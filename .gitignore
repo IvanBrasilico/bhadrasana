@@ -118,7 +118,7 @@ codacy.sh
 _build
 */alembic/*
 */CSV*
-*/files/*
+
 
 \.vscode/settings\.json
 tags
