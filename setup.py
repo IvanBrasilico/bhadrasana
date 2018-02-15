@@ -20,7 +20,7 @@ setup(
         'Flask-wtf',
         'pandas',
         'pymongo',
-        'sqlalchemy'
+        'sqlalchemy',
         'ajna_commons==0.0.1',
     ],
     dependency_links=[
