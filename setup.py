@@ -10,6 +10,7 @@ setup(
     author_email='brasilico.ivan@gmail.com',
     packages=find_packages(),
     install_requires=[
+        'dominate',
         'Flask',
         'Flask-BootStrap',
         'Flask-Login',
@@ -35,6 +36,8 @@ setup(
             'flake8-quotes',
             'flask-webtest',
             'isort',
+            'autopep8',
+            'pylint',
             'pytest',
             'pytest-cov',
             'pytest-mock',
