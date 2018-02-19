@@ -5,7 +5,7 @@ import os
 from sqlalchemy import Column, Enum, ForeignKey, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, scoped_session, sessionmaker
-from werkzeug.security import generate_password_hash  # , check_password_hash
+from werkzeug.security import generate_password_hash
 
 
 class Filtro(enum.Enum):
@@ -48,7 +48,7 @@ class MySession():
 Base = declarative_base()
 
 
-class DBUser(Base):
+class SQLDBUser(Base):
     """Base de Usuários"""
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
@@ -71,18 +71,18 @@ class DBUser(Base):
     def get(cls, session, username, password=None):
         """Test if user exists, and if passed, if password
         is correct
-        returns DBUser or None
+        returns SQLDBUser or None
         """
         if password:
-            dbuser = session.query(DBUser).filter(
-                DBUser.username == username,
-                DBUser._password == cls.encript(password)
+            DBUser = session.query(SQLDBUser).filter(
+                SQLDBUser.username == username,
+                SQLDBUser._password == cls.encript(password)
             ).first()
         else:
-            dbuser = session.query(DBUser).filter(
-                DBUser.username == username,
+            DBUser = session.query(SQLDBUser).filter(
+                SQLDBUser.username == username,
             ).first()
-        return dbuser
+        return DBUser
 
 
 class BaseOrigem(Base):

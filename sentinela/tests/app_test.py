@@ -26,6 +26,7 @@ class FlaskTestCase(unittest.TestCase):
             app.app.testing = True
             app.app.config['WTF_CSRF_ENABLED'] = False
             self.app = app.app.test_client()
+            app.DBUser.dbsession = None  # Bypass authentication
         rv = self.login('ajna', 'ajna')
         assert rv is not None
 
@@ -90,22 +91,26 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'="file"' in data
         rv = self._post(
-            '/upload_file', data={'': ''}, follow_redirects=False)
+            '/upload_file', data={}, follow_redirects=True)
+        print(data)
         data = self.data(rv)
+        assert b'="file"' in data
         file = {
             'file': (BytesIO(b'FILE CONTENT'), 'test.csv')
         }
         rv = self._post(
-            '/upload_file', data=file, follow_redirects=False)
+            '/upload_file', data=file, follow_redirects=True)
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        print(data)
+        assert b'test.csv' in data
         file = {
             'file': (BytesIO(b'FILE CONTENT'), '')
         }
         rv = self._post(
-            '/upload_file', data=file, follow_redirects=False)
+            '/upload_file', data=file, follow_redirects=True)
+        print(data)
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        assert b'Selecionar arquivo' in data
 
     def test_listfiles(self):
         if self.http_server is not None:

@@ -18,30 +18,27 @@ a aplicação de filtros/parâmetros de risco.
 """
 import csv
 import datetime
-import logging
 import os
-from urllib.parse import urljoin, urlparse
 
-from dominate.tags import img
 from flask import (Flask, abort, flash, redirect, render_template, request,
                    session, url_for)
 from flask_bootstrap import Bootstrap
 # from flask_cors import CORS
-from flask_login import (LoginManager, UserMixin, current_user, login_required,
-                         login_user, logout_user)
+from flask_login import current_user, login_required, login_user, logout_user
 from flask_nav import Nav
 from flask_nav.elements import Navbar, View
 from flask_session import Session
 # from flask_sslify import SSLify
-from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
+from pymongo import MongoClient
 from werkzeug.utils import secure_filename
-from wtforms import BooleanField, PasswordField, StringField, SubmitField
-from wtforms.validators import DataRequired, Length
 
-from sentinela.conf import (ALLOWED_EXTENSIONS, APP_PATH, CSV_DOWNLOAD,
-                            CSV_FOLDER, SECRET, UPLOAD_FOLDER)
-from sentinela.models.models import (Base, BaseOrigem, Coluna, DBUser, DePara,
+from ajna_commons.flask.conf import (ALLOWED_EXTENSIONS, DATABASE, MONGODB_URI,
+                                     SECRET, logo)
+from ajna_commons.flask.login import (DBUser, authenticate, is_safe_url,
+                                      login_manager)
+from sentinela.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER, UPLOAD_FOLDER
+from sentinela.models.models import (Base, BaseOrigem, Coluna, DePara,
                                      MySession, PadraoRisco, ParametroRisco,
                                      Tabela, ValorParametro, Visao)
 from sentinela.utils.csv_handlers import (sanitizar, sch_processing,
@@ -53,69 +50,26 @@ mysession = MySession(Base)
 dbsession = mysession.session
 engine = mysession.engine
 
-logging.basicConfig(level=os.environ.get('LOGLEVEL', 'INFO'))
-
 app = Flask(__name__, static_url_path='/static')
+db = MongoClient(host=MONGODB_URI)[DATABASE]
+print('db ', db)
+DBUser.dbsession = db
+print('DBUser.dbsession ', DBUser.dbsession)
+login_manager.init_app(app)
 # CORS(app)
 csrf = CSRFProtect(app)
 Bootstrap(app)
 nav = Nav()
-logo = img(src='/static/css/images/logo.png')
-
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-login_manager.session_protection = 'strong'
-
-# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-
-class User(UserMixin):
-    user_database = DBUser
-
-    def __init__(self, id):
-        self.id = id
-        self.name = str(id)
-
-    @classmethod
-    def get(cls, username, password=None):
-        dbuser = cls.user_database.get(dbsession, username, password)
-        if dbuser:
-            return User(dbuser.username)
-        return None
-
-
-class LoginForm(FlaskForm):
-    nome = StringField('Nome', validators=[DataRequired(), Length(1, 50)])
-    senha = PasswordField('Senha', validators=[DataRequired()])
-    remember_me = BooleanField('Lembrar-me')
-    submit = SubmitField('Entrar')
-
-
-def authenticate(username, password):
-    user_entry = User.get(username, password)
-    return user_entry
-
-
-@login_manager.user_loader
-def load_user(userid):
-    user_entry = User.get(userid)
-    return user_entry
-
-
-def is_safe_url(target):
-    ref_url = urlparse(request.host_url)
-    test_url = urlparse(urljoin(request.host_url, target))
-    return test_url.scheme in ('http', 'https') and \
-        ref_url.netloc == test_url.netloc
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    message = request.args.get('message', '')
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('senha')
         registered_user = authenticate(username, password)
+        print('User found: ', registered_user)
         if registered_user is not None:
             print('Logged in..')
             login_user(registered_user)
@@ -124,9 +78,11 @@ def login():
                 return abort(400)
             return redirect(next or url_for('index'))
         else:
-            return abort(401)
-    else:
-        return render_template('login.html', form=request.form)
+            print('Login inválido...')
+            message = 'Login inválido!'
+    return render_template('login.html',
+                           message=message,
+                           form=request.form)
 
 
 @app.route('/logout')
@@ -171,20 +127,17 @@ def upload_file():
     """Função simplificada para upload do arquivo de uma extração
     """
     if request.method == 'POST':
-        # check if the post request has the file part
         if 'file' not in request.files:
-            flash('No file part')
+            flash('Arquivo vazio. Selecionar arquivo válido'
+                  ' e depois clicar em submeter!')
             return redirect(request.url)
         file = request.files['file']
-        # if user does not select file, browser also
-        # submit a empty part without filename
-        if file.filename == '':
-            flash('No selected file')
+        if file.filename == '' or not allowed_file(file.filename):
+            flash('Selecionar arquivo válido e depois clicar em submeter!')
             return redirect(request.url)
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(UPLOAD_FOLDER, filename))
-            return redirect(url_for('list_files'))
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(UPLOAD_FOLDER, filename))
+        return redirect(url_for('list_files'))
     return render_template('importa_base.html')
 
 
@@ -643,7 +596,7 @@ def adiciona_visao():
         Visao.nome == visao_novo
     ).first()
     return redirect(url_for('juncoes',
-                    visaoid=visao.id))
+                            visaoid=visao.id))
 
 
 @app.route('/exclui_visao')
@@ -677,7 +630,7 @@ def exclui_coluna():
         Coluna.id == colunaid).delete()
     dbsession.commit()
     return redirect(url_for('juncoes',
-                    visaoid=visaoid))
+                            visaoid=visaoid))
 
 
 @app.route('/adiciona_tabela')
@@ -694,7 +647,7 @@ def adiciona_tabela():
     dbsession.add(tabela)
     dbsession.commit()
     return redirect(url_for('juncoes',
-                    visaoid=visaoid))
+                            visaoid=visaoid))
 
 
 @app.route('/exclui_tabela')
@@ -705,7 +658,7 @@ def exclui_tabela():
         Tabela.id == tabelaid).delete()
     dbsession.commit()
     return redirect(url_for('juncoes',
-                    visaoid=visaoid))
+                            visaoid=visaoid))
 
 
 @nav.navigation()
