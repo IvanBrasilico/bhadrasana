@@ -26,7 +26,6 @@
     </div>
     <div class="row">
         <div class="col-sm-6">
-            {% if parametros %}
             <h4>Parâmetros de risco cadastrados</h4>
             <div id="list" class="row col-sm-9">
                 <form id="frmparametros" class="form-group">
@@ -47,6 +46,7 @@
                         <button onclick="adicionar_parametro()" id="btn_ok" type="button" class="btn btn-default">OK</button>
                     </div>
                 </form>
+                {% if parametros %}
                 <div class="table">
                     <table class="inlineTable table table-bordered table-hover table-responsive" cellspacing="0" cellpadding="0" id="parametros">
                         {% for parametro in parametros %}
@@ -58,8 +58,8 @@
                         </tr>
                         {% endfor %}
                     </table>
-                    {% endif %}
                 </div>
+                {% endif %}
             </div>
         </div>
         {% if parametros %}
