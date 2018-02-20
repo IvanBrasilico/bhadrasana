@@ -116,8 +116,8 @@ bottery_core
 settings.py
 codacy.sh
 _build
-*/alembic/*
-*/CSV*
+*/files*
+*sentinela/CSV*
 
 
 \.vscode/settings\.json

@@ -95,6 +95,7 @@ class BaseOrigem(Base):
     caminho = Column(String(200), unique=True)
     deparas = relationship('DePara', back_populates='base')
     padroes = relationship('PadraoRisco', back_populates='base')
+    visoes = relationship('Visao', back_populates='base')
 
     def __init__(self, nome, caminho=None):
         self.nome = nome
@@ -143,7 +144,6 @@ class ParametroRisco(Base):
     nome_campo = Column(String(20))
     descricao = Column(String(200))
     valores = relationship('ValorParametro', back_populates='risco')
-    base_id = Column(Integer, ForeignKey('bases.id'))
     padraorisco = relationship(
         'PadraoRisco', back_populates='parametros')
 
@@ -185,6 +185,9 @@ class Visao(Base):
     nome = Column(String(50), unique=True)
     tabelas = relationship('Tabela', back_populates='visao')
     colunas = relationship('Coluna', back_populates='visao')
+    base_id = Column(Integer, ForeignKey('basesorigem.id'))
+    base = relationship(
+        'BaseOrigem', back_populates='visoes')
 
     def __init__(self, csv):
         self.csv = csv
