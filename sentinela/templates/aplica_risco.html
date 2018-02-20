@@ -8,9 +8,11 @@
         </h4>
         <div class="col-sm-6">
             <h4>
-                <b>Base Original:</b>
+                <b>Base Original: {{baseid}}</b>
+                
                 <select class="form-control" name="base" id="base">
                     <option value="0">Selecionar</option>
+
                     {% for base in bases %}
                     <option value="{{ base.id }}" {% if base.id|int()==baseid|int() %} selected="selected" {% endif %}>{{ base.nome }}
                     </option>

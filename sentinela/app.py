@@ -37,6 +37,7 @@ from ajna_commons.flask.conf import (ALLOWED_EXTENSIONS, DATABASE, MONGODB_URI,
                                      SECRET, logo)
 from ajna_commons.flask.login import (DBUser, authenticate, is_safe_url,
                                       login_manager)
+from ajna_commons.flask.log import logger
 from sentinela.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER, UPLOAD_FOLDER
 from sentinela.models.models import (Base, BaseOrigem, Coluna, DePara,
                                      MySession, PadraoRisco, ParametroRisco,
@@ -52,15 +53,23 @@ engine = mysession.engine
 
 app = Flask(__name__, static_url_path='/static')
 db = MongoClient(host=MONGODB_URI)[DATABASE]
-print('db ', db)
+logger.info('db ', db)
 DBUser.dbsession = db
-print('DBUser.dbsession ', DBUser.dbsession)
+logger.info('DBUser.dbsession ', DBUser.dbsession)
 login_manager.init_app(app)
 # CORS(app)
 csrf = CSRFProtect(app)
 Bootstrap(app)
 nav = Nav()
 
+
+@app.before_request
+def log_every_request():
+    """Send every request to the log"""
+    name = 'No user'
+    if current_user and current_user.is_authenticated:
+        name = current_user.name
+    logger.info(request.url + ' - ' + name)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -69,16 +78,16 @@ def login():
         username = request.form.get('username')
         password = request.form.get('senha')
         registered_user = authenticate(username, password)
-        print('User found: ', registered_user)
+        logger.info('User found: ', registered_user)
         if registered_user is not None:
-            print('Logged in..')
+            logger.info('Logged in..')
             login_user(registered_user)
             next = request.args.get('next')
             if not is_safe_url(next):
                 return abort(400)
             return redirect(next or url_for('index'))
         else:
-            print('Login inválido...')
+            logger.error('Login inválido...')
             message = 'Login inválido!'
     return render_template('login.html',
                            message=message,
@@ -109,60 +118,50 @@ def index():
         return redirect(url_for('login'))
 
 
-@app.route('/list_files')
+@app.route('/importa_base', methods=['GET', 'POST'])
 @login_required
-def list_files():
-    """Lista arquivos csv disponíveis para trabalhar
-    """
-    lista_arquivos = sorted([file for file in
-                             os.listdir(UPLOAD_FOLDER) if allowed_file(file)])
-    bases = dbsession.query(PadraoRisco).order_by(PadraoRisco.nome).all()
-    return render_template('importa_base.html', lista_arquivos=lista_arquivos,
-                           bases=bases)
-
-
-@app.route('/upload_file', methods=['GET', 'POST'])
-@login_required
-def upload_file():
+def importa_base():
     """Função simplificada para upload do arquivo de uma extração
+        Args 
+            base: ID da Base de Origem do arquivo
+            data: data inicial do período extraído (se não for passada,
+            assume hoje)
+            file: arquivo csv, sch+txt, ou conjunto deles em formato zip
     """
+    baseid = request.form.get('base')
+    data = request.form.get('data')
     if request.method == 'POST':
         if 'file' not in request.files:
             flash('Arquivo vazio. Selecionar arquivo válido'
                   ' e depois clicar em submeter!')
-            return redirect(request.url)
-        file = request.files['file']
-        if file.filename == '' or not allowed_file(file.filename):
-            flash('Selecionar arquivo válido e depois clicar em submeter!')
-            return redirect(request.url)
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(UPLOAD_FOLDER, filename))
-        return redirect(url_for('list_files'))
-    return render_template('importa_base.html')
-
-
-@app.route('/importa')
-@login_required
-def importa():
-    erro = ''
-    baseid = request.args.get('base')
-    filename = request.args.get('filename')
-    data = request.args.get('data')
-    if not data:
-        data = datetime.date.today().strftime('%Y%m%d')
-    if baseid is not None and filename is not None:
-        dest_path = os.path.join(CSV_FOLDER, baseid,
-                                 data[:4], data[4:].replace('-', ''))
-        if not os.path.exists(dest_path):
-            os.makedirs(dest_path)
-        try:
-            sch_processing(os.path.join(UPLOAD_FOLDER,
-                                        secure_filename(filename)),
-                           dest_path=dest_path)
-            return redirect(url_for('risco', baseid=baseid))
-        except Exception as err:
-            erro = err.__cause__
-    return redirect(url_for('list_files', erro=erro))
+        else:
+            file = request.files['file']
+            filename = secure_filename(file.filename)
+            if (not filename or not allowed_file(filename)):
+                flash('Selecionar arquivo válido e depois clicar em submeter!')
+                filename = None
+            elif baseid is None:
+                flash('Selecionar base original e depois clicar em submeter!')
+            else: # Validado - tentar upload e procesamento
+                logger.debug(data)
+                if not data:
+                    data = datetime.date.today().strftime('%Y%m%d')
+                # file_stream = io.BytesIO(file)
+                file.save(os.path.join(UPLOAD_FOLDER, filename))
+                dest_path = os.path.join(CSV_FOLDER, baseid,
+                                        data[:4], data[4:].replace('-', ''))
+                if not os.path.exists(dest_path):
+                    os.makedirs(dest_path)
+                try:
+                    sch_processing(os.path.join(UPLOAD_FOLDER,
+                                                secure_filename(filename)),
+                                dest_path=dest_path)
+                    return redirect(url_for('risco', baseid=baseid))
+                except Exception as err:
+                    flash(err.__cause__)
+    bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
+    return render_template('importa_base.html', bases=bases,
+                            baseid=baseid, data=data)
 
 
 @app.route('/risco', methods=['POST', 'GET'])
@@ -294,7 +293,7 @@ def importa_csv(padraoid, riscoid):
             flash('No file part')
             return redirect(request.url)
         csvf = request.files['csv']
-        print('FILE***', csvf.filename)
+        logger.info('FILE***', csvf.filename)
         if csvf.filename == '':
             flash('No selected file')
             return redirect(request.url)
@@ -309,7 +308,7 @@ def importa_csv(padraoid, riscoid):
                 csvf.filename.rsplit('.', 1)[1].lower() == 'csv':
             # filename = secure_filename(csvf.filename)
             csvf.save(os.path.join(tmpdir, risco.nome_campo + '.csv'))
-            print(csvf.filename)
+            logger.info(csvf.filename)
             gerente = GerenteRisco()
             gerente.parametros_fromcsv(risco.nome_campo, session=dbsession)
     return redirect(url_for('edita_risco', padraoid=padraoid,
@@ -528,7 +527,7 @@ def arvore():
     selected_model = request.args.get('selected_model')
     selected_field = request.args.get('selected_field')
     instance_id = request.args.get('instance_id')
-    print(selected_module)
+    logger.info(selected_module)
     gerente.set_module(selected_module, db='cargatest.db')
     filters = []
     afilter = Filtro(selected_field, None, instance_id)
@@ -536,9 +535,9 @@ def arvore():
     q = gerente.filtra(selected_model, filters, return_query=True)
     instance = q.first()
     string_arvore = ''
-    print(instance)
+    logger.info(instance)
     pai = gerente.get_paiarvore(instance)
-    print(pai)
+    logger.info(pai)
     if pai:
         lista = gerente.recursive_tree(pai)
         string_arvore = '\n'.join(lista)
@@ -664,7 +663,7 @@ def exclui_tabela():
 @nav.navigation()
 def mynavbar():
     items = [View('Home', 'index'),
-             View('Importar Bases', 'list_files'),
+             View('Importar Base', 'importa_base'),
              View('Aplicar Risco', 'risco'),
              View('Editar Riscos', 'edita_risco'),
              View('Editar Titulos', 'edita_depara'),
@@ -689,4 +688,7 @@ Session(app)
         sslify = SSLify(app)"""
 
 if __name__ == '__main__':
+    print('Iniciando Servidor Bhadrasana...')
+    app.logger.addHandler(file_handler)
+    file_handler.setLevel(logging.WARNING)
     app.run(debug=app.config['DEBUG'])

@@ -22,7 +22,6 @@ class MySession():
                 os.path.abspath(__file__)), nomebase)
             if os.name != 'nt':
                 path = '/' + path
-            print(path)
         self._engine = create_engine('sqlite:///' + path, convert_unicode=True)
         Session = sessionmaker(bind=self._engine)
         if test:
