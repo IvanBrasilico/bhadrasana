@@ -328,7 +328,9 @@ class GerenteRisco():
         cabecalhos_nao_repetidos = []
         caminho = os.path.join(path, str(baseorigemid))
         logger.debug(caminho)
-        ultimo_ano = sorted(os.listdir(caminho))
+        if not os.path.isdir(caminho):
+            ultimo_ano = sorted(os.listdir(caminho))
+            return []
         logger.debug(ultimo_ano)
         if len(ultimo_ano) == 0:
             raise ValueError('Não há nenhuma base do tipo desejado ' 
