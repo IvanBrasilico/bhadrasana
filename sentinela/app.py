@@ -71,6 +71,7 @@ def log_every_request():
         name = current_user.name
     logger.info(request.url + ' - ' + name)
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     message = request.args.get('message', '')
@@ -142,26 +143,26 @@ def importa_base():
                 filename = None
             elif baseid is None:
                 flash('Selecionar base original e depois clicar em submeter!')
-            else: # Validado - tentar upload e procesamento
+            else:  # Validado - tentar upload e procesamento
                 logger.debug(data)
                 if not data:
                     data = datetime.date.today().strftime('%Y%m%d')
                 # file_stream = io.BytesIO(file)
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
                 dest_path = os.path.join(CSV_FOLDER, baseid,
-                                        data[:4], data[4:].replace('-', ''))
+                                         data[:4], data[4:].replace('-', ''))
                 if not os.path.exists(dest_path):
                     os.makedirs(dest_path)
                 try:
                     sch_processing(os.path.join(UPLOAD_FOLDER,
                                                 secure_filename(filename)),
-                                dest_path=dest_path)
+                                   dest_path=dest_path)
                     return redirect(url_for('risco', baseid=baseid))
                 except Exception as err:
                     flash(err.__cause__)
     bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
     return render_template('importa_base.html', bases=bases,
-                            baseid=baseid, data=data)
+                           baseid=baseid, data=data)
 
 
 @app.route('/risco', methods=['POST', 'GET'])
@@ -667,8 +668,8 @@ def mynavbar():
              View('Aplicar Risco', 'risco'),
              View('Editar Riscos', 'edita_risco'),
              View('Editar Titulos', 'edita_depara'),
-             View('Navega Bases', 'navega_bases'),
-             View('Editar Visão', 'juncoes')]
+             View('Editar Visão', 'juncoes'),
+             View('Navega Bases', 'navega_bases')]
     if current_user.is_authenticated:
         items.append(View('Sair', 'logout'))
     return Navbar(logo, *items)
@@ -692,3 +693,4 @@ if __name__ == '__main__':
     app.logger.addHandler(file_handler)
     file_handler.setLevel(logging.WARNING)
     app.run(debug=app.config['DEBUG'])
+1
