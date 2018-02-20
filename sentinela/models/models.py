@@ -164,7 +164,7 @@ class ParametroRisco(Base):
         self.nome_campo = nome
         self.descricao = descricao
         if padraorisco:
-            self.base_id = padraorisco.id
+            self.padraorisco_id = padraorisco.id
 
 
 class ValorParametro(Base):

@@ -319,6 +319,7 @@ def edita_risco():
     padroes = dbsession.query(PadraoRisco).order_by(PadraoRisco.nome).all()
     parametros = []
     headers = []
+    basesid = None
     if padraoid:
         padrao = dbsession.query(PadraoRisco).filter(
             PadraoRisco.id == padraoid
@@ -415,7 +416,7 @@ def adiciona_parametro():
     if risco_novo:
         sanitizado = sanitizar(risco_novo, norm_function=unicode_sanitizar)
         risco = ParametroRisco(sanitizado)
-        risco.base_id = padraoid
+        risco.padraorisco_id = padraoid
         dbsession.add(risco)
         dbsession.commit()
     if lista:
@@ -424,7 +425,7 @@ def adiciona_parametro():
         for item in nova_lista[0].split(','):
             sanitizado = sanitizar(item, norm_function=unicode_sanitizar)
             risco = ParametroRisco(sanitizado)
-            risco.base_id = padraoid
+            risco.padraorisco_id = padraoid
             dbsession.add(risco)
         dbsession.commit()
     return redirect(url_for('edita_risco', padraoid=padraoid))
