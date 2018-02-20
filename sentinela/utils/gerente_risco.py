@@ -140,6 +140,10 @@ class GerenteRisco():
 
         Returns:
             lista contendo os campos filtrados. 1ª linha com nomes de campo
+
+        Obs: para um arquivo, quando a base for constituída de vários arquivos,
+         utilizar :func:`aplica_juncao`
+         
         """
         mensagem = 'Arquivo não fornecido!'
         if arquivo:

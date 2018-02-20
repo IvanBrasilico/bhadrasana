@@ -147,12 +147,13 @@
 </div>
 {% endif %} {% endblock %} {% block scripts %} {{super()}}
 <script>
-    function aplica_risco(filename) {
+    function aplica_risco(filename, acao) {
         parametros_selecionados = [];
         $("input:checkbox[name=parametro]:checked").each(function () {
             parametros_selecionados.push($(this).val());
         });
         window.location.assign('/aplica_risco?filename=' + filename +
+            '&acao=' + acao +
             '&baseid=' + $("#base").val() +
             '&padraoid=' + $("#padrao").val() +
             '&visaoid=' + $("#visao").val() +

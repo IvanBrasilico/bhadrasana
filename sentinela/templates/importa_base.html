@@ -21,9 +21,9 @@
                     </big>
                     <h4>Indicar nome da Base que está sendo importada (obrigatório) e data (opcional)</h4>
                     <h4>
-                        <label for="base">Base Original:</label>
+                        <label for="baseid">Base Original:</label>
                     </h4>
-                    <select class="form-control" name="base" id="base">
+                    <select class="form-control" name="baseid" id="baseid">
                         <option value="0">Selecionar</option>
                         {% for base in bases %}
                         <option value="{{ base.id }}" {% if base.id|int()==baseid|int() %} selected="selected" {% endif %}>{{ base.nome }}</option>
