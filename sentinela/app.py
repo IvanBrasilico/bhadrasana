@@ -213,17 +213,18 @@ def risco():
         PadraoRisco.id == padraoid
     ).first()
     if padrao is None:
-        flash('É obrigatório informar Padrão de Risco!')
+        if path:
+            flash('É obrigatório informar Padrão de Risco a ser aplicado!')
     else:
         parametros = padrao.parametros
-
     parametro_id = request.args.get('parametroid')
     valores = []
-    paramrisco = dbsession.query(ParametroRisco).filter(
-        ParametroRisco.id == parametro_id
-    ).first()
-    if paramrisco:
-        valores = paramrisco.valores
+    if parametro_id:
+        paramrisco = dbsession.query(ParametroRisco).filter(
+            ParametroRisco.id == parametro_id
+        ).first()
+        if paramrisco:
+            valores = paramrisco.valores
     if not path or not padrao:
         return render_template('aplica_risco.html',
                                lista_arquivos=lista_arquivos,
