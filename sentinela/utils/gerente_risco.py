@@ -2,11 +2,13 @@
 de risco cadastrados nos dados. Utiliza pandas para realizar filtragem
 """
 import csv
+import json
 import os
 from collections import defaultdict
 
 import pandas as pd
 
+from ajna_commons.flask.log import logger
 from sentinela.conf import ENCODE, tmpdir
 from sentinela.models.models import (Filtro, PadraoRisco, ParametroRisco,
                                      ValorParametro)
@@ -143,7 +145,7 @@ class GerenteRisco():
 
         Obs: para um arquivo, quando a base for constituída de vários arquivos,
          utilizar :func:`aplica_juncao`
-         
+
         """
         mensagem = 'Arquivo não fornecido!'
         if arquivo:
@@ -325,12 +327,18 @@ class GerenteRisco():
         cabecalhos = []
         cabecalhos_nao_repetidos = []
         caminho = os.path.join(path, str(baseorigemid))
+        logger.debug(caminho)
         ultimo_ano = sorted(os.listdir(caminho))
-        print(ultimo_ano)
+        logger.debug(ultimo_ano)
+        if len(ultimo_ano) == 0:
+            raise ValueError('Não há nenhuma base do tipo desejado ' 
+                             'para consulta')
         ultimo_ano = ultimo_ano[-1]
         caminho = os.path.join(caminho, ultimo_ano)
-        ultimo_mesdia = sorted(os.listdir(caminho))[-1]
-        caminho = os.path.join(caminho, ultimo_mesdia)
+        ultimo_mes = sorted(os.listdir(caminho))[-1]
+        caminho = os.path.join(caminho, ultimo_mes)
+        ultimo_mes = sorted(os.listdir(caminho))[-1]
+        caminho = os.path.join(caminho, ultimo_dia)
         for arquivo in os.listdir(caminho):
             with open(os.path.join(caminho, arquivo),
                       'r', encoding=ENCODE, newline='') as f:
@@ -390,3 +398,30 @@ class GerenteRisco():
             return self.aplica_risco(result_list,
                                      parametros_ativos=parametros_ativos)
         return result_list
+
+    @classmethod
+    def csv_to_mongo(cls, db, tabela, path=None, arquivo=None, unique=[]):
+        """Reads a csv file and inserts all contents into a MongoDB collection
+        Creates collection if it not exists
+        Args:
+            db: MongoDBClient connection with database setted
+            tabela: nome da coleção do MongoDB a utilizar (cria se não existe)
+            path: caminho do(s) arquivo(s) csv OU
+            arquivo: caminho e nome do arquivo csv
+            unique: lista de campos que terão indice único (e 
+            não serão reinseridos) - TODO: unique field on mongo archive
+        """
+        if path is None and arquivo is None:
+            raise AtributeError('Nome ou caminho do(s) arquivo(s) deve ser'
+                                'obrigatoriamente informado')
+        if arquivo:
+            lista_arquivos = [os.path.basename(arquivo)]
+            path = os.path.dirname(arquivo)
+        else:
+            lista_arquivos = os.listdir(path)
+        for arquivo in lista_arquivos:
+            df = pd.read_csv(os.path.join(path, arquivo))
+            data_json = json.loads(df.to_json(orient='records'))
+            if tabela not in db.collection_names():
+                db.create_collection(tabela)
+            db[tabela].insert(data_json)

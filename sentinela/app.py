@@ -170,11 +170,12 @@ def importa_base():
                            baseid=baseid, data=data)
 
 
-def arquiva_base_csv(base_csv):
+def arquiva_base_csv(baseorigem, base_csv):
     # TODO: passar esta responsabilidade para algum Gerente??
     # Aviso: Esta função rmtree só deve ser utilizada com caminhos seguros,
     # de preferência gerados pela própria aplicação
     logger.debug(base_csv)
+    GerenteRisco.csv_to_mongo(db, baseorigem.nome, base_csv)
     shutil.rmtree(base_csv)
 
 
@@ -232,8 +233,11 @@ def risco():
     csv_salvo = ''
     if acao == 'arquivar':
         try:
-            arquiva_base_csv(base_csv)
-            flash('Base arquivada!')
+            if abase and base_csv:
+                arquiva_base_csv(abase, base_csv)
+                flash('Base arquivada!')
+            else:
+                flash('Informe Base Original e arquivo!')
         except Exception as err:
             flash(err)
         return redirect(url_for('risco', baseid=baseid))
@@ -314,13 +318,12 @@ def edita_risco():
     padraoid = request.args.get('padraoid')
     padroes = dbsession.query(PadraoRisco).order_by(PadraoRisco.nome).all()
     parametros = []
-    baseid = None
     headers = []
     if padraoid:
         padrao = dbsession.query(PadraoRisco).filter(
             PadraoRisco.id == padraoid
         ).first()
-        baseid = padrao.base_id
+        basesid = padrao.bases
         if padrao:
             parametros = padrao.parametros
     riscoid = request.args.get('riscoid')
@@ -331,14 +334,29 @@ def edita_risco():
         ).first()
         if valor:
             valores = valor.valores
-    if baseid:
-        headers = dbsession.query(DePara).filter(
-            DePara.base_id == baseid
-        ).all()
-        if not headers:
-            gerente = GerenteRisco()
-            headers = gerente.get_headers_base(baseid, CSV_FOLDER)
-            headers.sort()
+    headers = []
+    if basesid:
+        logger.debug(basesid)
+        for base in basesid:
+            logger.debug(base)
+            base_id = base.id
+            base_headers = [depara.titulo_novo for depara in
+                            dbsession.query(DePara).filter(
+                                DePara.base_id == base_id
+                            ).all()]
+            if not base_headers:
+                gerente = GerenteRisco()
+                try:
+                    base_headers = gerente.get_headers_base(
+                        base_id, CSV_FOLDER)
+                except ValueError as err:
+                    base_headers = []
+            headers.extend(base_headers)
+        if len(headers) == 0:
+            flash('Aviso: nenhuma base exemplo ou configuração muda títulos '
+                  'encontrada para sugestão de campo parâmetro.')
+        headers.sort()
+        logger.debug(headers)
     return render_template('edita_risco.html',
                            padraoid=padraoid,
                            padroes=padroes,
