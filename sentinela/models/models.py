@@ -2,7 +2,8 @@
 import enum
 import os
 
-from sqlalchemy import Column, Enum, ForeignKey, Integer, String, create_engine
+from sqlalchemy import (Column, Enum, ForeignKey, Integer, Table,
+                        String, create_engine)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, scoped_session, sessionmaker
 from werkzeug.security import generate_password_hash
@@ -85,6 +86,14 @@ class SQLDBUser(Base):
         return DBUser
 
 
+association_table = Table('basesorigem_padroesrisco', Base.metadata,
+                          Column('left_id', Integer,
+                                 ForeignKey('basesorigem.id')),
+                          Column('right_id', Integer,
+                                 ForeignKey('padroesrisco.id'))
+                          )
+
+
 class BaseOrigem(Base):
     """Metadado sobre as bases de dados disponíveis/integradas.
     Caminho: caminho no disco onde os dados da importação da base
@@ -94,12 +103,33 @@ class BaseOrigem(Base):
     nome = Column(String(20), unique=True)
     caminho = Column(String(200), unique=True)
     deparas = relationship('DePara', back_populates='base')
-    padroes = relationship('PadraoRisco', back_populates='base')
     visoes = relationship('Visao', back_populates='base')
+    padroes = relationship(
+        "PadraoRisco", secondary=association_table,
+        back_populates="bases")
 
     def __init__(self, nome, caminho=None):
         self.nome = nome
         self.caminho = caminho
+
+
+class PadraoRisco(Base):
+    """Metadado sobre as bases de dados disponíveis/integradas.
+    Caminho: caminho no disco onde os dados da importação da base
+    (normalmente arquivos csv) estão guardados"""
+    __tablename__ = 'padroesrisco'
+    id = Column(Integer, primary_key=True)
+    nome = Column(String(20), unique=True)
+    parametros = relationship('ParametroRisco', back_populates='padraorisco')
+    base_id = Column(Integer, ForeignKey('basesorigem.id'))
+    bases = relationship(
+        'BaseOrigem', secondary=association_table,
+        back_populates='padroes')
+
+    def __init__(self, nome, base=None):
+        self.nome = nome
+        if base:
+            self.base_id = base.id
 
 
 class DePara(Base):
@@ -117,24 +147,6 @@ class DePara(Base):
         self.base_id = base.id
 
 
-class PadraoRisco(Base):
-    """Metadado sobre as bases de dados disponíveis/integradas.
-    Caminho: caminho no disco onde os dados da importação da base
-    (normalmente arquivos csv) estão guardados"""
-    __tablename__ = 'bases'
-    id = Column(Integer, primary_key=True)
-    nome = Column(String(20), unique=True)
-    parametros = relationship('ParametroRisco', back_populates='padraorisco')
-    base_id = Column(Integer, ForeignKey('basesorigem.id'))
-    base = relationship(
-        'BaseOrigem', back_populates='padroes')
-
-    def __init__(self, nome, base=None):
-        self.nome = nome
-        if base:
-            self.base_id = base.id
-
-
 class ParametroRisco(Base):
     """Nomeia um parâmetro de risco que pode ser aplicado
     como filtro em um Banco de Dados. Um parâmetro tem uma
@@ -146,6 +158,7 @@ class ParametroRisco(Base):
     valores = relationship('ValorParametro', back_populates='risco')
     padraorisco = relationship(
         'PadraoRisco', back_populates='parametros')
+    padraorisco_id = Column(Integer, ForeignKey('padroesrisco.id'))
 
     def __init__(self, nome, descricao='', padraorisco=None):
         self.nome_campo = nome

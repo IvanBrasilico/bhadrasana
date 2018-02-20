@@ -192,28 +192,28 @@ def risco():
     """
     path = request.args.get('filename')
     acao = request.args.get('acao')
-    lista_arquivos = []
     baseid = request.args.get('baseid', '0')
     padraoid = request.args.get('padraoid', '0')
     visaoid = request.args.get('visaoid', '0')
     parametros_ativos = request.args.get('parametros_ativos')
     if parametros_ativos:
         parametros_ativos = parametros_ativos.split(',')
-    try:
-        for ano in os.listdir(os.path.join(CSV_FOLDER, baseid)):
-            for mesdia in os.listdir(os.path.join(CSV_FOLDER, baseid, ano)):
-                lista_arquivos.append(ano + '/' + mesdia)
-    except FileNotFoundError:
-        pass
     bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
-    padroes = dbsession.query(PadraoRisco).order_by(PadraoRisco.nome).all()
-    visoes = dbsession.query(Visao).order_by(Visao.nome).all()
+    if baseid:
+        abase = dbsession.query(BaseOrigem).filter(
+            BaseOrigem.id == baseid).first()
+        if abase:
+            padroes = abase.padroes
+            visoes = abase.visoes
+        else:
+            padroes = []
+            visoes = []
     parametros = []
     padrao = dbsession.query(PadraoRisco).filter(
         PadraoRisco.id == padraoid
     ).first()
     if padrao is None:
-        if path:
+        if path and acao == 'aplicar':
             flash('É obrigatório informar Padrão de Risco a ser aplicado!')
     else:
         parametros = padrao.parametros
@@ -225,6 +225,23 @@ def risco():
         ).first()
         if paramrisco:
             valores = paramrisco.valores
+    if path:
+        base_csv = os.path.join(CSV_FOLDER, baseid, path)
+    lista_risco = []
+    csv_salvo = ''
+    if acao == 'arquivar':
+        try:
+            arquiva_base_csv(base_csv)
+            flash('Base arquivada!')
+        except Exception as err:
+            flash(err)
+    lista_arquivos = []
+    try:
+        for ano in os.listdir(os.path.join(CSV_FOLDER, baseid)):
+            for mesdia in os.listdir(os.path.join(CSV_FOLDER, baseid, ano)):
+                lista_arquivos.append(ano + '/' + mesdia)
+    except FileNotFoundError:
+        pass
     if not path or not padrao:
         return render_template('aplica_risco.html',
                                lista_arquivos=lista_arquivos,
@@ -237,53 +254,42 @@ def risco():
                                visaoid=visaoid,
                                parametros=parametros,
                                parametros_ativos=parametros_ativos)
-    # if path aplica_risco
-    base_csv = os.path.join(CSV_FOLDER, baseid, path)
-    lista_risco = []
-    csv_salvo = ''
-    if acao == 'arquivar':
+    # Todas as condições para aplicar_risco foram cumpridas
+    gerente = GerenteRisco()
+    gerente.set_padraorisco(padrao)
+    if visaoid == '0':
+        dir_content = os.listdir(base_csv)
+        arquivo = ''
+        if len(dir_content) == 1:
+            arquivo = os.path.join(base_csv, dir_content[0])
         try:
-            arquiva_base_csv(base_csv)
-            lista_arquivos = []
-            flash('Base arquivada!')
+            lista_risco = gerente.aplica_risco(arquivo=arquivo,
+                                                parametros_ativos=parametros_ativos)
         except Exception as err:
-            flash(err.__cause__)
+            flash(err)
+
     else:
-        gerente = GerenteRisco()
-        gerente.set_padraorisco(padrao)
-        if visaoid == '0':
-            dir_content = os.listdir(base_csv)
-            arquivo = ''
-            if len(dir_content) == 1:
-                arquivo = os.path.join(base_csv, dir_content[0])
+        avisao = dbsession.query(Visao).filter(
+            Visao.id == visaoid).first()
+        if avisao is None:
+            flash('Visão não encontrada!')
+        else:
             try:
-                lista_risco = gerente.aplica_risco(arquivo=arquivo,
-                                                   parametros_ativos=parametros_ativos)
+                lista_risco = gerente.aplica_juncao(avisao, path=base_csv, filtrar=True,
+                                                    parametros_ativos=parametros_ativos)
             except Exception as err:
                 flash(err)
 
-        else:
-            avisao = dbsession.query(Visao).filter(
-                Visao.id == visaoid).first()
-            if avisao is None:
-                flash('Visão não encontrada!')
-            else:
-                try:
-                    lista_risco = gerente.aplica_juncao(avisao, path=base_csv, filtrar=True,
-                                                        parametros_ativos=parametros_ativos)
-                except Exception as err:
-                    flash(err)
-
-        if lista_risco:  # Salvar resultado
-            static_path = app.config.get('STATIC_FOLDER', 'static')
-            csv_salvo = os.path.join(APP_PATH, static_path, 'baixar.csv')
-            try:
-                os.remove(csv_salvo)  # Remove resultado antigo se houver
-            except IOError:
-                pass
-            with open(csv_salvo, 'w', encoding=ENCODE, newline='') as csv_out:
-                writer = csv.writer(csv_out)
-                writer.writerows(lista_risco)
+    if lista_risco:  # Salvar resultado
+        static_path = app.config.get('STATIC_FOLDER', 'static')
+        csv_salvo = os.path.join(APP_PATH, static_path, 'baixar.csv')
+        try:
+            os.remove(csv_salvo)  # Remove resultado antigo se houver
+        except IOError:
+            pass
+        with open(csv_salvo, 'w', encoding=ENCODE, newline='') as csv_out:
+            writer = csv.writer(csv_out)
+            writer.writerows(lista_risco)
     return render_template('aplica_risco.html',
                            lista_arquivos=lista_arquivos,
                            bases=bases,
