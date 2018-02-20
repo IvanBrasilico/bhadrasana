@@ -329,8 +329,8 @@ class GerenteRisco():
         caminho = os.path.join(path, str(baseorigemid))
         logger.debug(caminho)
         if not os.path.isdir(caminho):
-            ultimo_ano = sorted(os.listdir(caminho))
             return []
+        ultimo_ano = sorted(os.listdir(caminho))
         logger.debug(ultimo_ano)
         if len(ultimo_ano) == 0:
             raise ValueError('Não há nenhuma base do tipo desejado ' 
