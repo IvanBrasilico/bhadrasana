@@ -145,11 +145,12 @@ def importa_base():
             elif baseid is None:
                 flash('Selecionar base original e depois clicar em submeter!')
             else:  # Validado - tentar upload e procesamento
-                logger.debug(data)
                 if not data:
-                    data = datetime.date.today().strftime('%Y%m%d')
+                    data = datetime.date.today().strftime('%Y-%m-%d')
+                logger.debug(data)
                 dest_path = os.path.join(CSV_FOLDER, baseid,
-                                         data[:4], data[4:].replace('-', ''))
+                                         data[:4], data[5:7], data[8:10])
+                logger.debug(dest_path)
                 if not os.path.exists(dest_path):
                     os.makedirs(dest_path)
                 try:
@@ -235,11 +236,13 @@ def risco():
             flash('Base arquivada!')
         except Exception as err:
             flash(err)
+        return redirect(url_for('risco', baseid=baseid))
     lista_arquivos = []
     try:
         for ano in os.listdir(os.path.join(CSV_FOLDER, baseid)):
-            for mesdia in os.listdir(os.path.join(CSV_FOLDER, baseid, ano)):
-                lista_arquivos.append(ano + '/' + mesdia)
+            for mes in os.listdir(os.path.join(CSV_FOLDER, baseid, ano)):
+                for dia in os.listdir(os.path.join(CSV_FOLDER, baseid, ano, mes)):
+                    lista_arquivos.append(ano + '/' + mes + '/' + dia)
     except FileNotFoundError:
         pass
     if not path or not padrao:
@@ -264,7 +267,7 @@ def risco():
             arquivo = os.path.join(base_csv, dir_content[0])
         try:
             lista_risco = gerente.aplica_risco(arquivo=arquivo,
-                                                parametros_ativos=parametros_ativos)
+                                               parametros_ativos=parametros_ativos)
         except Exception as err:
             flash(err)
 
