@@ -20,6 +20,7 @@ setup(
         'Flask-wtf',
         'pandas',
         'pymongo',
+        'raven',
         'sqlalchemy',
         'ajna_commons==0.0.1',
     ],
