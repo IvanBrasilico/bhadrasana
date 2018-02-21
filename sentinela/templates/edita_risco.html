@@ -12,15 +12,19 @@
                 </h4>
             </div>
             <div class="col-sm-2">
-                <h4>
-                    <select class="form-control" name="padrao" id="padrao">
-                        <option value="0">Selecione...</option>
-                        {% for padrao in padroes %}
-                        <option value="{{ padrao.id }}" {% if padrao.id|int()==padraoid|int() %} selected="selected" {% endif %}>{{ padrao.nome }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </h4>
+                <select class="form-control" name="padrao" id="padrao">
+                    <option value="0">Selecione...</option>
+                    {% for padrao in padroes %}
+                    <option value="{{ padrao.id }}" {% if padrao.id|int()==padraoid|int() %} selected="selected" {% endif %}>{{ padrao.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-2">
+                <input class="form-control" id="nome_padrao_risco" type="text" placeholder="Nome">
+            </div>
+            <div class="col-sm-2">
+                <button onclick="adicionar_padraorisco()" id="btn_addpadrao" type="button" class="btn btn-default">Criar novo Padrão de Risco</button>
             </div>
         </div>
     </div>
@@ -185,6 +189,13 @@
     var parametros = document.querySelector("#parametros tbody");
     var valores = document.querySelector("#riscos tbody")
     var chave = document.querySelector("#parametros tbody")
+
+    function adicionar_padraorisco() {
+        var nome = $("#nome_padrao_risco").val();
+        if (nome != '') {
+            window.location.assign('/adiciona_padrao/' + nome)
+        }
+    }
 
     function adicionar_parametro() {
         var risco = $("#parametro_risco").val();

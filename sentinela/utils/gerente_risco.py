@@ -80,6 +80,29 @@ class GerenteRisco():
         self._riscosativos = {}
         self._padraorisco = None
 
+    def importa_base(self, dest_path, file, remove=True):
+        """Copia base para dest_path, processando se necessário
+        Aceita arquivos .zip contendo arquivos sch
+        e arquivos csv únicos
+
+        Args:
+            dest_path: destino do(s) arquivo(s) gerados
+            file: arquivo da base de origem (fonte externa/extração)
+            remove: excluir o arquivo temporário após processamento
+        """
+        tempfile = os.path.join(tmpdir, file.filename)
+        if '.zip' in tempfile or os.path.isdir(tempfile):
+            file.save(tempfile)
+            result = sch_processing(tempfile,
+                                    dest_path=dest_path)
+            if not os.path.isdir(tempfile) and remove:
+                os.remove(tempfile)
+        else:
+            file.save(os.path.join(dest_path, file.filename))
+            result = file.filename
+            # result = csv_processing(tempfile, dest_path=dest_path)
+        return result
+
     def set_padraorisco(self, padraorisco):
         """Vincula o Gerente a um objeto padraoriscoOriginal
         Atenção: TODOS os parâmetros de risco ativos no Gerente serão
@@ -259,7 +282,6 @@ class GerenteRisco():
                       'r', encoding=ENCODE, newline='') as f:
                 reader = csv.reader(f)
                 lista = [linha for linha in reader]
-                lista = lista[1:]
         if session:
             parametro = session.query(ParametroRisco).filter(
                 ParametroRisco.nome_campo == campo).first()
@@ -269,16 +291,20 @@ class GerenteRisco():
                 session.commit()
             for linha in lista:
                 if parametro.id:
+                    if len(linha) == 1:
+                        ltipofiltro = Filtro.igual
+                    else:
+                        ltipofiltro = Filtro[linha[1].strip()]
                     valor = session.query(ValorParametro).filter(
                         ValorParametro.valor == linha[0],
                         ValorParametro.risco_id == parametro.id).first()
                     if not valor:
                         valor = ValorParametro(linha[0].strip(),
-                                               linha[1].strip())
+                                               ltipofiltro)
                         valor.risco_id = parametro.id
                         session.add(valor)
                     else:
-                        valor.tipo_filtro = Filtro[linha[1]]
+                        valor.tipo_filtro = ltipofiltro
                         valor.risco_id = parametro.id
                         session.merge(valor)
                     parametro.valores.append(valor)
@@ -288,7 +314,11 @@ class GerenteRisco():
         else:
             dict_filtros = defaultdict(list)
             for linha in lista:
-                dict_filtros[Filtro[linha[1]]].append(linha[0])
+                if len(linha) == 1:
+                    ltipofiltro = Filtro.igual
+                else:
+                    ltipofiltro = Filtro[linha[1].strip()]
+                dict_filtros[ltipofiltro].append(linha[0])
             self._riscosativos[campo] = dict_filtros
 
     def import_named_csv(self, arquivo, session=None, padraorisco=None,
@@ -333,13 +363,13 @@ class GerenteRisco():
         ultimo_ano = sorted(os.listdir(caminho))
         logger.debug(ultimo_ano)
         if len(ultimo_ano) == 0:
-            raise ValueError('Não há nenhuma base do tipo desejado ' 
+            raise ValueError('Não há nenhuma base do tipo desejado '
                              'para consulta')
         ultimo_ano = ultimo_ano[-1]
         caminho = os.path.join(caminho, ultimo_ano)
         ultimo_mes = sorted(os.listdir(caminho))[-1]
         caminho = os.path.join(caminho, ultimo_mes)
-        ultimo_mes = sorted(os.listdir(caminho))[-1]
+        ultimo_dia = sorted(os.listdir(caminho))[-1]
         caminho = os.path.join(caminho, ultimo_dia)
         for arquivo in os.listdir(caminho):
             with open(os.path.join(caminho, arquivo),
