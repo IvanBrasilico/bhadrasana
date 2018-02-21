@@ -15,7 +15,7 @@ import unicodedata
 from zipfile import ZipFile
 
 from sentinela.conf import ENCODE, tmpdir
-
+from ajna_commons.flask.log import logger
 
 def ascii_sanitizar(text):
     """Remove espaços à direita e esquerda, espaços adicionais entre
@@ -73,7 +73,7 @@ def muda_titulos_lista(lista, de_para_dict):
         novo_titulo = de_para_dict.get(titulo, titulo)
         cabecalho.append(novo_titulo)
     result = [cabecalho]
-    result.append(lista[1:])
+    result.extend(lista[1:])
     return result
 
 

@@ -12,7 +12,8 @@ from ajna_commons.flask.log import logger
 from sentinela.conf import ENCODE, tmpdir
 from sentinela.models.models import (Filtro, PadraoRisco, ParametroRisco,
                                      ValorParametro)
-from sentinela.utils.csv_handlers import sanitizar, unicode_sanitizar
+from sentinela.utils.csv_handlers import (muda_titulos_lista, sanitizar,
+                                          unicode_sanitizar)
 
 
 def equality(listaoriginal, nomecampo, listavalores):
@@ -149,6 +150,13 @@ class GerenteRisco():
             session.merge(self._padraorisco)
             session.commit()
 
+    def checa_depara(self, base):
+        if base.deparas:
+            de_para_dict = {depara.titulo_ant: depara.titulo_novo
+                            for depara in base.deparas}
+            self.pre_processers['mudatitulo'] = muda_titulos_lista
+            self.pre_processers_params['mudatitulo'] = {'de_para_dict': de_para_dict}
+
     def aplica_risco(self, lista=None, arquivo=None, parametros_ativos=None):
         """Compara a linha de título da lista recebida com a lista de nomes
         de campo que possuem parâmetros de risco ativos. Após, chama para cada
@@ -189,7 +197,7 @@ class GerenteRisco():
             lista[ind] = linha_striped
         # Aplicar pre_processers
         for key in self.pre_processers:
-            self.pre_processers[key](lista,
+            lista = self.pre_processers[key](lista,
                                      **self.pre_processers_params[key])
         headers = set(lista[0])
         # print('Ativos:', parametros_ativos)
@@ -198,6 +206,7 @@ class GerenteRisco():
         else:
             riscos = set(list(self._riscosativos.keys()))
         aplicar = headers & riscos   # INTERSECTION OF SETS
+        logger.debug(aplicar)
         result = []
         result.append(lista[0])
         # print(aplicar)

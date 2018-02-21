@@ -278,6 +278,7 @@ def risco():
         if len(dir_content) == 1:
             arquivo = os.path.join(base_csv, dir_content[0])
         try:
+            gerente.checa_depara(abase)
             lista_risco = gerente.aplica_risco(arquivo=arquivo,
                                                parametros_ativos=parametros_ativos)
         except Exception as err:
