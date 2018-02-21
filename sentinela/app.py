@@ -153,15 +153,17 @@ def importa_base():
                 dest_path = os.path.join(CSV_FOLDER, baseid,
                                          data[:4], data[5:7], data[8:10])
                 logger.debug(dest_path)
-                if not os.path.exists(dest_path):
+                if os.path.exists(dest_path):
+                    flash('Já houve importação de base para os parâmetros informados')
+                else:
                     os.makedirs(dest_path)
-                logger.debug(os.path.join(dest_path, filename))
-                try:
-                    gerente = GerenteRisco()
-                    gerente.importa_base(dest_path, file)
-                    return redirect(url_for('risco', baseid=baseid))
-                except Exception as err:
-                    flash(err)
+                    logger.debug(os.path.join(dest_path, filename))
+                    try:
+                        gerente = GerenteRisco()
+                        gerente.importa_base(dest_path, file)
+                        return redirect(url_for('risco', baseid=baseid))
+                    except Exception as err:
+                        flash(err)
     bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
     return render_template('importa_base.html', bases=bases,
                            baseid=baseid, data=data)
