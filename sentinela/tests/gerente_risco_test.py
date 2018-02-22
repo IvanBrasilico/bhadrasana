@@ -1,6 +1,8 @@
 """Testes para o módulo gerente_risco"""
 import csv
+import datetime
 import os
+import shutil
 import tempfile
 import unittest
 
@@ -10,6 +12,11 @@ from sentinela.utils.gerente_risco import GerenteRisco
 CSV_RISCO_TEST = 'sentinela/tests/csv_risco_example.csv'
 CSV_NAMEDRISCO_TEST = 'sentinela/tests/csv_namedrisco_example.csv'
 CSV_FOLDER_TEST = 'sentinela/tests/CSV'
+CSV_FOLDER_DEST = 'sentinela/tests/DEST'
+
+CSV_ROOT = 'sentinela/tests/CSV'
+CSV_ALIMENTOS = os.path.join(CSV_ROOT, 'alimentoseesportes.csv')
+CSV_ADITIVOS = os.path.join(CSV_ROOT, 'aditivoseaventuras.csv')
 
 
 class TestGerenteRisco(unittest.TestCase):
@@ -157,6 +164,7 @@ class TestGerenteRisco(unittest.TestCase):
         lista = self.lista
         gerente = self.gerente
         gerente.import_named_csv(CSV_NAMEDRISCO_TEST)
+        print(lista)
         lista_risco = gerente.aplica_risco(lista)
         assert len(lista_risco) == 6
         gerente.parametros_tocsv()
@@ -219,6 +227,25 @@ class TestGerenteRisco(unittest.TestCase):
 
     def test_headers(self):
         gerente = self.gerente
-        headers = gerente.get_headers_base(2, CSV_FOLDER_TEST)
+        headers = gerente.get_headers_base(1, CSV_FOLDER_TEST)
         print(headers)
-        assert len(headers) == 55
+        assert len(headers) == 34
+        assert isinstance(headers, set)
+
+    def test_importa_base(self):
+        gerente = self.gerente
+        shutil.rmtree(CSV_FOLDER_DEST)
+        gerente.importa_base(CSV_FOLDER_DEST,
+                             '1',
+                             datetime.date.today().strftime('%Y-%m-%d'),
+                             CSV_ALIMENTOS)
+        gerente.importa_base(CSV_FOLDER_DEST,
+                             '2',
+                             datetime.date.today().strftime('%Y-%m-%d'),
+                             CSV_ADITIVOS)
+        with self.assertRaises(FileExistsError) as context:
+            gerente.importa_base(CSV_FOLDER_DEST,
+                                 '2',
+                                 datetime.date.today().strftime('%Y-%m-%d'),
+                                 CSV_ADITIVOS)
+        shutil.rmtree(CSV_FOLDER_DEST)

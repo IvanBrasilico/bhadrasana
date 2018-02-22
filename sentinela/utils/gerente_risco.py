@@ -81,27 +81,56 @@ class GerenteRisco():
         self._riscosativos = {}
         self._padraorisco = None
 
-    def importa_base(self, dest_path, file, remove=True):
+    def importa_base(self, csv_folder, baseid, data, filename, remove=False):
         """Copia base para dest_path, processando se necessário
         Aceita arquivos .zip contendo arquivos sch
         e arquivos csv únicos
+        No caso de CSV, retorna erro caso títulos não batam com importação
+        anterior para a mesma "BASE" (dest_path) para evitar erros do usuário
 
         Args:
-            dest_path: destino do(s) arquivo(s) gerados
-            file: arquivo da base de origem (fonte externa/extração)
+            csv_folder: destino do(s) arquivo(s) gerados
+            base_id: id da base, será usada para identificar uma subpasta
+            data: data do período inicial da base/extração. Será usada
+            para gerar subpasta no formato YYYY/MM/DD
+            filename: caminho completo do arquivo da base de origem
+             (fonte externa/extração)
             remove: excluir o arquivo temporário após processamento
+        Returns
+            a tuple or a list of tuples. First items are created csvs
         """
-        tempfile = os.path.join(tmpdir, file.filename)
-        if '.zip' in tempfile or os.path.isdir(tempfile):
-            file.save(tempfile)
-            result = sch_processing(tempfile,
-                                    dest_path=dest_path)
-            if not os.path.isdir(tempfile) and remove:
-                os.remove(tempfile)
+        dest_path = os.path.join(csv_folder, baseid,
+                                 data[:4], data[5:7], data[8:10])
+        if os.path.exists(dest_path):
+            raise FileExistsError(
+                'Já houve importação de base para os parâmetros informados')
         else:
-            file.save(os.path.join(dest_path, file.filename))
-            result = file.filename
+            os.makedirs(dest_path)
+        if '.zip' in filename or os.path.isdir(filename):
+            result = sch_processing(filename,
+                                    dest_path=dest_path)
+        else:
+            # No caso de CSV, retornar erro caso títulos não batam com importação
+            # anterior
+            # Para sch zipados e lista de csv zipados, esta verificação é mais
+            # custosa, mas também precisa ser implementada
+            cabecalhos_antigos = self.get_headers_base(csv_folder, baseid)
+            diferenca_cabecalhos = set()
+            print(diferenca_cabecalhos)
+            if cabecalhos_antigos:
+                with open(filename, 'r', newline='') as file:
+                    reader = csv.reader(file)
+                    cabecalhos_novos = set(next(reader))
+                    diferenca_cabecalhos = cabecalhos_novos ^ cabecalhos_antigos
+                    if diferenca_cabecalhos:
+                        raise ValueError('Erro na importação! ' +
+                                        'Há base anterior com cabeçalhos diferentes. ' +
+                                        str(diferenca_cabecalhos))
+                    file.save(os.path.join(dest_path, filename))
+            result = (filename, 'single csv')
             # result = csv_processing(tempfile, dest_path=dest_path)
+        if not os.path.isdir(filename) and remove:
+            os.remove(filename)
         return result
 
     def set_padraorisco(self, padraorisco):
@@ -302,6 +331,7 @@ class GerenteRisco():
             with open(os.path.join(path, campo + '.csv'),
                       'r', encoding=ENCODE, newline='') as f:
                 reader = csv.reader(f)
+                cabecalho = next(reader)
                 lista = [linha for linha in reader]
         if session:
             parametro = session.query(ParametroRisco).filter(
@@ -310,7 +340,7 @@ class GerenteRisco():
                 parametro = ParametroRisco(campo, padraorisco=padraorisco)
                 session.add(parametro)
                 session.commit()
-            for linha in lista[1:]:
+            for linha in lista:
                 if parametro.id:
                     if len(linha) == 1:
                         ltipofiltro = Filtro.igual
@@ -334,7 +364,7 @@ class GerenteRisco():
             self.add_risco(parametro)
         else:
             dict_filtros = defaultdict(list)
-            for linha in lista[1:]:
+            for linha in lista:
                 if len(linha) == 1:
                     ltipofiltro = Filtro.igual
                 else:
@@ -376,11 +406,11 @@ class GerenteRisco():
         """Busca última base disponível no diretório de CSVs e
         traz todos os headers"""
         cabecalhos = []
-        cabecalhos_nao_repetidos = []
+        cabecalhos_nao_repetidos = set()
         caminho = os.path.join(path, str(baseorigemid))
         logger.debug(caminho)
         if not os.path.isdir(caminho):
-            return []
+            return set()
         ultimo_ano = sorted(os.listdir(caminho))
         logger.debug(ultimo_ano)
         if len(ultimo_ano) == 0:
@@ -400,8 +430,7 @@ class GerenteRisco():
                 cabecalhos.extend(cabecalho)
         for word in cabecalhos:
             new_word = sanitizar(word, norm_function=unicode_sanitizar)
-            if new_word not in cabecalhos_nao_repetidos:
-                cabecalhos_nao_repetidos.append(new_word)
+            cabecalhos_nao_repetidos.add(new_word)
         return cabecalhos_nao_repetidos
 
     def aplica_juncao(self, visao, path=tmpdir, filtrar=False,

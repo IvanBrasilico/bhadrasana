@@ -150,27 +150,30 @@ def importa_base():
                 if not data:
                     data = datetime.date.today().strftime('%Y-%m-%d')
                 logger.debug(data)
-                dest_path = os.path.join(CSV_FOLDER, baseid,
-                                         data[:4], data[5:7], data[8:10])
-                logger.debug(dest_path)
-                if os.path.exists(dest_path):
-                    flash('Já houve importação de base para os parâmetros informados')
-                else:
-                    os.makedirs(dest_path)
-                    logger.debug(os.path.join(dest_path, filename))
-                    try:
-                        gerente = GerenteRisco()
-                        gerente.importa_base(dest_path, file)
-                        return redirect(url_for('risco', baseid=baseid))
-                    except Exception as err:
-                        flash(err)
+                try:
+                    gerente = GerenteRisco()
+                    tempfile_name = os.path.join(tmpdir, filename)
+                    tempfile = file.save(tempfile_name)
+                    lista_arquivos = gerente.importa_base(CSV_FOLDER,
+                                                          baseid,
+                                                          data,
+                                                          tempfile_name,
+                                                          remove=True)
+                    gerente.ativa_santizacao()
+                    gerente.pre_processa_base(dest_path, lista_arquivos)
+                    return redirect(url_for('risco', baseid=baseid))
+                except Exception as err:
+                    flash(err)
     bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
     return render_template('importa_base.html', bases=bases,
                            baseid=baseid, data=data)
 
+
 @app.route('/adiciona_base/<nome>')
 @login_required
 def adiciona_base(nome):
+    """Cria nova instância de Base Origem com o nome passado
+    """
     logger.debug(nome)
     nova_base = BaseOrigem(nome)
     dbsession.add(nova_base)
@@ -179,11 +182,15 @@ def adiciona_base(nome):
     return redirect(url_for('importa_base', baseid=baseid))
 
 
-def arquiva_base_csv(baseorigem, base_csv):
+def arquiva_base_csv(baseorigem, base_csv, to_mongo=True):
+    """ Apaga CSVs do disco
+    Copia para MongoDB antes por padrão
+    """"
     # Aviso: Esta função rmtree só deve ser utilizada com caminhos seguros,
     # de preferência gerados pela própria aplicação
     logger.debug(base_csv)
-    GerenteRisco.csv_to_mongo(db, baseorigem.nome, base_csv)
+    if to_mongo:
+        GerenteRisco.csv_to_mongo(db, baseorigem.nome, base_csv)
     shutil.rmtree(base_csv)
 
 
@@ -278,7 +285,7 @@ def risco():
         if len(dir_content) == 1:
             arquivo = os.path.join(base_csv, dir_content[0])
         try:
-            gerente.checa_depara(abase)
+            gerente.checa_depara(abase)  # Aplicar na importação???
             lista_risco = gerente.aplica_risco(arquivo=arquivo,
                                                parametros_ativos=parametros_ativos)
         except Exception as err:
@@ -411,7 +418,7 @@ def importa_csv(padraoid, riscoid):
             # filename = secure_filename(csvf.filename)
             csvf.save(os.path.join(tmpdir, risco.nome_campo + '.csv'))
             logger.info(csvf.filename)
-            gerente=GerenteRisco()
+            gerente = GerenteRisco()
             gerente.parametros_fromcsv(risco.nome_campo, session=dbsession)
     return redirect(url_for('edita_risco', padraoid=padraoid,
                             riscoid=riscoid))
@@ -420,9 +427,9 @@ def importa_csv(padraoid, riscoid):
 @app.route('/exporta_csv', methods=['POST', 'GET'])
 @login_required
 def exporta_csv():
-    padraoid=request.args.get('padraoid')
-    riscoid=request.args.get('riscoid')
-    gerente=GerenteRisco()
+    padraoid = request.args.get('padraoid')
+    riscoid = request.args.get('riscoid')
+    gerente = GerenteRisco()
     gerente.parametro_tocsv(riscoid, path=CSV_DOWNLOAD, dbsession=dbsession)
     return redirect(url_for('edita_risco', padraoid=padraoid,
                             riscoid=riscoid))
@@ -430,22 +437,22 @@ def exporta_csv():
 
 @app.route('/adiciona_parametro')
 def adiciona_parametro():
-    padraoid=request.args.get('padraoid')
-    risco_novo=request.args.get('risco_novo')
-    lista=request.args.get('lista')
+    padraoid = request.args.get('padraoid')
+    risco_novo = request.args.get('risco_novo')
+    lista = request.args.get('lista')
     if risco_novo:
-        sanitizado=sanitizar(risco_novo, norm_function=unicode_sanitizar)
-        risco=ParametroRisco(sanitizado)
-        risco.padraorisco_id=padraoid
+        sanitizado = sanitizar(risco_novo, norm_function=unicode_sanitizar)
+        risco = ParametroRisco(sanitizado)
+        risco.padraorisco_id = padraoid
         dbsession.add(risco)
         dbsession.commit()
     if lista:
-        nova_lista=[]
+        nova_lista = []
         nova_lista.append(lista)
         for item in nova_lista[0].split(','):
-            sanitizado=sanitizar(item, norm_function=unicode_sanitizar)
-            risco=ParametroRisco(sanitizado)
-            risco.padraorisco_id=padraoid
+            sanitizado = sanitizar(item, norm_function=unicode_sanitizar)
+            risco = ParametroRisco(sanitizado)
+            risco.padraorisco_id = padraoid
             dbsession.add(risco)
         dbsession.commit()
     return redirect(url_for('edita_risco', padraoid=padraoid))
@@ -453,8 +460,8 @@ def adiciona_parametro():
 
 @app.route('/exclui_parametro')
 def exclui_parametro():
-    padraoid=request.args.get('padraoid')
-    riscoid=request.args.get('riscoid')
+    padraoid = request.args.get('padraoid')
+    riscoid = request.args.get('riscoid')
     dbsession.query(ParametroRisco).filter(
         ParametroRisco.id == riscoid).delete()
     dbsession.query(ValorParametro).filter(
@@ -465,14 +472,14 @@ def exclui_parametro():
 
 @app.route('/adiciona_valor')
 def adiciona_valor():
-    padraoid=request.args.get('padraoid')
-    novo_valor=request.args.get('novo_valor')
-    tipo_filtro=request.args.get('filtro')
-    valor=sanitizar(novo_valor, norm_function=unicode_sanitizar)
-    filtro=sanitizar(tipo_filtro, norm_function=unicode_sanitizar)
-    riscoid=request.args.get('riscoid')
-    valor=ValorParametro(valor, filtro)
-    valor.risco_id=riscoid
+    padraoid = request.args.get('padraoid')
+    novo_valor = request.args.get('novo_valor')
+    tipo_filtro = request.args.get('filtro')
+    valor = sanitizar(novo_valor, norm_function=unicode_sanitizar)
+    filtro = sanitizar(tipo_filtro, norm_function=unicode_sanitizar)
+    riscoid = request.args.get('riscoid')
+    valor = ValorParametro(valor, filtro)
+    valor.risco_id = riscoid
     dbsession.add(valor)
     dbsession.commit()
     return redirect(url_for('edita_risco', padraoid=padraoid,
@@ -481,9 +488,9 @@ def adiciona_valor():
 
 @app.route('/exclui_valor')
 def exclui_valor():
-    padraoid=request.args.get('padraoid')
-    riscoid=request.args.get('riscoid')
-    valorid=request.args.get('valorid')
+    padraoid = request.args.get('padraoid')
+    riscoid = request.args.get('riscoid')
+    valorid = request.args.get('valorid')
     dbsession.query(ValorParametro).filter(
         ValorParametro.id == valorid).delete()
     dbsession.commit()
@@ -494,15 +501,15 @@ def exclui_valor():
 @app.route('/edita_depara')
 @login_required
 def edita_depara():
-    baseid=request.args.get('baseid')
-    bases=dbsession.query(BaseOrigem).all()
-    titulos=[]
+    baseid = request.args.get('baseid')
+    bases = dbsession.query(BaseOrigem).all()
+    titulos = []
     if baseid:
-        base=dbsession.query(BaseOrigem).filter(
+        base = dbsession.query(BaseOrigem).filter(
             BaseOrigem.id == baseid
         ).first()
         if base:
-            titulos=base.deparas
+            titulos = base.deparas
     return render_template('muda_titulos.html', bases=bases,
                            baseid=baseid,
                            titulos=titulos)
@@ -510,14 +517,14 @@ def edita_depara():
 
 @app.route('/adiciona_depara')
 def adiciona_depara():
-    baseid=request.args.get('baseid')
-    titulo_antigo=request.args.get('antigo')
-    titulo_novo=request.args.get('novo')
+    baseid = request.args.get('baseid')
+    titulo_antigo = request.args.get('antigo')
+    titulo_novo = request.args.get('novo')
     if baseid:
-        base=dbsession.query(BaseOrigem).filter(
+        base = dbsession.query(BaseOrigem).filter(
             BaseOrigem.id == baseid
         ).first()
-    depara=DePara(titulo_antigo, titulo_novo, base)
+    depara = DePara(titulo_antigo, titulo_novo, base)
     dbsession.add(depara)
     dbsession.commit()
     return redirect(url_for('edita_depara', baseid=baseid))
@@ -525,8 +532,8 @@ def adiciona_depara():
 
 @app.route('/exclui_depara')
 def exclui_depara():
-    baseid=request.args.get('baseid')
-    tituloid=request.args.get('tituloid')
+    baseid = request.args.get('baseid')
+    tituloid = request.args.get('tituloid')
     dbsession.query(DePara).filter(
         DePara.id == tituloid).delete()
     dbsession.commit()
@@ -536,19 +543,19 @@ def exclui_depara():
 @app.route('/navega_bases')
 @login_required
 def navega_bases():
-    selected_module=request.args.get('selected_module')
-    selected_model=request.args.get('selected_model')
-    selected_field=request.args.get('selected_field')
-    filters=session.get('filters', [])
-    gerente=GerenteBase()
-    list_modulos=gerente.list_modulos
-    list_models=[]
-    list_fields=[]
+    selected_module = request.args.get('selected_module')
+    selected_model = request.args.get('selected_model')
+    selected_field = request.args.get('selected_field')
+    filters = session.get('filters', [])
+    gerente = GerenteBase()
+    list_modulos = gerente.list_modulos
+    list_models = []
+    list_fields = []
     if selected_module:
         gerente.set_module(selected_module)
-        list_models=gerente.list_models
+        list_models = gerente.list_models
         if selected_model:
-            list_fields=gerente.dict_models[selected_model]['campos']
+            list_fields = gerente.dict_models[selected_model]['campos']
     return render_template('navega_bases.html',
                            selected_module=selected_module,
                            selected_model=selected_model,
@@ -561,15 +568,15 @@ def navega_bases():
 
 @app.route('/adiciona_filtro')
 def adiciona_filtro():
-    selected_module=request.args.get('selected_module')
-    selected_model=request.args.get('selected_model')
-    selected_field=request.args.get('selected_field')
-    filters=session.get('filters', [])
-    tipo_filtro=request.args.get('filtro')
-    valor=request.args.get('valor')
-    afilter=Filtro(selected_field, tipo_filtro, valor)
+    selected_module = request.args.get('selected_module')
+    selected_model = request.args.get('selected_model')
+    selected_field = request.args.get('selected_field')
+    filters = session.get('filters', [])
+    tipo_filtro = request.args.get('filtro')
+    valor = request.args.get('valor')
+    afilter = Filtro(selected_field, tipo_filtro, valor)
     filters.append(afilter)
-    session['filters']=filters
+    session['filters'] = filters
     return redirect(url_for('navega_bases',
                             selected_module=selected_module,
                             selected_model=selected_model,
@@ -579,14 +586,14 @@ def adiciona_filtro():
 
 @app.route('/exclui_filtro')
 def exclui_filtro():
-    selected_module=request.args.get('selected_module')
-    selected_model=request.args.get('selected_model')
-    selected_field=request.args.get('selected_field')
-    filters=session.get('filters', [])
-    index=request.args.get('index')
+    selected_module = request.args.get('selected_module')
+    selected_model = request.args.get('selected_model')
+    selected_field = request.args.get('selected_field')
+    filters = session.get('filters', [])
+    index = request.args.get('index')
     if filters:
         filters.pop(int(index))
-    session['filters']=filters
+    session['filters'] = filters
     return redirect(url_for('navega_bases',
                             selected_module=selected_module,
                             selected_model=selected_model,
@@ -596,21 +603,21 @@ def exclui_filtro():
 
 @app.route('/consulta_bases_executar')
 def consulta_bases_executar():
-    selected_module=request.args.get('selected_module')
-    selected_model=request.args.get('selected_model')
-    selected_field=request.args.get('selected_field')
-    filters=session.get('filters', [])
-    gerente=GerenteBase()
+    selected_module = request.args.get('selected_module')
+    selected_model = request.args.get('selected_model')
+    selected_field = request.args.get('selected_field')
+    filters = session.get('filters', [])
+    gerente = GerenteBase()
     gerente.set_module(selected_module, db='cargatest.db')
-    dados=gerente.filtra(selected_model, filters)
-    list_modulos=gerente.list_modulos
-    list_models=[]
-    list_fields=[]
+    dados = gerente.filtra(selected_model, filters)
+    list_modulos = gerente.list_modulos
+    list_models = []
+    list_fields = []
     if selected_module:
         gerente.set_module(selected_module)
-        list_models=gerente.list_models
+        list_models = gerente.list_models
         if selected_model:
-            list_fields=gerente.dict_models[selected_model]['campos']
+            list_fields = gerente.dict_models[selected_model]['campos']
     return render_template('navega_bases.html',
                            selected_module=selected_module,
                            selected_model=selected_model,
@@ -624,43 +631,43 @@ def consulta_bases_executar():
 
 @app.route('/arvore')
 def arvore():
-    gerente=GerenteBase()
-    selected_module=request.args.get('selected_module')
-    selected_model=request.args.get('selected_model')
-    selected_field=request.args.get('selected_field')
-    instance_id=request.args.get('instance_id')
+    gerente = GerenteBase()
+    selected_module = request.args.get('selected_module')
+    selected_model = request.args.get('selected_model')
+    selected_field = request.args.get('selected_field')
+    instance_id = request.args.get('instance_id')
     logger.info(selected_module)
     gerente.set_module(selected_module, db='cargatest.db')
-    filters=[]
-    afilter=Filtro(selected_field, None, instance_id)
+    filters = []
+    afilter = Filtro(selected_field, None, instance_id)
     filters.append(afilter)
-    q=gerente.filtra(selected_model, filters, return_query=True)
-    instance=q.first()
-    string_arvore=''
+    q = gerente.filtra(selected_model, filters, return_query=True)
+    instance = q.first()
+    string_arvore = ''
     logger.info(instance)
-    pai=gerente.get_paiarvore(instance)
+    pai = gerente.get_paiarvore(instance)
     logger.info(pai)
     if pai:
-        lista=gerente.recursive_tree(pai)
-        string_arvore='\n'.join(lista)
+        lista = gerente.recursive_tree(pai)
+        string_arvore = '\n'.join(lista)
     return render_template('arvore.html',
                            arvore=string_arvore)
 
 
 @app.route('/arvore_teste')
 def arvore_teste():
-    gerente=GerenteBase()
+    gerente = GerenteBase()
     gerente.set_module('carga', db='cargatest.db')
-    filters=[]
-    afilter=Filtro('Manifesto', None, 'M-2')
+    filters = []
+    afilter = Filtro('Manifesto', None, 'M-2')
     filters.append(afilter)
-    q=gerente.filtra('Manifesto', filters, return_query=True)
-    manifesto=q.first()
-    escala=gerente.get_paiarvore(manifesto)
-    string_arvore=''
+    q = gerente.filtra('Manifesto', filters, return_query=True)
+    manifesto = q.first()
+    escala = gerente.get_paiarvore(manifesto)
+    string_arvore = ''
     if escala:
-        lista=gerente.recursive_tree(escala, child=manifesto)
-        string_arvore='\n'.join(lista)
+        lista = gerente.recursive_tree(escala, child=manifesto)
+        string_arvore = '\n'.join(lista)
     return render_template('arvore.html',
                            arvore=string_arvore)
 
@@ -668,15 +675,15 @@ def arvore_teste():
 @app.route('/juncoes')
 @login_required
 def juncoes():
-    visaoid=request.args.get('visaoid')
-    visoes=dbsession.query(Visao).order_by(Visao.nome).all()
-    tabelas=[]
-    colunas=[]
+    visaoid = request.args.get('visaoid')
+    visoes = dbsession.query(Visao).order_by(Visao.nome).all()
+    tabelas = []
+    colunas = []
     if visaoid:
-        tabelas=dbsession.query(Tabela).filter(
+        tabelas = dbsession.query(Tabela).filter(
             Tabela.visao_id == visaoid
         ).all()
-        colunas=dbsession.query(Coluna).filter(
+        colunas = dbsession.query(Coluna).filter(
             Coluna.visao_id == visaoid
         ).all()
     return render_template('gerencia_juncoes.html',
@@ -688,12 +695,12 @@ def juncoes():
 
 @app.route('/adiciona_visao')
 def adiciona_visao():
-    visao_novo=request.args.get('visao_novo')
-    visao=Visao(visao_novo)
-    visao.nome=visao_novo
+    visao_novo = request.args.get('visao_novo')
+    visao = Visao(visao_novo)
+    visao.nome = visao_novo
     dbsession.add(visao)
     dbsession.commit()
-    visao=dbsession.query(Visao).filter(
+    visao = dbsession.query(Visao).filter(
         Visao.nome == visao_novo
     ).first()
     return redirect(url_for('juncoes',
@@ -702,7 +709,7 @@ def adiciona_visao():
 
 @app.route('/exclui_visao')
 def exclui_visao():
-    visaoid=request.args.get('visaoid')
+    visaoid = request.args.get('visaoid')
     dbsession.query(Visao).filter(
         Visao.id == visaoid).delete()
     dbsession.query(Coluna).filter(
@@ -713,11 +720,11 @@ def exclui_visao():
 
 @app.route('/adiciona_coluna')
 def adiciona_coluna():
-    visaoid=request.args.get('visaoid')
-    col_nova=request.args.get('col_nova')
-    coluna=Coluna(col_nova)
-    coluna.nome=col_nova
-    coluna.visao_id=visaoid
+    visaoid = request.args.get('visaoid')
+    col_nova = request.args.get('col_nova')
+    coluna = Coluna(col_nova)
+    coluna.nome = col_nova
+    coluna.visao_id = visaoid
     dbsession.add(coluna)
     dbsession.commit()
     return redirect(url_for('juncoes', visaoid=visaoid))
@@ -725,8 +732,8 @@ def adiciona_coluna():
 
 @app.route('/exclui_coluna')
 def exclui_coluna():
-    visaoid=request.args.get('visaoid')
-    colunaid=request.args.get('colunaid')
+    visaoid = request.args.get('visaoid')
+    colunaid = request.args.get('colunaid')
     dbsession.query(Coluna).filter(
         Coluna.id == colunaid).delete()
     dbsession.commit()
@@ -736,15 +743,15 @@ def exclui_coluna():
 
 @app.route('/adiciona_tabela')
 def adiciona_tabela():
-    visaoid=request.args.get('visaoid')
-    csv=request.args.get('csv')
-    primario=request.args.get('primario')
-    estrangeiro=request.args.get('estrangeiro')
-    pai_id=request.args.get('pai_id')
-    desc=request.args.get('descricao')
-    tabela=Tabela(csv, primario, estrangeiro, pai_id, visaoid)
+    visaoid = request.args.get('visaoid')
+    csv = request.args.get('csv')
+    primario = request.args.get('primario')
+    estrangeiro = request.args.get('estrangeiro')
+    pai_id = request.args.get('pai_id')
+    desc = request.args.get('descricao')
+    tabela = Tabela(csv, primario, estrangeiro, pai_id, visaoid)
     if desc:
-        tabela.descricao=desc
+        tabela.descricao = desc
     dbsession.add(tabela)
     dbsession.commit()
     return redirect(url_for('juncoes',
@@ -753,8 +760,8 @@ def adiciona_tabela():
 
 @app.route('/exclui_tabela')
 def exclui_tabela():
-    visaoid=request.args.get('visaoid')
-    tabelaid=request.args.get('tabelaid')
+    visaoid = request.args.get('visaoid')
+    tabelaid = request.args.get('tabelaid')
     dbsession.query(Tabela).filter(
         Tabela.id == tabelaid).delete()
     dbsession.commit()
@@ -764,7 +771,7 @@ def exclui_tabela():
 
 @nav.navigation()
 def mynavbar():
-    items=[View('Home', 'index'),
+    items = [View('Home', 'index'),
              View('Importar Base', 'importa_base'),
              View('Aplicar Risco', 'risco'),
              View('Editar Riscos', 'edita_risco'),
@@ -777,13 +784,13 @@ def mynavbar():
 
 
 nav.init_app(app)
-app.config['DEBUG']=os.environ.get('DEBUG', 'None') == '1'
+app.config['DEBUG'] = os.environ.get('DEBUG', 'None') == '1'
 if app.config['DEBUG'] is True:
-    app.jinja_env.auto_reload=True
-    app.config['TEMPLATES_AUTO_RELOAD']=True
-app.secret_key=SECRET
-app.config['SECRET_KEY']=SECRET
-app.config['SESSION_TYPE']='filesystem'
+    app.jinja_env.auto_reload = True
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.secret_key = SECRET
+app.config['SECRET_KEY'] = SECRET
+app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 """if app.config['SSL_REDIRECT']:
         from flask_sslify import SSLify
