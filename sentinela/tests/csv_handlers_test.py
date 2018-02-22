@@ -18,7 +18,8 @@ SAMPLES_DIR = os.path.join('sentinela', 'tests', 'sample')
 CSV_TITLES_TEST = os.path.join(SAMPLES_DIR, 'csv_title_example.csv')
 SCH_FILE_TEST = os.path.join(SAMPLES_DIR, 'sch', '1')
 SCH_ZIP_TEST = os.path.join(SAMPLES_DIR, 'sch', '1.zip')
-SCH_VIAGENS = os.path.join(SAMPLES_DIR, 'viagens')
+SCH_VIAGENS = os.path.join(SAMPLES_DIR, 'sch', 'viagens')
+SCH_ZIP_VIAGENS = os.path.join(SAMPLES_DIR, 'sch', 'viagens.zip')
 
 
 class TestCsvHandlers(unittest.TestCase):
@@ -71,6 +72,22 @@ class TestCsvHandlers(unittest.TestCase):
         print(lista[0])
         assert lista[1][0][0:5] == lista2[1][0][0:5]
 
+    def test_sch_dir_viagens(self):
+        print(SCH_VIAGENS)
+        filenames = sch_processing(SCH_FILE_TEST)
+        print(filenames)
+        with open(filenames[0][1], 'r', encoding=ENCODE,
+                  newline='') as txt_file:
+            reader = csv.reader(txt_file, delimiter='\t')
+            lista = [linha for linha in reader]
+        with open(filenames[0][0], 'r', encoding=ENCODE,
+                  newline='') as csv_file:
+            reader = csv.reader(csv_file)
+            lista2 = [linha for linha in reader]
+        assert len(lista) == len(lista2)
+        print(lista[0])
+        assert lista[1][0][0:5] == lista2[1][0][0:5]
+
     def test_sch_zip(self):
         filenames = sch_processing(SCH_ZIP_TEST)
         with ZipFile(SCH_ZIP_TEST) as myzip:
@@ -90,6 +107,27 @@ class TestCsvHandlers(unittest.TestCase):
         assert len(lista) == len(lista2)
         print('test_sch lista', lista[:2])
         print('test_sch lista2', lista2[:2])
+        assert lista[1][0:5] == lista2[1][0:5]
+
+    def test_sch_zip_viagens(self):
+        filenames = sch_processing(SCH_ZIP_VIAGENS, dest_path='.')
+        with ZipFile(SCH_ZIP_VIAGENS) as myzip:
+            with myzip.open(filenames[0][1]) as zip_file:
+                zip_io = io.TextIOWrapper(
+                    zip_file,
+                    encoding=ENCODE, newline=None
+                )
+                reader = csv.reader(zip_io, delimiter='\t')
+                lista = [linha for linha in reader]
+        print(filenames[0][1])
+        print(filenames[0][0])
+        with open(filenames[0][0], 'r', encoding=ENCODE,
+                  newline='') as txt_file:
+            reader = csv.reader(txt_file)
+            lista2 = [linha for linha in reader]
+        print('test_sch lista', lista[:5])
+        print('test_sch lista2', lista2[:5])
+        assert len(lista) == len(lista2)
         assert lista[1][0:5] == lista2[1][0:5]
 
     def test_sanitizar(self):

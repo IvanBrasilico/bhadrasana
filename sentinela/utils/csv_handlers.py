@@ -174,7 +174,9 @@ def sch_processing(path, mask_txt='0.txt', dest_path=tmpdir):
             for info in info_list:
                 if info.filename.find('.sch') != -1:
                     sch_name = info.filename
-                    txt_search = sch_name[-6:-4] + mask_txt
+                    # print('****', sch_name)
+                    txt_search = sch_name[4:-4] + mask_txt
+                    # print('****', txt_search)
                     for txtinfo in info_list:
                         if txtinfo.filename.find(txt_search) != -1:
                             txt_name = txtinfo.filename
