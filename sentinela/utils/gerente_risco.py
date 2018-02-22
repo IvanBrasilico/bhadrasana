@@ -159,7 +159,7 @@ class GerenteRisco():
                             for depara in base.deparas}
             self.pre_processers['mudartitulos'] = muda_titulos_lista
             self.pre_processers_params['mudartitulos'] = {
-                'de_para_dict': de_para_dict, 'copy': False}
+                'de_para_dict': de_para_dict, 'make_copy': False}
 
     def ativa_sanitizacao(self, norm_function=unicode_sanitizar):
         """Inclui função de sanitização nos pre_processers

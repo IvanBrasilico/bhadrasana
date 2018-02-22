@@ -7,7 +7,7 @@ Valores nas restantes
 Fim de linha significa nova linha
 Para comparações, retira espaços antes e depois do conteúdo das colunas
 """
-import copy
+from copy import deepcopy
 import csv
 import glob
 import io
@@ -57,9 +57,9 @@ def sanitizar_lista(lista, norm_function=unicode_sanitizar):
     """Percorre lista de listas sanitizando inline
     Por ora só suporta lista 'bidimensional', como um csv"""
     for row in range(len(lista)):
-        for col in range(len(lista)):
-            print(lista[row][col])
+        for col in range(len(lista[row])):
             lista[row][col] = sanitizar(lista[row][col], norm_function)
+    return lista
 
 
 
@@ -74,7 +74,7 @@ def muda_titulos_csv(csv_file, de_para_dict):
     return result
 
 
-def muda_titulos_lista(plista, de_para_dict, copy=True):
+def muda_titulos_lista(plista, de_para_dict, make_copy=True):
     """Recebe um dicionário na forma titulo_old:titulo_new
     e muda a linha de titulo da lista.
     Passar copy=False para listas grandes faz a modificação in-line
@@ -87,8 +87,8 @@ def muda_titulos_lista(plista, de_para_dict, copy=True):
          de_para_dict: dicionário titulo_antigo: titulo_novo
          copy: Se False, modifica original
     """
-    if copy:
-        lista = copy.deepcopy(plista)
+    if make_copy:
+        lista = deepcopy(plista)
     for r in range(len(lista[0])):
         # Se título não está no de_para, retorna ele mesmo
         titulo = sanitizar(lista[0][r])
