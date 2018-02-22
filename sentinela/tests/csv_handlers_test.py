@@ -125,8 +125,8 @@ class TestCsvHandlers(unittest.TestCase):
                   newline='') as txt_file:
             reader = csv.reader(txt_file)
             lista2 = [linha for linha in reader]
-        print('test_sch lista', lista[:5])
-        print('test_sch lista2', lista2[:5])
+        print('test_sch lista', lista)
+        print('test_sch lista2', lista2)
         assert len(lista) == len(lista2)
         assert lista[1][0:5] == lista2[1][0:5]
 

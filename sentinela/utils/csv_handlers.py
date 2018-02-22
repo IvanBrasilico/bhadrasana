@@ -134,7 +134,9 @@ def sch_tocsv(sch, txt, dest_path=tmpdir):
     filename = os.path.join(dest_path, campo + '.csv')
     with open(filename, 'w', encoding=ENCODE, newline='') as out:
         writer = csv.writer(out, quotechar='"', quoting=csv.QUOTE_ALL)
+        # print('txt', txt)
         del txt[0]
+        # print('txt', txt)
         writer.writerow(cabecalhos)
         # RETIFICAR LINHAS!!!!
         retificar_linhas(txt, cabecalhos)
@@ -171,12 +173,13 @@ def sch_processing(path, mask_txt='0.txt', dest_path=tmpdir):
     else:
         with ZipFile(path) as myzip:
             info_list = myzip.infolist()
+            print('info_list ',info_list)
             for info in info_list:
                 if info.filename.find('.sch') != -1:
                     sch_name = info.filename
-                    # print('****', sch_name)
-                    txt_search = sch_name[4:-4] + mask_txt
-                    # print('****', txt_search)
+                    print('****', sch_name)
+                    txt_search = sch_name[3:-4] + mask_txt
+                    print('****', txt_search)
                     for txtinfo in info_list:
                         if txtinfo.filename.find(txt_search) != -1:
                             txt_name = txtinfo.filename
@@ -192,6 +195,7 @@ def sch_processing(path, mask_txt='0.txt', dest_path=tmpdir):
                                 )
                                 reader = csv.reader(txt_io, delimiter='\t')
                                 txt_content = [linha for linha in reader]
+                                print('txt_contentt', txt_content)
                     csv_name = sch_tocsv(sch_content, txt_content, dest_path)
                     filenames.append((csv_name, txt_name))
     return filenames
