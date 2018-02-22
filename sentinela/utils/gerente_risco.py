@@ -13,7 +13,7 @@ from sentinela.conf import ENCODE, tmpdir
 from sentinela.models.models import (Filtro, PadraoRisco, ParametroRisco,
                                      ValorParametro)
 from sentinela.utils.csv_handlers import (muda_titulos_lista, sanitizar,
-                                          unicode_sanitizar)
+                                          sanitizar_lista, unicode_sanitizar)
 
 
 def equality(listaoriginal, nomecampo, listavalores):
@@ -165,9 +165,9 @@ class GerenteRisco():
         """Inclui função de sanitização nos pre_processers
         Os pre_processers são usados ao recuperar headers, importar, 
         aplicar_risco, entre outras ações"""
-        self.pre_processers['sanitizar'] = sanitizar
-            self.pre_processers_params['sanitizar'] = {
-                'norm_function': norm_function}
+        self.pre_processers['sanitizar'] = sanitizar_lista
+        self.pre_processers_params['sanitizar'] = {
+            'norm_function': norm_function}
 
     def aplica_risco(self, lista=None, arquivo=None, parametros_ativos=None):
         """Compara a linha de título da lista recebida com a lista de nomes
@@ -310,7 +310,7 @@ class GerenteRisco():
                 parametro = ParametroRisco(campo, padraorisco=padraorisco)
                 session.add(parametro)
                 session.commit()
-            for linha in lista:
+            for linha in lista[1:]:
                 if parametro.id:
                     if len(linha) == 1:
                         ltipofiltro = Filtro.igual
@@ -334,7 +334,7 @@ class GerenteRisco():
             self.add_risco(parametro)
         else:
             dict_filtros = defaultdict(list)
-            for linha in lista:
+            for linha in lista[1:]:
                 if len(linha) == 1:
                     ltipofiltro = Filtro.igual
                 else:
