@@ -151,11 +151,23 @@ class GerenteRisco():
             session.commit()
 
     def checa_depara(self, base):
+        """Se tiver depara na base, adiciona aos pre_processers
+        Os pre_processers são usados ao recuperar headers, importar, 
+        aplicar_risco, entre outras ações"""
         if base.deparas:
             de_para_dict = {depara.titulo_ant: depara.titulo_novo
                             for depara in base.deparas}
-            self.pre_processers['mudatitulo'] = muda_titulos_lista
-            self.pre_processers_params['mudatitulo'] = {'de_para_dict': de_para_dict}
+            self.pre_processers['mudartitulos'] = muda_titulos_lista
+            self.pre_processers_params['mudartitulos'] = {
+                'de_para_dict': de_para_dict, 'copy': False}
+
+    def ativa_sanitizacao(self, norm_function=unicode_sanitizar):
+        """Inclui função de sanitização nos pre_processers
+        Os pre_processers são usados ao recuperar headers, importar, 
+        aplicar_risco, entre outras ações"""
+        self.pre_processers['sanitizar'] = sanitizar
+            self.pre_processers_params['sanitizar'] = {
+                'norm_function': norm_function}
 
     def aplica_risco(self, lista=None, arquivo=None, parametros_ativos=None):
         """Compara a linha de título da lista recebida com a lista de nomes
@@ -198,7 +210,7 @@ class GerenteRisco():
         # Aplicar pre_processers
         for key in self.pre_processers:
             lista = self.pre_processers[key](lista,
-                                     **self.pre_processers_params[key])
+                                             **self.pre_processers_params[key])
         headers = set(lista[0])
         # print('Ativos:', parametros_ativos)
         if parametros_ativos:

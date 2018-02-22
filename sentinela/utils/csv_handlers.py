@@ -7,6 +7,7 @@ Valores nas restantes
 Fim de linha significa nova linha
 Para comparações, retira espaços antes e depois do conteúdo das colunas
 """
+import copy
 import csv
 import glob
 import io
@@ -16,6 +17,7 @@ from zipfile import ZipFile
 
 from sentinela.conf import ENCODE, tmpdir
 from ajna_commons.flask.log import logger
+
 
 def ascii_sanitizar(text):
     """Remove espaços à direita e esquerda, espaços adicionais entre
@@ -51,6 +53,15 @@ def sanitizar(text, norm_function=unicode_sanitizar):
                     if len(word.strip()))
     return text
 
+def sanitizar_lista(lista, norm_function=unicode_sanitizar):
+    """Percorre lista de listas sanitizando inline
+    Por ora só suporta lista 'bidimensional', como um csv"""
+    for row in range(len(lista)):
+        for col in range(len(lista)):
+            print(lista[row][col])
+            lista[row][col] = sanitizar(lista[row][col], norm_function)
+
+
 
 def muda_titulos_csv(csv_file, de_para_dict):
     """Apenas abre o arquivo e repassa para muda_titulos_lista"""
@@ -63,18 +74,27 @@ def muda_titulos_csv(csv_file, de_para_dict):
     return result
 
 
-def muda_titulos_lista(lista, de_para_dict):
+def muda_titulos_lista(plista, de_para_dict, copy=True):
     """Recebe um dicionário na forma titulo_old:titulo_new
-    e muda a linha de titulo."""
-    cabecalho = []
-    for titulo in lista[0]:
+    e muda a linha de titulo da lista.
+    Passar copy=False para listas grandes faz a modificação in-line
+    na lista original (muito mais rápido) modificando a lista original
+    e retornando ela mesma. O padrão é copiar a lista e deixar 
+    intocada a lista original
+        Args:
+         plista: list de lists representando a planilha a ter 
+         títulos modificados
+         de_para_dict: dicionário titulo_antigo: titulo_novo
+         copy: Se False, modifica original
+    """
+    if copy:
+        lista = copy.deepcopy(plista)
+    for r in range(len(lista[0])):
         # Se título não está no de_para, retorna ele mesmo
-        titulo = sanitizar(titulo)
+        titulo = sanitizar(lista[0][r])
         novo_titulo = de_para_dict.get(titulo, titulo)
-        cabecalho.append(novo_titulo)
-    result = [cabecalho]
-    result.extend(lista[1:])
-    return result
+        lista[0][r] = novo_titulo
+    return lista
 
 
 def retificar_linhas(lista, cabecalhos):

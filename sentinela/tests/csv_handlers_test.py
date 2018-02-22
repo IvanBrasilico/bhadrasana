@@ -1,3 +1,4 @@
+import copy
 import csv
 import io
 import os
@@ -7,7 +8,7 @@ from zipfile import ZipFile
 
 from sentinela.utils.csv_handlers import (ENCODE, ascii_sanitizar,
                                           muda_titulos_csv, muda_titulos_lista,
-                                          sanitizar, sch_processing,
+                                          sanitizar, sanitizar_lista, sch_processing,
                                           unicode_sanitizar)
 
 tmpdir = tempfile.mkdtemp()
@@ -39,7 +40,7 @@ class TestCsvHandlers(unittest.TestCase):
         self.comparalistas(self.lista, lista_nova)
 
     def test_muda_titulos_lista(self):
-        lista_old = list(self.lista)
+        lista_old = copy.deepcopy(self.lista)
         self.lista = muda_titulos_lista(self.lista,
                                         TestCsvHandlers.titulos_novos)
         self.comparalistas(lista_old, self.lista)
@@ -109,4 +110,16 @@ class TestCsvHandlers(unittest.TestCase):
                 'teste sentenca comprida, ruian metals ou ruian metals?'
             sanitizado = sanitizar(teste, norm_function=norm_function)
             assert teste != sanitizado
+            assert sanitizado == esperado
+
+    def test_sanitizar_lista(self):
+        for norm_function in {ascii_sanitizar,
+                              unicode_sanitizar}:
+            teste = [['Bebidas', 'Comidas'],
+                     ['café', 'BOLO'],
+                     ['Chá', 'TorraDa']]
+            esperado = [['bebidas', 'comidas'],
+                        ['cafe', 'bolo'],
+                        ['cha', 'torrada']]
+            sanitizado = sanitizar_lista(teste, norm_function=norm_function)
             assert sanitizado == esperado
