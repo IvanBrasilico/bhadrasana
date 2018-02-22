@@ -4,6 +4,7 @@ de risco cadastrados nos dados. Utiliza pandas para realizar filtragem
 import csv
 import json
 import os
+import shutil
 from collections import defaultdict
 
 import pandas as pd
@@ -114,9 +115,8 @@ class GerenteRisco():
             # anterior
             # Para sch zipados e lista de csv zipados, esta verificação é mais
             # custosa, mas também precisa ser implementada
-            cabecalhos_antigos = self.get_headers_base(csv_folder, baseid)
+            cabecalhos_antigos = self.get_headers_base(baseid, csv_folder)
             diferenca_cabecalhos = set()
-            print(diferenca_cabecalhos)
             if cabecalhos_antigos:
                 with open(filename, 'r', newline='') as file:
                     reader = csv.reader(file)
@@ -124,10 +124,13 @@ class GerenteRisco():
                     diferenca_cabecalhos = cabecalhos_novos ^ cabecalhos_antigos
                     if diferenca_cabecalhos:
                         raise ValueError('Erro na importação! ' +
-                                        'Há base anterior com cabeçalhos diferentes. ' +
-                                        str(diferenca_cabecalhos))
-                    file.save(os.path.join(dest_path, filename))
-            result = (filename, 'single csv')
+                                         'Há base anterior com cabeçalhos diferentes. ' +
+                                         str(diferenca_cabecalhos))
+            dest_filename = os.path.join(dest_path,
+                                         os.path.basename(filename))
+            shutil.copyfile(filename,
+                            os.path.join(dest_filename))
+            result = (dest_filename, 'single csv')
             # result = csv_processing(tempfile, dest_path=dest_path)
         if not os.path.isdir(filename) and remove:
             os.remove(filename)
@@ -181,7 +184,7 @@ class GerenteRisco():
 
     def checa_depara(self, base):
         """Se tiver depara na base, adiciona aos pre_processers
-        Os pre_processers são usados ao recuperar headers, importar, 
+        Os pre_processers são usados ao recuperar headers, importar,
         aplicar_risco, entre outras ações"""
         if base.deparas:
             de_para_dict = {depara.titulo_ant: depara.titulo_novo
@@ -192,11 +195,54 @@ class GerenteRisco():
 
     def ativa_sanitizacao(self, norm_function=unicode_sanitizar):
         """Inclui função de sanitização nos pre_processers
-        Os pre_processers são usados ao recuperar headers, importar, 
+        Os pre_processers são usados ao recuperar headers, importar,
         aplicar_risco, entre outras ações"""
         self.pre_processers['sanitizar'] = sanitizar_lista
         self.pre_processers_params['sanitizar'] = {
             'norm_function': norm_function}
+
+    def load_csv(self, arquivo):
+        with open(arquivo, 'r', encoding=ENCODE, newline='') as arq:
+            reader = csv.reader(arq)
+            lista = [linha for linha in reader]
+        return lista
+
+    def save_csv(self, lista, arquivo):
+        try:
+            os.remove(arquivo)  # Remove resultado antigo se houver
+        except IOError:
+            pass
+        with open(arquivo, 'w', encoding=ENCODE, newline='') as csv_out:
+            writer = csv.writer(csv_out)
+            writer.writerows(lista)
+
+    def strip_lines(self, lista):
+        # Precaução: retirar espaços mortos de todo item
+        # da lista para evitar erros de comparação
+        for ind, linha in enumerate(lista):
+            linha_striped = []
+            for item in linha:
+                if isinstance(item, str):
+                    item = item.strip()
+                linha_striped.append(item)
+            lista[ind] = linha_striped
+        return lista
+
+    def pre_processa(self, lista):
+        for key in self.pre_processers:
+            lista = self.pre_processers[key](lista,
+                                             **self.pre_processers_params[key])
+        return lista
+
+    def pre_processa_arquivos(self, lista_arquivos):
+        if len(lista_arquivos) > 0:
+            if (isinstance(lista_arquivos[0], list) or
+                    isinstance(lista_arquivos[0], tuple)):
+                lista_arquivos = [linha[0] for linha in lista_arquivos]
+        for filename in lista_arquivos:
+            lista = self.load_csv(filename)
+            lista = self.pre_processa(lista)
+            self.save_csv(lista, filename)
 
     def aplica_risco(self, lista=None, arquivo=None, parametros_ativos=None):
         """Compara a linha de título da lista recebida com a lista de nomes
@@ -222,24 +268,14 @@ class GerenteRisco():
         mensagem = 'Arquivo não fornecido!'
         if arquivo:
             mensagem = 'Lista não fornecida!'
-            with open(arquivo, 'r', encoding=ENCODE, newline='') as arq:
-                reader = csv.reader(arq)
-                lista = [linha for linha in reader]
+            lista = self.load_csv(arquivo)
         if not lista:
             raise AttributeError('Erro! ' + mensagem)
-        # Precaução: retirar espaços mortos de todo item
-        # da lista para evitar erros de comparação
-        for ind, linha in enumerate(lista):
-            linha_striped = []
-            for item in linha:
-                if isinstance(item, str):
-                    item = item.strip()
-                linha_striped.append(item)
-            lista[ind] = linha_striped
         # Aplicar pre_processers
-        for key in self.pre_processers:
-            lista = self.pre_processers[key](lista,
-                                             **self.pre_processers_params[key])
+        logger.debug(lista[:10])
+        lista = self.strip_lines(lista)
+        lista = self.pre_processa(lista)
+        logger.debug(lista[:10])
         headers = set(lista[0])
         # print('Ativos:', parametros_ativos)
         if parametros_ativos:
@@ -408,7 +444,6 @@ class GerenteRisco():
         cabecalhos = []
         cabecalhos_nao_repetidos = set()
         caminho = os.path.join(path, str(baseorigemid))
-        logger.debug(caminho)
         if not os.path.isdir(caminho):
             return set()
         ultimo_ano = sorted(os.listdir(caminho))

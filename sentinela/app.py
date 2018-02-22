@@ -159,8 +159,9 @@ def importa_base():
                                                           data,
                                                           tempfile_name,
                                                           remove=True)
-                    gerente.ativa_santizacao()
-                    gerente.pre_processa_base(dest_path, lista_arquivos)
+                    gerente.ativa_sanitizacao()
+                    logger.debug(lista_arquivos)
+                    gerente.pre_processa_arquivos(lista_arquivos)
                     return redirect(url_for('risco', baseid=baseid))
                 except Exception as err:
                     flash(err)
@@ -185,7 +186,7 @@ def adiciona_base(nome):
 def arquiva_base_csv(baseorigem, base_csv, to_mongo=True):
     """ Apaga CSVs do disco
     Copia para MongoDB antes por padrão
-    """"
+    """
     # Aviso: Esta função rmtree só deve ser utilizada com caminhos seguros,
     # de preferência gerados pela própria aplicação
     logger.debug(base_csv)
@@ -206,6 +207,7 @@ def risco():
             file: caminho do(s) csv(s) já processados e no diretório
             acao: 'aplicar' - aplicao_risco no diretório file
                   'arquivar' - adiciona diretório ao BD e apaga dir
+                  'excluir' - apaga dir
     """
     path = request.args.get('filename')
     acao = request.args.get('acao')
@@ -246,10 +248,10 @@ def risco():
         base_csv = os.path.join(CSV_FOLDER, baseid, path)
     lista_risco = []
     csv_salvo = ''
-    if acao == 'arquivar':
+    if acao == 'arquivar' or acao == 'excluir':
         try:
             if abase and base_csv:
-                arquiva_base_csv(abase, base_csv)
+                arquiva_base_csv(abase, base_csv, to_mongo=acao == 'arquivar')
                 flash('Base arquivada!')
             else:
                 flash('Informe Base Original e arquivo!')
@@ -306,13 +308,7 @@ def risco():
     if lista_risco:  # Salvar resultado
         static_path = app.config.get('STATIC_FOLDER', 'static')
         csv_salvo = os.path.join(APP_PATH, static_path, 'baixar.csv')
-        try:
-            os.remove(csv_salvo)  # Remove resultado antigo se houver
-        except IOError:
-            pass
-        with open(csv_salvo, 'w', encoding=ENCODE, newline='') as csv_out:
-            writer = csv.writer(csv_out)
-            writer.writerows(lista_risco)
+        gerente.save_csv(lista_risco, csv_salvo)
     return render_template('aplica_risco.html',
                            lista_arquivos=lista_arquivos,
                            bases=bases,

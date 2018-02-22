@@ -14,9 +14,8 @@ CSV_NAMEDRISCO_TEST = 'sentinela/tests/csv_namedrisco_example.csv'
 CSV_FOLDER_TEST = 'sentinela/tests/CSV'
 CSV_FOLDER_DEST = 'sentinela/tests/DEST'
 
-CSV_ROOT = 'sentinela/tests/CSV'
-CSV_ALIMENTOS = os.path.join(CSV_ROOT, 'alimentoseesportes.csv')
-CSV_ADITIVOS = os.path.join(CSV_ROOT, 'aditivoseaventuras.csv')
+CSV_ALIMENTOS = os.path.join(CSV_FOLDER_TEST, 'alimentoseesportes.csv')
+CSV_ADITIVOS = os.path.join(CSV_FOLDER_TEST, 'aditivoseaventuras.csv')
 
 
 class TestGerenteRisco(unittest.TestCase):
@@ -234,18 +233,32 @@ class TestGerenteRisco(unittest.TestCase):
 
     def test_importa_base(self):
         gerente = self.gerente
-        shutil.rmtree(CSV_FOLDER_DEST)
+        data = datetime.date.today().strftime('%Y-%m-%d')
+        if os.path.exists(CSV_FOLDER_DEST):
+            shutil.rmtree(CSV_FOLDER_DEST)
         gerente.importa_base(CSV_FOLDER_DEST,
                              '1',
-                             datetime.date.today().strftime('%Y-%m-%d'),
+                             data,
                              CSV_ALIMENTOS)
         gerente.importa_base(CSV_FOLDER_DEST,
                              '2',
-                             datetime.date.today().strftime('%Y-%m-%d'),
+                             data,
                              CSV_ADITIVOS)
+        assert os.path.isfile(os.path.join(CSV_FOLDER_DEST, '1',
+                                           data[:4], data[5:7], data[8:10],
+                                           os.path.basename(CSV_ALIMENTOS)))
+        assert os.path.isfile(os.path.join(CSV_FOLDER_DEST, '2',
+                                           data[:4], data[5:7], data[8:10],
+                                           os.path.basename(CSV_ADITIVOS)))
         with self.assertRaises(FileExistsError) as context:
             gerente.importa_base(CSV_FOLDER_DEST,
                                  '2',
-                                 datetime.date.today().strftime('%Y-%m-%d'),
+                                 data,
+                                 CSV_ADITIVOS)
+        data = data[:8] + '00'
+        with self.assertRaises(ValueError) as context:
+            gerente.importa_base(CSV_FOLDER_DEST,
+                                 '1',
+                                 data,
                                  CSV_ADITIVOS)
         shutil.rmtree(CSV_FOLDER_DEST)

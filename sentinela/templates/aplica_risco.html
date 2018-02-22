@@ -29,9 +29,12 @@
                             <button class="btn btn-default btn-info" onclick="aplica_risco('{{filename}}', 'aplicar')">Aplicar</button>
                         </td>
                         <td align="center">
-                                <button class="btn btn-warning" onclick="aplica_risco('{{filename}}', 'arquivar')">Arquivar</button>
-                            </td>
-                        </tr>
+                            <button class="btn btn-warning" onclick="aplica_risco('{{filename}}', 'arquivar')">Arquivar</button>
+                        </td>
+                        <td align="center">
+                            <button class="btn btn-danger" onclick="aplica_risco('{{filename}}', 'excluir')">Excluir</button>
+                        </td>
+                    </tr>
                     {% endfor %}{% if not lista_arquivos %}
                     <tr>
                         <td>Sem bases importadas.</td>
@@ -41,9 +44,11 @@
             </div>
         </div>
         <div class="col-sm-6">
-            <h4><b>Visualização:</b> </h4>
-            Em bases com várias tabelas(vários arquivos csv), é preciso definir os campos a exibir e
-            a forma de vizualização na aba "Edita Visão"
+            <h4>
+                <b>Visualização:</b>
+            </h4>
+            Em bases com várias tabelas(vários arquivos csv), é preciso definir os campos a exibir e a forma de vizualização na aba "Edita
+            Visão"
 
             <select class="form-control" name="visao" id="visao">
                 <option value="0">Selecionar</option>

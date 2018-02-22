@@ -74,7 +74,7 @@ def muda_titulos_csv(csv_file, de_para_dict):
     return result
 
 
-def muda_titulos_lista(plista, de_para_dict, make_copy=True):
+def muda_titulos_lista(lista, de_para_dict, make_copy=True):
     """Recebe um dicionário na forma titulo_old:titulo_new
     e muda a linha de titulo da lista.
     Passar copy=False para listas grandes faz a modificação in-line
@@ -88,7 +88,7 @@ def muda_titulos_lista(plista, de_para_dict, make_copy=True):
          copy: Se False, modifica original
     """
     if make_copy:
-        lista = deepcopy(plista)
+        lista = deepcopy(lista)
     for r in range(len(lista[0])):
         # Se título não está no de_para, retorna ele mesmo
         titulo = sanitizar(lista[0][r])
