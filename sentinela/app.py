@@ -159,8 +159,9 @@ def importa_base():
                                                           data,
                                                           tempfile_name,
                                                           remove=True)
+                    # Sanitizar base já na importação para evitar
+                    # processamento repetido depois
                     gerente.ativa_sanitizacao()
-                    logger.debug(lista_arquivos)
                     gerente.pre_processa_arquivos(lista_arquivos)
                     return redirect(url_for('risco', baseid=baseid))
                 except Exception as err:
@@ -252,7 +253,10 @@ def risco():
         try:
             if abase and base_csv:
                 arquiva_base_csv(abase, base_csv, to_mongo=acao == 'arquivar')
-                flash('Base arquivada!')
+                if acao == 'arquivar':
+                    flash('Base arquivada!')
+                else:
+                    flash('Base excluída!')
             else:
                 flash('Informe Base Original e arquivo!')
         except Exception as err:
@@ -288,11 +292,12 @@ def risco():
             arquivo = os.path.join(base_csv, dir_content[0])
         try:
             gerente.checa_depara(abase)  # Aplicar na importação???
-            lista_risco = gerente.aplica_risco(arquivo=arquivo,
+            lista = gerente.load_csv(arquivo)
+            lista = gerente.load_mongo(db, abase)
+            lista_risco = gerente.aplica_risco(lista,
                                                parametros_ativos=parametros_ativos)
         except Exception as err:
             flash(err)
-
     else:
         avisao = dbsession.query(Visao).filter(
             Visao.id == visaoid).first()

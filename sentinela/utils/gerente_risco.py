@@ -130,7 +130,7 @@ class GerenteRisco():
                                          os.path.basename(filename))
             shutil.copyfile(filename,
                             os.path.join(dest_filename))
-            result = (dest_filename, 'single csv')
+            result = [(dest_filename, 'single csv')]
             # result = csv_processing(tempfile, dest_path=dest_path)
         if not os.path.isdir(filename) and remove:
             os.remove(filename)
@@ -235,11 +235,13 @@ class GerenteRisco():
         return lista
 
     def pre_processa_arquivos(self, lista_arquivos):
+        print(lista_arquivos)
         if len(lista_arquivos) > 0:
             if (isinstance(lista_arquivos[0], list) or
                     isinstance(lista_arquivos[0], tuple)):
-                lista_arquivos = [linha[0] for linha in lista_arquivos]
-        for filename in lista_arquivos:
+                alista = [linha[0] for linha in lista_arquivos]
+        print(alista)
+        for filename in alista:
             lista = self.load_csv(filename)
             lista = self.pre_processa(lista)
             self.save_csv(lista, filename)
@@ -542,3 +544,11 @@ class GerenteRisco():
             if tabela not in db.collection_names():
                 db.create_collection(tabela)
             db[tabela].insert(data_json)
+    
+    def load_mongo(self, db, base):
+        mongo_list = db[base.nome].find()
+        result = [mongo_list[0].keys()]
+        for linha in mongo_list:
+            result.append(linha.values())
+
+        return result
