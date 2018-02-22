@@ -9,8 +9,8 @@ import unittest
 from sentinela.models.models import Filtro
 from sentinela.utils.gerente_risco import GerenteRisco
 
-CSV_RISCO_TEST = 'sentinela/tests/csv_risco_example.csv'
-CSV_NAMEDRISCO_TEST = 'sentinela/tests/csv_namedrisco_example.csv'
+CSV_RISCO_TEST = 'sentinela/tests/sample/csv_risco_example.csv'
+CSV_NAMEDRISCO_TEST = 'sentinela/tests/sample/csv_namedrisco_example.csv'
 CSV_FOLDER_TEST = 'sentinela/tests/CSV'
 CSV_FOLDER_DEST = 'sentinela/tests/DEST'
 
@@ -18,6 +18,14 @@ CSV_ALIMENTOS = os.path.join(CSV_FOLDER_TEST, 'alimentoseesportes.csv')
 CSV_ADITIVOS = os.path.join(CSV_FOLDER_TEST, 'aditivoseaventuras.csv')
 
 
+# SCH_VIAGENS é um zip
+# contendo o conteúdo de csv alimentos e csv aditivos,
+# separado por "tabelas":
+# viagem: id
+# alimento: viagem, alimento
+# esporte: viagem, esporte
+SAMPLES_DIR = os.path.join('sentinela', 'tests', 'sample')
+SCH_VIAGENS = os.path.join(SAMPLES_DIR, 'viagens')
 class TestGerenteRisco(unittest.TestCase):
     def setUp(self):
         with open(CSV_RISCO_TEST, 'r', newline='') as f:
@@ -262,3 +270,4 @@ class TestGerenteRisco(unittest.TestCase):
                                  data,
                                  CSV_ADITIVOS)
         shutil.rmtree(CSV_FOLDER_DEST)
+

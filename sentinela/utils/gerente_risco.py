@@ -550,5 +550,4 @@ class GerenteRisco():
         result = [mongo_list[0].keys()]
         for linha in mongo_list:
             result.append(linha.values())
-
         return result

@@ -154,8 +154,9 @@ def sch_processing(path, mask_txt='0.txt', dest_path=tmpdir):
     Obs: não há procura recursiva, apenas no raiz do diretório"""
     filenames = []
     if path.find('.zip') == -1:
-        for sch in glob.glob(path + '*.sch'):
+        for sch in glob.glob(os.path.join(path,'*.sch')):
             sch_name = sch
+            # print('****', sch_name)
             txt_name = glob.glob(os.path.join(
                 path, '*' + os.path.basename(sch_name)[3:-4] + mask_txt))[0]
             with open(sch_name, encoding=ENCODE,
@@ -173,7 +174,7 @@ def sch_processing(path, mask_txt='0.txt', dest_path=tmpdir):
             for info in info_list:
                 if info.filename.find('.sch') != -1:
                     sch_name = info.filename
-                    txt_search = sch_name[3:-4] + mask_txt
+                    txt_search = sch_name[-6:-4] + mask_txt
                     for txtinfo in info_list:
                         if txtinfo.filename.find(txt_search) != -1:
                             txt_name = txtinfo.filename

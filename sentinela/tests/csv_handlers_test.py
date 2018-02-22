@@ -13,9 +13,12 @@ from sentinela.utils.csv_handlers import (ENCODE, ascii_sanitizar,
 
 tmpdir = tempfile.mkdtemp()
 
-CSV_TITLES_TEST = 'sentinela/tests/csv_title_example.csv'
-SCH_FILE_TEST = 'sentinela/tests/'
-SCH_ZIP_TEST = 'sentinela/tests/tests.zip'
+SAMPLES_DIR = os.path.join('sentinela', 'tests', 'sample')
+
+CSV_TITLES_TEST = os.path.join(SAMPLES_DIR, 'csv_title_example.csv')
+SCH_FILE_TEST = os.path.join(SAMPLES_DIR, 'sch', '1')
+SCH_ZIP_TEST = os.path.join(SAMPLES_DIR, 'sch', '1.zip')
+SCH_VIAGENS = os.path.join(SAMPLES_DIR, 'viagens')
 
 
 class TestCsvHandlers(unittest.TestCase):
@@ -53,7 +56,9 @@ class TestCsvHandlers(unittest.TestCase):
             assert new in ''.join(lista[0])
 
     def test_sch_dir(self):
+        print(SCH_FILE_TEST)
         filenames = sch_processing(SCH_FILE_TEST)
+        print(filenames)
         with open(filenames[0][1], 'r', encoding=ENCODE,
                   newline='') as txt_file:
             reader = csv.reader(txt_file, delimiter='\t')
