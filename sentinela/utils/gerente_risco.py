@@ -108,35 +108,39 @@ class GerenteRisco():
                 'Já houve importação de base para os parâmetros informados')
         else:
             os.makedirs(dest_path)
-        if '.zip' in filename or os.path.isdir(filename):
-            result = sch_processing(filename,
-                                    dest_path=dest_path)
-        else:
-            # No caso de CSV, retornar erro caso títulos não batam
-            # com importação anterior
-            # Para sch zipados e lista de csv zipados, esta verificação é mais
-            # custosa, mas também precisa ser implementada
-            cabecalhos_antigos = self.get_headers_base(baseid, csv_folder)
-            diferenca_cabecalhos = set()
-            if cabecalhos_antigos:
-                with open(filename, 'r', newline='') as file:
-                    reader = csv.reader(file)
-                    cabecalhos_novos = set(next(reader))
-                    diferenca_cabecalhos = (cabecalhos_novos ^
-                                            cabecalhos_antigos)
-                    if diferenca_cabecalhos:
-                        raise ValueError(
-                            'Erro na importação! ' +
-                            'Há base anterior com cabeçalhos diferentes. ' +
-                            str(diferenca_cabecalhos))
-            dest_filename = os.path.join(dest_path,
-                                         os.path.basename(filename))
-            shutil.copyfile(filename,
-                            os.path.join(dest_filename))
-            result = [(dest_filename, 'single csv')]
-            # result = csv_processing(tempfile, dest_path=dest_path)
-        if not os.path.isdir(filename) and remove:
-            os.remove(filename)
+        try:
+            if '.zip' in filename or os.path.isdir(filename):
+                result = sch_processing(filename,
+                                        dest_path=dest_path)
+            else:
+                # No caso de CSV, retornar erro caso títulos não batam
+                # com importação anterior
+                # Para sch zipados e lista de csv zipados, esta verificação é mais
+                # custosa, mas também precisa ser implementada
+                cabecalhos_antigos = self.get_headers_base(baseid, csv_folder)
+                diferenca_cabecalhos = set()
+                if cabecalhos_antigos:
+                    with open(filename, 'r', newline='') as file:
+                        reader = csv.reader(file)
+                        cabecalhos_novos = set(next(reader))
+                        diferenca_cabecalhos = (cabecalhos_novos ^
+                                                cabecalhos_antigos)
+                        if diferenca_cabecalhos:
+                            raise ValueError(
+                                'Erro na importação! ' +
+                                'Há base anterior com cabeçalhos diferentes. ' +
+                                str(diferenca_cabecalhos))
+                dest_filename = os.path.join(dest_path,
+                                            os.path.basename(filename))
+                shutil.copyfile(filename,
+                                os.path.join(dest_filename))
+                result = [(dest_filename, 'single csv')]
+                # result = csv_processing(tempfile, dest_path=dest_path)
+            if not os.path.isdir(filename) and remove:
+                os.remove(filename)
+        except Exception as err:
+            shutil.rmtree(dest_path)
+            raise err
         return result
 
     def set_padraorisco(self, padraorisco):
@@ -553,8 +557,11 @@ class GerenteRisco():
             db[tabela].insert(data_json)
 
     def load_mongo(self, db, base):
+        mongo_debug = list(db[base.nome].find())
         mongo_list = db[base.nome].find()
+        logger.debug(mongo_debug)
         result = [mongo_list[0].keys()]
         for linha in mongo_list:
             result.append(linha.values())
+        logger.debug('Result ', result)
         return result

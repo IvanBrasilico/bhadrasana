@@ -142,29 +142,36 @@ def importa_base():
             if (not filename or not allowed_file(filename)):
                 flash('Selecionar arquivo válido e depois clicar em submeter!')
                 filename = None
-            elif baseid is None or baseid == 0:
-                flash('Selecionar base original e depois clicar em submeter!')
-            else:  # Validado - tentar upload e procesamento
-                if not data:
-                    data = datetime.date.today().strftime('%Y-%m-%d')
-                logger.debug(data)
-                try:
-                    gerente = GerenteRisco()
-                    tempfile_name = os.path.join(tmpdir, filename)
-                    file.save(tempfile_name)
-                    lista_arquivos = gerente.importa_base(CSV_FOLDER,
-                                                          baseid,
-                                                          data,
-                                                          tempfile_name,
-                                                          remove=True)
-                    # Sanitizar base já na importação para evitar
-                    # processamento repetido depois
-                    gerente.ativa_sanitizacao()
-                    gerente.pre_processa_arquivos(lista_arquivos)
-                    return redirect(url_for('risco', baseid=baseid))
-                except Exception as err:
-                    logger.error(err, exc_info=True)
-                    flash(err)
+            else:
+                if baseid is None or baseid == 0:
+                    flash('Selecionar base original e depois clicar em submeter!')
+                else:  # Validado - tentar upload e procesamento
+                    abase = dbsession.query(BaseOrigem).filter(
+                        BaseOrigem.id == baseid).first()
+                    if abase is None:
+                        raise ValueError('Informe uma base válida!!!')
+                    if not data:
+                        data = datetime.date.today().strftime('%Y-%m-%d')
+                    logger.debug(data)
+                    try:
+                        gerente = GerenteRisco()
+                        tempfile_name = os.path.join(tmpdir, filename)
+                        file.save(tempfile_name)
+                        lista_arquivos = gerente.importa_base(CSV_FOLDER,
+                                                            baseid,
+                                                            data,
+                                                            tempfile_name,
+                                                            remove=True)
+                        # Sanitizar base já na importação para evitar
+                        # processamento repetido depois
+                        gerente.ativa_sanitizacao()
+                        gerente.checa_depara(abase)  # Aplicar na importação???
+                        logger.debug(lista_arquivos)
+                        gerente.pre_processa_arquivos(lista_arquivos)
+                        return redirect(url_for('risco', baseid=baseid))
+                    except Exception as err:
+                        logger.error(err, exc_info=True)
+                        flash(err)
     bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
     return render_template('importa_base.html', bases=bases,
                            baseid=baseid, data=data)
@@ -270,6 +277,8 @@ def risco():
                     lista_arquivos.append(ano + '/' + mes + '/' + dia)
     except FileNotFoundError:
         pass
+    if acao == 'mongo':
+        path = '-'
     if not path or not padrao:
         return render_template('aplica_risco.html',
                                lista_arquivos=lista_arquivos,
@@ -285,17 +294,20 @@ def risco():
     # Todas as condições para aplicar_risco foram cumpridas
     gerente = GerenteRisco()
     gerente.set_padraorisco(padrao)
-    if visaoid == '0':
+    if acao == 'mongo':
+        lista = gerente.load_mongo(db, abase)
+        lista_risco = gerente.aplica_risco(
+                lista,
+                parametros_ativos=parametros_ativos
+        )
+    elif visaoid == '0':
         dir_content = os.listdir(base_csv)
         arquivo = ''
         if len(dir_content) == 1:
             arquivo = os.path.join(base_csv, dir_content[0])
         try:
-            gerente.checa_depara(abase)  # Aplicar somente na importação???
-            if acao == 'mongo':
-                lista = gerente.load_mongo(db, abase)
-            else:
-                lista = gerente.load_csv(arquivo)
+            # gerente.checa_depara(abase)  # Aplicar somente na importação???
+            lista = gerente.load_csv(arquivo)
             lista_risco = gerente.aplica_risco(
                 lista,
                 parametros_ativos=parametros_ativos
