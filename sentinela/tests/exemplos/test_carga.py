@@ -14,7 +14,7 @@ from sentinela.utils.gerente_risco import GerenteRisco
 # Configurar nesta linha uma base do Sistema Carga E
 CARGA_ZIP_TEST = '/home/ivan/Downloads/P.zip'
 # Comentar a linha abaixo para testar com uma base real
-CARGA_ZIP_TEST = 'sentinela/tests/tests.zip'
+CARGA_ZIP_TEST = 'sentinela/tests/CSV/tests.zip'
 
 
 def carrega_carga(session):

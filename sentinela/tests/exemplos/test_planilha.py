@@ -7,8 +7,7 @@ import os
 import tempfile
 import unittest
 
-from sentinela.models.models import (Base, BaseOrigem, DePara, MySession,
-                                     PadraoRisco)
+from sentinela.models.models import (Base, BaseOrigem, DePara, MySession)
 from sentinela.utils.csv_handlers import muda_titulos_csv, muda_titulos_lista
 from sentinela.utils.gerente_risco import GerenteRisco
 
@@ -50,14 +49,12 @@ class TestModel(unittest.TestCase):
         gerente.clear_risco()
         gerente.parametros_fromcsv('alimento', path=self.tmpdir)
         # , path='.')
-        lista_risco = gerente.aplica_risco(arquivo=PLANILHA_TEST)
+        lista_risco = gerente.aplica_risco(arquivo=CSV_TEST_1)
         print(lista_risco)
-        assert False
-
 
     def test_planilhas_BD(self):
         gerente = GerenteRisco()
-        gerente.import_named_csv(CSV_NAMEDRISCO_TEST, self.session)
+        gerente.import_named_csv(CSV_NAMEDRISCO, self.session)
         gerente.parametros_tocsv(self.tmpdir)  # path='.')
         gerente.clear_risco()
         gerente.parametros_fromcsv('alimento', path=self.tmpdir)

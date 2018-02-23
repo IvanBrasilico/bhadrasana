@@ -105,8 +105,8 @@ class BaseOrigem(Base):
     deparas = relationship('DePara', back_populates='base')
     visoes = relationship('Visao', back_populates='base')
     padroes = relationship(
-        "PadraoRisco", secondary=association_table,
-        back_populates="bases")
+        'PadraoRisco', secondary=association_table,
+        back_populates='bases')
 
     def __init__(self, nome, caminho=None):
         self.nome = nome

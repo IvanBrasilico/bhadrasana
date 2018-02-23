@@ -1,10 +1,10 @@
 Alimento
-1   Frutóse
-2   whey protein
-3   vitamina A
-4   Dextrose de    Milho
-5   alface
-6   aspargos
-7   bacon
-8   arroz
-9   coxinha
+1	Frutóse
+2	whey protein
+3	vitamina A
+4	Dextrose de    Milho
+5	alface
+6	aspargos
+7	bacon
+8	arroz
+9	coxinha

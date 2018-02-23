@@ -26,6 +26,8 @@ CSV_ADITIVOS = os.path.join(CSV_FOLDER_TEST, 'aditivoseaventuras.csv')
 # esporte: viagem, esporte
 SAMPLES_DIR = os.path.join('sentinela', 'tests', 'sample')
 SCH_VIAGENS = os.path.join(SAMPLES_DIR, 'viagens')
+
+
 class TestGerenteRisco(unittest.TestCase):
     def setUp(self):
         with open(CSV_RISCO_TEST, 'r', newline='') as f:
@@ -258,16 +260,15 @@ class TestGerenteRisco(unittest.TestCase):
         assert os.path.isfile(os.path.join(CSV_FOLDER_DEST, '2',
                                            data[:4], data[5:7], data[8:10],
                                            os.path.basename(CSV_ADITIVOS)))
-        with self.assertRaises(FileExistsError) as context:
+        with self.assertRaises(FileExistsError):
             gerente.importa_base(CSV_FOLDER_DEST,
                                  '2',
                                  data,
                                  CSV_ADITIVOS)
         data = data[:8] + '00'
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(ValueError):
             gerente.importa_base(CSV_FOLDER_DEST,
                                  '1',
                                  data,
                                  CSV_ADITIVOS)
         shutil.rmtree(CSV_FOLDER_DEST)
-

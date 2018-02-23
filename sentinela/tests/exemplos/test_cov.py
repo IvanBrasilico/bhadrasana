@@ -10,13 +10,8 @@ from sentinela.models.models import (Base, BaseOrigem, DePara, MySession,
 from sentinela.utils.csv_handlers import muda_titulos_csv, muda_titulos_lista
 from sentinela.utils.gerente_risco import GerenteRisco
 
-PLANILHA_TEST = ('/Users/47020753817/Downloads/WinPython-64bit-3.5.3.1Qt5'
-                 '/notebooks/btp 5 setembro.csv')
-CSV_NAMEDRISCO_TEST = 'sentinela/tests/csv_namedrisco_example.csv'
+CSV_NAMEDRISCO_TEST = 'sentinela/tests/BTP_named_risco.csv'
 CSV_TITLES_TEST = 'sentinela/tests/BTP.csv'
-CSV_MATRIZRISCO_TEST = ('/Users/47020753817/Downloads/'
-                        'WinPython-64bit-3.5.3.1Qt5/'
-                        'notebooks/Matriz Risco.csv')
 
 
 class TestModel(unittest.TestCase):

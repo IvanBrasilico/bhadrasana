@@ -16,7 +16,6 @@ import unicodedata
 from zipfile import ZipFile
 
 from sentinela.conf import ENCODE, tmpdir
-from ajna_commons.flask.log import logger
 
 
 def ascii_sanitizar(text):
@@ -53,6 +52,7 @@ def sanitizar(text, norm_function=unicode_sanitizar):
                     if len(word.strip()))
     return text
 
+
 def sanitizar_lista(lista, norm_function=unicode_sanitizar):
     """Percorre lista de listas sanitizando inline
     Por ora só suporta lista 'bidimensional', como um csv"""
@@ -60,7 +60,6 @@ def sanitizar_lista(lista, norm_function=unicode_sanitizar):
         for col in range(len(lista[row])):
             lista[row][col] = sanitizar(lista[row][col], norm_function)
     return lista
-
 
 
 def muda_titulos_csv(csv_file, de_para_dict):
@@ -79,10 +78,10 @@ def muda_titulos_lista(lista, de_para_dict, make_copy=True):
     e muda a linha de titulo da lista.
     Passar copy=False para listas grandes faz a modificação in-line
     na lista original (muito mais rápido) modificando a lista original
-    e retornando ela mesma. O padrão é copiar a lista e deixar 
+    e retornando ela mesma. O padrão é copiar a lista e deixar
     intocada a lista original
         Args:
-         plista: list de lists representando a planilha a ter 
+         plista: list de lists representando a planilha a ter
          títulos modificados
          de_para_dict: dicionário titulo_antigo: titulo_novo
          copy: Se False, modifica original
@@ -156,7 +155,7 @@ def sch_processing(path, mask_txt='0.txt', dest_path=tmpdir):
     Obs: não há procura recursiva, apenas no raiz do diretório"""
     filenames = []
     if path.find('.zip') == -1:
-        for sch in glob.glob(os.path.join(path,'*.sch')):
+        for sch in glob.glob(os.path.join(path, '*.sch')):
             sch_name = sch
             # print('****', sch_name)
             txt_name = glob.glob(os.path.join(
@@ -173,13 +172,13 @@ def sch_processing(path, mask_txt='0.txt', dest_path=tmpdir):
     else:
         with ZipFile(path) as myzip:
             info_list = myzip.infolist()
-            print('info_list ',info_list)
+            # print('info_list ',info_list)
             for info in info_list:
                 if info.filename.find('.sch') != -1:
                     sch_name = info.filename
-                    print('****', sch_name)
+                    # print('****', sch_name)
                     txt_search = sch_name[3:-4] + mask_txt
-                    print('****', txt_search)
+                    # print('****', txt_search)
                     for txtinfo in info_list:
                         if txtinfo.filename.find(txt_search) != -1:
                             txt_name = txtinfo.filename
@@ -195,7 +194,7 @@ def sch_processing(path, mask_txt='0.txt', dest_path=tmpdir):
                                 )
                                 reader = csv.reader(txt_io, delimiter='\t')
                                 txt_content = [linha for linha in reader]
-                                print('txt_contentt', txt_content)
+                                # print('txt_content', txt_content)
                     csv_name = sch_tocsv(sch_content, txt_content, dest_path)
                     filenames.append((csv_name, txt_name))
     return filenames

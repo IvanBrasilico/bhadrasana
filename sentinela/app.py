@@ -16,7 +16,6 @@ conexões internas.
 Adicionalmente, permite o merge entre bases, navegação de bases, e
 a aplicação de filtros/parâmetros de risco.
 """
-import csv
 import datetime
 import os
 import shutil
@@ -39,14 +38,13 @@ from ajna_commons.flask.conf import (ALLOWED_EXTENSIONS, DATABASE, MONGODB_URI,
 from ajna_commons.flask.login import (DBUser, authenticate, is_safe_url,
                                       login_manager)
 from ajna_commons.flask.log import logger
-from sentinela.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER, UPLOAD_FOLDER
+from sentinela.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER
 from sentinela.models.models import (Base, BaseOrigem, Coluna, DePara,
                                      MySession, PadraoRisco, ParametroRisco,
                                      Tabela, ValorParametro, Visao)
-from sentinela.utils.csv_handlers import (sanitizar, sch_processing,
-                                          unicode_sanitizar)
+from sentinela.utils.csv_handlers import (sanitizar, unicode_sanitizar)
 from sentinela.utils.gerente_base import Filtro, GerenteBase
-from sentinela.utils.gerente_risco import ENCODE, GerenteRisco, tmpdir
+from sentinela.utils.gerente_risco import GerenteRisco, tmpdir
 
 mysession = MySession(Base)
 dbsession = mysession.session
@@ -153,7 +151,7 @@ def importa_base():
                 try:
                     gerente = GerenteRisco()
                     tempfile_name = os.path.join(tmpdir, filename)
-                    tempfile = file.save(tempfile_name)
+                    file.save(tempfile_name)
                     lista_arquivos = gerente.importa_base(CSV_FOLDER,
                                                           baseid,
                                                           data,
@@ -165,6 +163,7 @@ def importa_base():
                     gerente.pre_processa_arquivos(lista_arquivos)
                     return redirect(url_for('risco', baseid=baseid))
                 except Exception as err:
+                    logger.error(err, exc_info=True)
                     flash(err)
     bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
     return render_template('importa_base.html', bases=bases,
@@ -266,7 +265,8 @@ def risco():
     try:
         for ano in os.listdir(os.path.join(CSV_FOLDER, baseid)):
             for mes in os.listdir(os.path.join(CSV_FOLDER, baseid, ano)):
-                for dia in os.listdir(os.path.join(CSV_FOLDER, baseid, ano, mes)):
+                for dia in os.listdir(os.path.join(CSV_FOLDER,
+                                                   baseid, ano, mes)):
                     lista_arquivos.append(ano + '/' + mes + '/' + dia)
     except FileNotFoundError:
         pass
@@ -294,9 +294,12 @@ def risco():
             gerente.checa_depara(abase)  # Aplicar na importação???
             lista = gerente.load_csv(arquivo)
             lista = gerente.load_mongo(db, abase)
-            lista_risco = gerente.aplica_risco(lista,
-                                               parametros_ativos=parametros_ativos)
+            lista_risco = gerente.aplica_risco(
+                lista,
+                parametros_ativos=parametros_ativos
+            )
         except Exception as err:
+            logger.error(err, exc_info=True)
             flash(err)
     else:
         avisao = dbsession.query(Visao).filter(
@@ -305,9 +308,18 @@ def risco():
             flash('Visão não encontrada!')
         else:
             try:
-                lista_risco = gerente.aplica_juncao(avisao, path=base_csv, filtrar=True,
-                                                    parametros_ativos=parametros_ativos)
+                logger.debug(
+                    ' '.join(['Aplicando junção*** ', avisao,
+                              path, True, parametros_ativos]))
+                lista_risco = gerente.aplica_juncao(
+                    avisao, path=base_csv,
+                    filtrar=True,
+                    parametros_ativos=parametros_ativos
+                )
             except Exception as err:
+                logger.error(err, exc_info=True)
+                flash('Erro ao aplicar junção! Detalhes no log da aplicação.')
+                flash(type(err))
                 flash(err)
 
     if lista_risco:  # Salvar resultado
@@ -799,7 +811,4 @@ Session(app)
 
 if __name__ == '__main__':
     print('Iniciando Servidor Bhadrasana...')
-    app.logger.addHandler(file_handler)
-    file_handler.setLevel(logging.WARNING)
     app.run(debug=app.config['DEBUG'])
-1

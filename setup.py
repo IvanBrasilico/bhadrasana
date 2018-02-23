@@ -10,6 +10,7 @@ setup(
     author_email='brasilico.ivan@gmail.com',
     packages=find_packages(),
     install_requires=[
+        'Celery',
         'dominate',
         'Flask',
         'Flask-BootStrap',
@@ -21,6 +22,7 @@ setup(
         'pandas',
         'pymongo',
         'raven',
+        'redis',
         'sqlalchemy',
         'ajna_commons==0.0.1',
     ],

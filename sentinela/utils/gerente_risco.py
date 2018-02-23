@@ -14,7 +14,8 @@ from sentinela.conf import ENCODE, tmpdir
 from sentinela.models.models import (Filtro, PadraoRisco, ParametroRisco,
                                      ValorParametro)
 from sentinela.utils.csv_handlers import (muda_titulos_lista, sanitizar,
-                                          sanitizar_lista, unicode_sanitizar)
+                                          sanitizar_lista, sch_processing,
+                                          unicode_sanitizar)
 
 
 def equality(listaoriginal, nomecampo, listavalores):
@@ -111,8 +112,8 @@ class GerenteRisco():
             result = sch_processing(filename,
                                     dest_path=dest_path)
         else:
-            # No caso de CSV, retornar erro caso títulos não batam com importação
-            # anterior
+            # No caso de CSV, retornar erro caso títulos não batam
+            # com importação anterior
             # Para sch zipados e lista de csv zipados, esta verificação é mais
             # custosa, mas também precisa ser implementada
             cabecalhos_antigos = self.get_headers_base(baseid, csv_folder)
@@ -121,11 +122,13 @@ class GerenteRisco():
                 with open(filename, 'r', newline='') as file:
                     reader = csv.reader(file)
                     cabecalhos_novos = set(next(reader))
-                    diferenca_cabecalhos = cabecalhos_novos ^ cabecalhos_antigos
+                    diferenca_cabecalhos = (cabecalhos_novos ^
+                                            cabecalhos_antigos)
                     if diferenca_cabecalhos:
-                        raise ValueError('Erro na importação! ' +
-                                         'Há base anterior com cabeçalhos diferentes. ' +
-                                         str(diferenca_cabecalhos))
+                        raise ValueError(
+                            'Erro na importação! ' +
+                            'Há base anterior com cabeçalhos diferentes. ' +
+                            str(diferenca_cabecalhos))
             dest_filename = os.path.join(dest_path,
                                          os.path.basename(filename))
             shutil.copyfile(filename,
@@ -369,7 +372,7 @@ class GerenteRisco():
             with open(os.path.join(path, campo + '.csv'),
                       'r', encoding=ENCODE, newline='') as f:
                 reader = csv.reader(f)
-                cabecalho = next(reader)
+                next(reader)
                 lista = [linha for linha in reader]
         if session:
             parametro = session.query(ParametroRisco).filter(
@@ -491,8 +494,8 @@ class GerenteRisco():
                                      dtype=str)
             # print(tabela.csv, tabela.estrangeiro, tabela.primario)
             dffilho = dfpaifilho.merge(dffilho, how=how,
-                                       left_on=tabela.primario,
-                                       right_on=tabela.estrangeiro)
+                                       left_on=tabela.primario.lower(),
+                                       right_on=tabela.estrangeiro.lower())
             tabela = visao.tabelas[r]
             paifilhofilename = os.path.join(path, tabela.csv)
             if hasattr(tabela, 'type'):
@@ -503,10 +506,10 @@ class GerenteRisco():
         paifilename = os.path.join(path, csv_pai)
         dfpai = pd.read_csv(paifilename, encoding=ENCODE, dtype=str)
         dfpai = dfpai.merge(dffilho, how=how,
-                            left_on=tabela.primario,
-                            right_on=tabela.estrangeiro)
+                            left_on=tabela.primario.lower(),
+                            right_on=tabela.estrangeiro.lower())
         if visao.colunas:
-            colunas = [coluna.nome for coluna in visao.colunas]
+            colunas = [coluna.nome.lower() for coluna in visao.colunas]
             result_df = dfpai[colunas]
             result_list = [colunas]
         else:
@@ -527,12 +530,12 @@ class GerenteRisco():
             tabela: nome da coleção do MongoDB a utilizar (cria se não existe)
             path: caminho do(s) arquivo(s) csv OU
             arquivo: caminho e nome do arquivo csv
-            unique: lista de campos que terão indice único (e 
+            unique: lista de campos que terão indice único (e
             não serão reinseridos) - TODO: unique field on mongo archive
         """
         if path is None and arquivo is None:
-            raise AtributeError('Nome ou caminho do(s) arquivo(s) deve ser'
-                                'obrigatoriamente informado')
+            raise AttributeError('Nome ou caminho do(s) arquivo(s) deve ser'
+                                 'obrigatoriamente informado')
         if arquivo:
             lista_arquivos = [os.path.basename(arquivo)]
             path = os.path.dirname(arquivo)
@@ -544,7 +547,7 @@ class GerenteRisco():
             if tabela not in db.collection_names():
                 db.create_collection(tabela)
             db[tabela].insert(data_json)
-    
+
     def load_mongo(self, db, base):
         mongo_list = db[base.nome].find()
         result = [mongo_list[0].keys()]

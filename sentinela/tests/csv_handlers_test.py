@@ -8,8 +8,8 @@ from zipfile import ZipFile
 
 from sentinela.utils.csv_handlers import (ENCODE, ascii_sanitizar,
                                           muda_titulos_csv, muda_titulos_lista,
-                                          sanitizar, sanitizar_lista, sch_processing,
-                                          unicode_sanitizar)
+                                          sanitizar, sanitizar_lista,
+                                          sch_processing, unicode_sanitizar)
 
 tmpdir = tempfile.mkdtemp()
 
@@ -110,7 +110,7 @@ class TestCsvHandlers(unittest.TestCase):
         assert lista[1][0:5] == lista2[1][0:5]
 
     def test_sch_zip_viagens(self):
-        filenames = sch_processing(SCH_ZIP_VIAGENS, dest_path='.')
+        filenames = sch_processing(SCH_ZIP_VIAGENS)
         with ZipFile(SCH_ZIP_VIAGENS) as myzip:
             with myzip.open(filenames[0][1]) as zip_file:
                 zip_io = io.TextIOWrapper(
