@@ -163,7 +163,7 @@ class GerenteRisco():
         dict_filtros = defaultdict(list)
         for valor in parametrorisco.valores:
             dict_filtros[valor.tipo_filtro].append(valor.valor)
-        self._riscosativos[parametrorisco.nome_campo] = dict_filtros
+        self._riscosativos[parametrorisco.nome_campo.lower()] = dict_filtros
         if session and self._padraorisco:
             self._padraorisco.parametros.append(parametrorisco)
             session.merge(self._padraorisco)
@@ -277,21 +277,25 @@ class GerenteRisco():
         if not lista:
             raise AttributeError('Erro! ' + mensagem)
         # Aplicar pre_processers
-        logger.debug(lista[:10])
+        # logger.debug('Aplica risco. Lista ANTES do pre processamento')
+        # logger.debug(lista[:10])
         lista = self.strip_lines(lista)
         lista = self.pre_processa(lista)
-        logger.debug(lista[:10])
+        # logger.debug('Aplica risco. Lista DEPOIS do pre processamento')
+        # logger.debug(lista[:10])
         headers = set(lista[0])
         # print('Ativos:', parametros_ativos)
         if parametros_ativos:
-            riscos = set(parametros_ativos)
+            riscos = set([parametro.lower() for parametro in parametros_ativos])
         else:
-            riscos = set(list(self._riscosativos.keys()))
+            riscos = set([key.lower() for key in self._riscosativos.keys()])
         aplicar = headers & riscos   # INTERSECTION OF SETS
-        logger.debug(aplicar)
+        # logger.debug('Headers, riscos a aplicar, e intersecção: ')
+        # logger.debug(headers)
+        # logger.debug(riscos)
+        # logger.debug(aplicar)
         result = []
         result.append(lista[0])
-        # print(aplicar)
         # print(self._riscosativos)
         for campo in aplicar:
             dict_filtros = self._riscosativos.get(campo)

@@ -293,7 +293,7 @@ def risco():
         try:
             gerente.checa_depara(abase)  # Aplicar na importação???
             lista = gerente.load_csv(arquivo)
-            lista = gerente.load_mongo(db, abase)
+            # lista = gerente.load_mongo(db, abase)
             lista_risco = gerente.aplica_risco(
                 lista,
                 parametros_ativos=parametros_ativos
@@ -309,8 +309,8 @@ def risco():
         else:
             try:
                 logger.debug(
-                    ' '.join(['Aplicando junção*** ', avisao,
-                              path, True, parametros_ativos]))
+                    ' '.join(['Aplicando junção*** ', str(avisao),
+                              path, ','.join(parametros_ativos)]))
                 lista_risco = gerente.aplica_juncao(
                     avisao, path=base_csv,
                     filtrar=True,
