@@ -20,6 +20,17 @@
                 </select>
             </h4>
             <h4>Bases carregadas no Servidor</h4>
+            <div class="row">
+                <div class="col-sm-12">
+                    <p>
+                        <button class="btn btn-default btn-info" onclick="aplica_risco('{{filename}}', 'mongo')">
+                            Aplicar risco nas bases arquivadas em Banco de Dados
+                        </button>
+                        &nbsp;
+                        <br>
+                    </p>
+                </div>
+            </div>
             <div class="table">
                 <table class="inlineTable table table-striped table-bordered table-hover table-condensed table-responsive">
                     {% for filename in lista_arquivos %}

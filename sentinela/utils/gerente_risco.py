@@ -162,7 +162,7 @@ class GerenteRisco():
         """Configura os parametros de risco ativos"""
         dict_filtros = defaultdict(list)
         for valor in parametrorisco.valores:
-            dict_filtros[valor.tipo_filtro].append(valor.valor)
+            dict_filtros[valor.tipo_filtro].append(valor.valor.lower())
         self._riscosativos[parametrorisco.nome_campo.lower()] = dict_filtros
         if session and self._padraorisco:
             self._padraorisco.parametros.append(parametrorisco)

@@ -291,9 +291,11 @@ def risco():
         if len(dir_content) == 1:
             arquivo = os.path.join(base_csv, dir_content[0])
         try:
-            gerente.checa_depara(abase)  # Aplicar na importação???
-            lista = gerente.load_csv(arquivo)
-            # lista = gerente.load_mongo(db, abase)
+            gerente.checa_depara(abase)  # Aplicar somente na importação???
+            if acao == 'mongo':
+                lista = gerente.load_mongo(db, abase)
+            else:
+                lista = gerente.load_csv(arquivo)
             lista_risco = gerente.aplica_risco(
                 lista,
                 parametros_ativos=parametros_ativos
