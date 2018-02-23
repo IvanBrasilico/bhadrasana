@@ -5,7 +5,31 @@ AJNA - Bhadrasana - Visão computacional e Aprendizado de máquina na vigilânci
 
 {% block head %}
 <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-<link href="/static/css/jquery-ui.min.css" rel="stylesheet"> 
+<link href="/static/css/jquery-ui.min.css" rel="stylesheet">
+<style>
+    .table {
+        margin: auto;
+    }
+    th,
+    td {
+        text-align: center;
+        color: #333;
+    }
+    td:hover {
+        background-color: rgba(207, 207, 207, 0.692)
+    }
+    .modal {
+        text-align: center;
+        vertical-align: middle;
+        height: 100%;
+        width: 100%;
+    }
+    .modal-dialog {
+        display: inline-block;
+        text-align: left;
+        vertical-align: middle;
+    }
+</style>
 {% endblock %} 
 
 {% block scripts %}
@@ -30,16 +54,4 @@ AJNA - Bhadrasana - Visão computacional e Aprendizado de máquina na vigilânci
 
     {% block page_content %}{% endblock %}
 </div>
-<style>
-    .table {
-        margin: auto;
-    }
-    th, td {
-        text-align: center;
-        color: #333;
-    }
-    td:hover{
-        background-color:rgba(207, 207, 207, 0.692)
-    }
-</style>
 {% endblock %}
