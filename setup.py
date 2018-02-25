@@ -23,8 +23,7 @@ setup(
         'pymongo',
         'raven',
         'redis',
-        'sqlalchemy',
-        'ajna_commons==0.0.1',
+        'sqlalchemy'
     ],
     dependency_links=[
         'git+https://github.com/IvanBrasilico/ajna_commons.git#egg=ajna_commons-0.0.1'

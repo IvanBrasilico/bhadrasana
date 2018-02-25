@@ -556,12 +556,60 @@ class GerenteRisco():
                 db.create_collection(tabela)
             db[tabela].insert(data_json)
 
-    def load_mongo(self, db, base):
+    def load_mongo(self, db, base, parametros=None):
         mongo_debug = list(db[base.nome].find())
         mongo_list = db[base.nome].find()
         logger.debug(mongo_debug)
-        result = [mongo_list[0].keys()]
+        result = [[key for key in mongo_list[0].keys()]]
         for linha in mongo_list:
-            result.append(linha.values())
-        logger.debug('Result ', result)
+            result.append([value for value in linha.values()])
+        logger.debug('Result ')
+        logger.debug(result)
         return result
+
+
+    def load_juncao_mongo(self, db, visao, path=tmpdir,
+                      parametros_ativos=None):
+        numero_juncoes = len(visao.tabelas)
+        tabela = visao.tabelas[numero_juncoes - 1]
+        filhofilename = os.path.join(path, tabela.csv)
+        dffilho = pd.read_csv(filhofilename, encoding=ENCODE,
+                              dtype=str)
+        if hasattr(tabela, 'type'):
+            how = tabela.type
+        else:
+            how = 'inner'
+        # print(tabela.csv, tabela.estrangeiro, tabela.primario)
+        # A primeira precisa ser "pulada", sempre é a junção 2 tabelas
+        # de cada vez. Se numero_juncoes for >2, entrará aqui fazendo
+        # a junção em cadeia desde o último até o primeiro filho
+        for r in range(numero_juncoes - 2, 0, -1):
+            paifilhofilename = os.path.join(path, visao.tabelas[r].csv)
+            dfpaifilho = pd.read_csv(paifilhofilename, encoding=ENCODE,
+                                     dtype=str)
+            # print(tabela.csv, tabela.estrangeiro, tabela.primario)
+            dffilho = dfpaifilho.merge(dffilho, how=how,
+                                       left_on=tabela.primario.lower(),
+                                       right_on=tabela.estrangeiro.lower())
+            tabela = visao.tabelas[r]
+            paifilhofilename = os.path.join(path, tabela.csv)
+            if hasattr(tabela, 'type'):
+                how = tabela.type
+            else:
+                how = 'inner'
+        csv_pai = visao.tabelas[0].csv
+        paifilename = os.path.join(path, csv_pai)
+        dfpai = pd.read_csv(paifilename, encoding=ENCODE, dtype=str)
+        dfpai = dfpai.merge(dffilho, how=how,
+                            left_on=tabela.primario.lower(),
+                            right_on=tabela.estrangeiro.lower())
+        if visao.colunas:
+            colunas = [coluna.nome.lower() for coluna in visao.colunas]
+            result_df = dfpai[colunas]
+            result_list = [colunas]
+        else:
+            result_df = dfpai
+            result_list = [result_df.columns.tolist()]
+        result_list.extend(result_df.values.tolist())
+        # parametros_ativos=parametros_ativos)
+        return result_list

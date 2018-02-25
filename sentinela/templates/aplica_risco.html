@@ -24,7 +24,7 @@
                 <div class="col-sm-12">
                     <p>
                         <button class="btn btn-default btn-info" onclick="aplica_risco('{{filename}}', 'mongo')">
-                            Aplicar risco nas bases arquivadas em Banco de Dados
+                            Aplicar risco nas bases arquivadas
                         </button>
                         &nbsp;
                         <br>
@@ -58,7 +58,7 @@
             <h4>
                 <b>Visualização:</b>
             </h4>
-            Em bases com várias tabelas(vários arquivos csv), é preciso definir os campos a exibir e a forma de vizualização na aba "Edita
+            Em bases com várias tabelas originais (vários arquivos csv ou sch/txt), é preciso definir os campos a exibir e a forma de vizualização na aba "Editar
             Visão"
 
             <select class="form-control" name="visao" id="visao">
@@ -71,9 +71,9 @@
             <h4>
                 <b>Padrão de Risco:</b>
             </h4>
-
+            Na aba Editar Riscos é possível definir filtros para pesquisa a utilizar aqui.
             <select class="form-control" name="padrao" id="padrao">
-                <option value="0">Selecionar</option>
+                <option value="0">Exibir todos</option>
                 {% for padrao in padroes %}
                 <option value="{{ padrao.id }}" {% if padrao.id|int()==padraoid|int() %} selected="selected" {% endif %}>{{ padrao.nome }}
                 </option>
@@ -166,24 +166,28 @@
 </div>
 {% endif %} {% endblock %} {% block scripts %} {{super()}}
 <script>
-    function aplica_risco(filename, acao) {
+    function parametros_selecionados(){
         parametros_selecionados = [];
         $("input:checkbox[name=parametro]:checked").each(function () {
             parametros_selecionados.push($(this).val());
         });
+        return parametros_selecionados
+    }
+    function aplica_risco(filename, acao) {
         window.location.assign('/aplica_risco?filename=' + filename +
             '&acao=' + acao +
             '&baseid=' + $("#base").val() +
             '&padraoid=' + $("#padrao").val() +
             '&visaoid=' + $("#visao").val() +
-            '&parametros_ativos=' + parametros_selecionados
+            '&parametros_ativos=' + parametros_selecionados()
         )
     }
     $(function () {
         var submit_form = function (e) {
             window.location.assign('/risco?baseid=' + $("#base").val() +
                 '&padraoid=' + $("#padrao").val() +
-                '&visaoid=' + $("#visao").val()
+                '&visaoid=' + $("#visao").val() +
+                '&parametros_ativos=' + parametros_selecionados()
             )
         };
         $('#base').bind('change', submit_form);
@@ -194,7 +198,8 @@
         window.location.assign('/risco?baseid=' + $("#base").val() +
             '&padraoid=' + $("#padrao").val() +
             '&visaoid=' + $("#visao").val() +
-            '&parametroid=' + parametroid
+            '&parametroid=' + parametroid +
+            '&parametros_ativos=' + parametros_selecionados()
         )
     }
     $('#pd_risco td:first-child').click(function () {

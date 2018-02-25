@@ -158,10 +158,10 @@ def importa_base():
                         tempfile_name = os.path.join(tmpdir, filename)
                         file.save(tempfile_name)
                         lista_arquivos = gerente.importa_base(CSV_FOLDER,
-                                                            baseid,
-                                                            data,
-                                                            tempfile_name,
-                                                            remove=True)
+                                                              baseid,
+                                                              data,
+                                                              tempfile_name,
+                                                              remove=True)
                         # Sanitizar base já na importação para evitar
                         # processamento repetido depois
                         gerente.ativa_sanitizacao()
@@ -212,9 +212,10 @@ def risco():
             padraoid: ID do padrão de risco aplicável
             visaoid: ID do objeto Visao (junção de CSVs e seleção de campos)
             file: caminho do(s) csv(s) já processados e no diretório
-            acao: 'aplicar' - aplicao_risco no diretório file
+            acao: 'aplicar' - aplica_risco no diretório file
                   'arquivar' - adiciona diretório ao BD e apaga dir
                   'excluir' - apaga dir
+                  'mongo' - busca no banco de dados arquivados
     """
     path = request.args.get('filename')
     acao = request.args.get('acao')
@@ -235,26 +236,9 @@ def risco():
             padroes = []
             visoes = []
     parametros = []
-    padrao = dbsession.query(PadraoRisco).filter(
-        PadraoRisco.id == padraoid
-    ).first()
-    if padrao is None:
-        if path and acao == 'aplicar':
-            flash('É obrigatório informar Padrão de Risco a ser aplicado!')
-    else:
-        parametros = padrao.parametros
-    parametro_id = request.args.get('parametroid')
-    valores = []
-    if parametro_id:
-        paramrisco = dbsession.query(ParametroRisco).filter(
-            ParametroRisco.id == parametro_id
-        ).first()
-        if paramrisco:
-            valores = paramrisco.valores
     if path:
         base_csv = os.path.join(CSV_FOLDER, baseid, path)
-    lista_risco = []
-    csv_salvo = ''
+
     if acao == 'arquivar' or acao == 'excluir':
         try:
             if abase and base_csv:
@@ -277,64 +261,67 @@ def risco():
                     lista_arquivos.append(ano + '/' + mes + '/' + dia)
     except FileNotFoundError:
         pass
-    if acao == 'mongo':
-        path = '-'
-    if not path or not padrao:
-        return render_template('aplica_risco.html',
-                               lista_arquivos=lista_arquivos,
-                               bases=bases,
-                               padroes=padroes,
-                               visoes=visoes,
-                               baseid=baseid,
-                               valores=valores,
-                               padraoid=padraoid,
-                               visaoid=visaoid,
-                               parametros=parametros,
-                               parametros_ativos=parametros_ativos)
-    # Todas as condições para aplicar_risco foram cumpridas
+    padrao = dbsession.query(PadraoRisco).filter(
+        PadraoRisco.id == padraoid
+    ).first()
+    if padrao is not None:
+        parametros = padrao.parametros
+    parametro_id = request.args.get('parametroid')
+    valores = []
+    if parametro_id:
+        paramrisco = dbsession.query(ParametroRisco).filter(
+            ParametroRisco.id == parametro_id
+        ).first()
+        if paramrisco:
+            valores = paramrisco.valores
+
     gerente = GerenteRisco()
-    gerente.set_padraorisco(padrao)
+    lista_risco = []
+    csv_salvo = ''
     if acao == 'mongo':
-        lista = gerente.load_mongo(db, abase)
-        lista_risco = gerente.aplica_risco(
-                lista,
-                parametros_ativos=parametros_ativos
-        )
-    elif visaoid == '0':
-        dir_content = os.listdir(base_csv)
-        arquivo = ''
-        if len(dir_content) == 1:
-            arquivo = os.path.join(base_csv, dir_content[0])
-        try:
-            # gerente.checa_depara(abase)  # Aplicar somente na importação???
-            lista = gerente.load_csv(arquivo)
-            lista_risco = gerente.aplica_risco(
-                lista,
-                parametros_ativos=parametros_ativos
-            )
-        except Exception as err:
-            logger.error(err, exc_info=True)
-            flash(err)
+        lista_risco = gerente.load_mongo(db, abase,
+                                         parametros_ativos)
     else:
-        avisao = dbsession.query(Visao).filter(
-            Visao.id == visaoid).first()
-        if avisao is None:
-            flash('Visão não encontrada!')
-        else:
-            try:
-                logger.debug(
-                    ' '.join(['Aplicando junção*** ', str(avisao),
-                              path, ','.join(parametros_ativos)]))
-                lista_risco = gerente.aplica_juncao(
-                    avisao, path=base_csv,
-                    filtrar=True,
-                    parametros_ativos=parametros_ativos
-                )
-            except Exception as err:
-                logger.error(err, exc_info=True)
-                flash('Erro ao aplicar junção! Detalhes no log da aplicação.')
-                flash(type(err))
-                flash(err)
+        if path:
+            if visaoid == '0':
+                dir_content = os.listdir(base_csv)
+                arquivo = ''
+                if len(dir_content) == 1:
+                    arquivo = os.path.join(base_csv, dir_content[0])
+                try:
+                    # Aplicar somente na importação???
+                    # gerente.checa_depara(abase)
+                    lista_risco = gerente.load_csv(arquivo)
+                    if padrao:
+                        gerente.set_padraorisco(padrao)
+                        lista_risco = gerente.aplica_risco(
+                            lista_risco,
+                            parametros_ativos=parametros_ativos
+                        )
+                except Exception as err:
+                    logger.error(err, exc_info=True)
+                    flash(err)
+            else:
+                avisao = dbsession.query(Visao).filter(
+                    Visao.id == visaoid).first()
+                if avisao is None:
+                    flash('Visão não encontrada!')
+                else:
+                    try:
+                        logger.debug(
+                            ' '.join(['Aplicando junção*** ', str(avisao),
+                                      path, ','.join(parametros_ativos)]))
+                        lista_risco = gerente.aplica_juncao(
+                            avisao, path=base_csv,
+                            filtrar=True,
+                            parametros_ativos=parametros_ativos
+                        )
+                    except Exception as err:
+                        logger.error(err, exc_info=True)
+                        flash('Erro ao aplicar junção! ' +
+                              'Detalhes no log da aplicação.')
+                        flash(type(err))
+                        flash(err)
 
     if lista_risco:  # Salvar resultado
         static_path = app.config.get('STATIC_FOLDER', 'static')
@@ -350,6 +337,7 @@ def risco():
                            visaoid=visaoid,
                            parametros=parametros,
                            parametros_ativos=parametros_ativos,
+                           valores=valores,
                            filename=path,
                            csv_salvo=os.path.basename(csv_salvo),
                            lista_risco=lista_risco)
