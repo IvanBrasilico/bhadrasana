@@ -144,7 +144,7 @@ def importa_base():
                 filename = None
             else:
                 if baseid is None or baseid == 0:
-                    flash('Selecionar base original e depois clicar em submeter!')
+                    flash('Selecionar base original e clicar em submeter!')
                 else:  # Validado - tentar upload e procesamento
                     abase = dbsession.query(BaseOrigem).filter(
                         BaseOrigem.id == baseid).first()
@@ -348,9 +348,10 @@ def risco():
 def edita_risco():
     padraoid = request.args.get('padraoid')
     padroes = dbsession.query(PadraoRisco).order_by(PadraoRisco.nome).all()
+    bases =  dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
     parametros = []
     headers = []
-    basesid = None
+    basesid = []
     if padraoid:
         padrao = dbsession.query(PadraoRisco).filter(
             PadraoRisco.id == padraoid
@@ -392,6 +393,8 @@ def edita_risco():
     return render_template('edita_risco.html',
                            padraoid=padraoid,
                            padroes=padroes,
+                           bases=bases,
+                           basesid=basesid,
                            riscoid=riscoid,
                            parametros=parametros,
                            lista_autocomplete=headers,

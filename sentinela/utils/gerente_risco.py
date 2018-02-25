@@ -115,8 +115,8 @@ class GerenteRisco():
             else:
                 # No caso de CSV, retornar erro caso títulos não batam
                 # com importação anterior
-                # Para sch zipados e lista de csv zipados, esta verificação é mais
-                # custosa, mas também precisa ser implementada
+                # Para sch zipados e lista de csv zipados, esta verificação
+                # é mais custosa, mas também precisa ser implementada
                 cabecalhos_antigos = self.get_headers_base(baseid, csv_folder)
                 diferenca_cabecalhos = set()
                 if cabecalhos_antigos:
@@ -127,11 +127,11 @@ class GerenteRisco():
                                                 cabecalhos_antigos)
                         if diferenca_cabecalhos:
                             raise ValueError(
-                                'Erro na importação! ' +
-                                'Há base anterior com cabeçalhos diferentes. ' +
+                                'Erro na importação! Há base anterior' +
+                                ' com cabeçalhos diferentes: ' +
                                 str(diferenca_cabecalhos))
                 dest_filename = os.path.join(dest_path,
-                                            os.path.basename(filename))
+                                             os.path.basename(filename))
                 shutil.copyfile(filename,
                                 os.path.join(dest_filename))
                 result = [(dest_filename, 'single csv')]
@@ -290,7 +290,8 @@ class GerenteRisco():
         headers = set(lista[0])
         # print('Ativos:', parametros_ativos)
         if parametros_ativos:
-            riscos = set([parametro.lower() for parametro in parametros_ativos])
+            riscos = set([parametro.lower()
+                          for parametro in parametros_ativos])
         else:
             riscos = set([key.lower() for key in self._riscosativos.keys()])
         aplicar = headers & riscos   # INTERSECTION OF SETS
@@ -567,9 +568,8 @@ class GerenteRisco():
         logger.debug(result)
         return result
 
-
     def load_juncao_mongo(self, db, visao, path=tmpdir,
-                      parametros_ativos=None):
+                          parametros_ativos=None):
         numero_juncoes = len(visao.tabelas)
         tabela = visao.tabelas[numero_juncoes - 1]
         filhofilename = os.path.join(path, tabela.csv)
