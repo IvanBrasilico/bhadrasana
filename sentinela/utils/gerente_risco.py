@@ -559,24 +559,31 @@ class GerenteRisco():
 
     def load_mongo(self, db, base, parametros_ativos=None):
         logger.debug(parametros_ativos)
-        filtro = {}
         if parametros_ativos:
             riscos = set([parametro.lower()
                           for parametro in parametros_ativos])
         else:
             riscos = set([key.lower() for key in self._riscosativos.keys()])
+        listadefiltros = []
         for campo in riscos:
             dict_filtros = self._riscosativos.get(campo)
             #  TODO: $or operator, filter operator
             for tipo_filtro, lista_filtros in dict_filtros.items():
-                filtro[campo] = {'$in': lista_filtros}
+                filtro = {campo: {'$in': lista_filtros}}
+                listadefiltros.append(filtro)
+        if listadefiltros:
+            filtro = {'$or': listadefiltros}
+        else:
+            filtro = {}
         logger.debug(filtro)
         mongo_debug = list(db[base.nome].find(filtro))
         mongo_list = db[base.nome].find(filtro)
         logger.debug(mongo_debug)
-        result = [[key for key in mongo_list[0].keys()]]
-        for linha in mongo_list:
-            result.append([value for value in linha.values()])
+        result = []
+        if mongo_list:
+            result = [[key for key in mongo_list[0].keys()]]
+            for linha in mongo_list:
+                result.append([value for value in linha.values()])
         logger.debug('Result ')
         logger.debug(result)
         return result
