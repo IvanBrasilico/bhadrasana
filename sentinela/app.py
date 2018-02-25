@@ -250,6 +250,10 @@ def risco():
             else:
                 flash('Informe Base Original e arquivo!')
         except Exception as err:
+            logger.error(err, exc_info=True)
+            flash('Erro ao arquivar base! ' +
+                    'Detalhes no log da aplicação.')
+            flash(type(err))
             flash(err)
         return redirect(url_for('risco', baseid=baseid))
     lista_arquivos = []
@@ -284,6 +288,8 @@ def risco():
         lista_risco = gerente.load_mongo(db, abase,
                                          parametros_ativos)
     else:
+        if padrao:
+            gerente.set_padraorisco(padrao)
         if path:
             if visaoid == '0':
                 dir_content = os.listdir(base_csv)
@@ -295,7 +301,6 @@ def risco():
                     # gerente.checa_depara(abase)
                     lista_risco = gerente.load_csv(arquivo)
                     if padrao:
-                        gerente.set_padraorisco(padrao)
                         lista_risco = gerente.aplica_risco(
                             lista_risco,
                             parametros_ativos=parametros_ativos

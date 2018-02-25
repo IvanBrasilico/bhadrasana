@@ -551,11 +551,11 @@ class GerenteRisco():
         else:
             lista_arquivos = os.listdir(path)
         for arquivo in lista_arquivos:
-            df = pd.read_csv(os.path.join(path, arquivo))
+            df = pd.read_csv(os.path.join(path, arquivo), encoding=ENCODE)
             data_json = json.loads(df.to_json(orient='records'))
-            if tabela not in db.collection_names():
-                db.create_collection(tabela)
-            db[tabela].insert(data_json)
+            if arquivo not in db.collection_names():
+                db.create_collection(arquivo)
+            db[arquivo].insert(data_json)
 
     def load_mongo(self, db, base, parametros_ativos=None):
         logger.debug(parametros_ativos)
