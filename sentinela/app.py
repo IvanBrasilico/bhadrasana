@@ -279,6 +279,8 @@ def risco():
     lista_risco = []
     csv_salvo = ''
     if acao == 'mongo':
+        if padrao:
+            gerente.set_padraorisco(padrao)
         lista_risco = gerente.load_mongo(db, abase,
                                          parametros_ativos)
     else:
@@ -348,7 +350,7 @@ def risco():
 def edita_risco():
     padraoid = request.args.get('padraoid')
     padroes = dbsession.query(PadraoRisco).order_by(PadraoRisco.nome).all()
-    bases =  dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
+    bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
     parametros = []
     headers = []
     basesid = []

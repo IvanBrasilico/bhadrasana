@@ -557,9 +557,22 @@ class GerenteRisco():
                 db.create_collection(tabela)
             db[tabela].insert(data_json)
 
-    def load_mongo(self, db, base, parametros=None):
-        mongo_debug = list(db[base.nome].find())
-        mongo_list = db[base.nome].find()
+    def load_mongo(self, db, base, parametros_ativos=None):
+        logger.debug(parametros_ativos)
+        filtro = {}
+        if parametros_ativos:
+            riscos = set([parametro.lower()
+                          for parametro in parametros_ativos])
+        else:
+            riscos = set([key.lower() for key in self._riscosativos.keys()])
+        for campo in riscos:
+            dict_filtros = self._riscosativos.get(campo)
+            #  TODO: $or operator, filter operator
+            for tipo_filtro, lista_filtros in dict_filtros.items():
+                filtro[campo] = {'$in': lista_filtros}
+        logger.debug(filtro)
+        mongo_debug = list(db[base.nome].find(filtro))
+        mongo_list = db[base.nome].find(filtro)
         logger.debug(mongo_debug)
         result = [[key for key in mongo_list[0].keys()]]
         for linha in mongo_list:
@@ -570,6 +583,7 @@ class GerenteRisco():
 
     def load_juncao_mongo(self, db, visao, path=tmpdir,
                           parametros_ativos=None):
+        # TODO: Fazer juncao_mongo
         numero_juncoes = len(visao.tabelas)
         tabela = visao.tabelas[numero_juncoes - 1]
         filhofilename = os.path.join(path, tabela.csv)
