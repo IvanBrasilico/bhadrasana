@@ -35,4 +35,4 @@ db['Conhecimento.csv'].aggregate([
         "container": { '$push': { 'dep_id': "$_id", 'dep_name': "$dep_name" } } 
       } 
   } 
-]);
+])

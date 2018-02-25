@@ -198,7 +198,7 @@ def arquiva_base_csv(baseorigem, base_csv, to_mongo=True):
     # de preferência gerados pela própria aplicação
     logger.debug(base_csv)
     if to_mongo:
-        GerenteRisco.csv_to_mongo(db, baseorigem.nome, base_csv)
+        GerenteRisco.csv_to_mongo(db, baseorigem, base_csv)
     shutil.rmtree(base_csv)
 
 

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 datarequisicao,categoriacarga,portodestinofinal,paisportoorigem,paisdescarregamento,cnpj_cpfconsignatario,datafinalconsulta,periodo,cnpj_cpfembarcador,datainicioconsulta,_id,portoorigem,paiscarregamento,portoatracacao,nomeconsulta,recintoaduaneiro,embarcacao,entregaexterior,operadorlogico,portodescarregamento,consignatarioestrangeiro,posicaoncm,paisdestinofinal,usuario,cargaordem,portocarregamento,bloqueiohistorico,horarequisicao
 21/02/2018,importada,,,,,15/08/2017,atracacao,,01/08/2017,5a92e882c873cf6ca78b9285,,,brssz,atracado20170801a15,,,,,,,,,25052288840,,,,14:28:22
 5a92e882c873cf6ca78b9286,deham,71705141159780,hamburg
@@ -68287,3 +68288,6 @@ datarequisicao,categoriacarga,portodestinofinal,paisportoorigem,paisdescarregame
 ,5a92e9a7c873cf6d8c8e494b,,,,,,,,,,,,,,,,,23/08/2017,,,,,,,agencia maritima cargonave (sp) - ltda,,12/08/2017,,,,,,,,,,,stentor (ex:breeze island),,8704068000163,9590785,21/07/2017,,,,23/07/2017,,,,17000255003
 ,5a92e9a7c873cf6d8c8e494c,,,,,,,,,,,,,,,,,24/08/2017,,,,,,,agencia maritima orion ltda,,10/08/2017,,,,,,,,,,,inspiration lake,,75185389000943,9727376,17/08/2017,,,,19/08/2017,,,,17000258444
 ,5a92e9a7c873cf6d8c8e494d,,,,,,,,,,,,,,,,,26/08/2017,,,,,,,agencia maritima orion ltda,,10/08/2017,,,,,,,,,,,log-in pantanal,,75185389000943,9351799,10/08/2017,,,,11/08/2017,,,,17000288432
+=======
+conhecimento,container,cpfcnpjconsignatario,descricaomercadoria,identificacaoembarcador
+>>>>>>> 2aad1a485bd5384c6cbb850c057ae5d11d9ee3e5
