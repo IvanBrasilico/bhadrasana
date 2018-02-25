@@ -531,7 +531,7 @@ class GerenteRisco():
         return result_list
 
     @classmethod
-    def csv_to_mongo(cls, db, tabela, path=None, arquivo=None, unique=[]):
+    def csv_to_mongo(cls, db, base, path=None, arquivo=None, unique=[]):
         """Reads a csv file and inserts all contents into a MongoDB collection
         Creates collection if it not exists
         Args:
@@ -553,7 +553,7 @@ class GerenteRisco():
         for arquivo in lista_arquivos:
             df = pd.read_csv(os.path.join(path, arquivo), encoding=ENCODE)
             data_json = json.loads(df.to_json(orient='records'))
-            collection_name = tabela + '.' + arquivo[:-4]
+            collection_name = base.nome + '.' + arquivo[:-4]
             if collection_name not in db.collection_names():
                 db.create_collection(collection_name)
             db[collection_name].insert(data_json)
