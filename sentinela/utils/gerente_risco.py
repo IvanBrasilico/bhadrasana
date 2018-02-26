@@ -266,6 +266,8 @@ class GerenteRisco():
             do parâmetro de risco cadastrado.
             OU
             arquivo (str): Arquivo csv de onde carregar a lista a ser filtrada
+            parametros_ativos: subconjunto do parâmetros de risco a serem
+            aplicados 
 
         Returns:
             lista contendo os campos filtrados. 1ª linha com nomes de campo
@@ -484,6 +486,23 @@ class GerenteRisco():
 
     def aplica_juncao(self, visao, path=tmpdir, filtrar=False,
                       parametros_ativos=None):
+        """Lê, um a um, os csvs configurados em visao.tabelas. Carrega em
+        DataFrames e faz merge destes, 
+
+        Args:
+            visao: objeto de Banco de Dados que espeficica as configurações
+            (metadados) da base
+            path: caminho da base de arquivos csv
+            filtrar: aplica_risco após merge dos DataFrames
+            parametros_ativos: subconjunto do parâmetros de risco a serem
+            aplicados 
+
+        Returns:
+            lista contendo os campos filtrados. 1ª linha com nomes de campo
+
+        Obs: quando a base for constituída de arquivo único,
+         utilizar :func:`aplica_risco`
+        """
         numero_juncoes = len(visao.tabelas)
         tabela = visao.tabelas[numero_juncoes - 1]
         filhofilename = os.path.join(path, tabela.csv)
@@ -498,19 +517,18 @@ class GerenteRisco():
         # de cada vez. Se numero_juncoes for >2, entrará aqui fazendo
         # a junção em cadeia desde o último até o primeiro filho
         for r in range(numero_juncoes - 2, 0, -1):
-            paifilhofilename = os.path.join(path, visao.tabelas[r].csv)
-            dfpaifilho = pd.read_csv(paifilhofilename, encoding=ENCODE,
-                                     dtype=str)
-            # print(tabela.csv, tabela.estrangeiro, tabela.primario)
-            dffilho = dfpaifilho.merge(dffilho, how=how,
-                                       left_on=tabela.primario.lower(),
-                                       right_on=tabela.estrangeiro.lower())
             tabela = visao.tabelas[r]
             paifilhofilename = os.path.join(path, tabela.csv)
             if hasattr(tabela, 'type'):
                 how = tabela.type
             else:
                 how = 'inner'
+            dfpaifilho = pd.read_csv(paifilhofilename, encoding=ENCODE,
+                                     dtype=str)
+            # print(tabela.csv, tabela.estrangeiro, tabela.primario)
+            dffilho = dfpaifilho.merge(dffilho, how=how,
+                                       left_on=tabela.primario.lower(),
+                                       right_on=tabela.estrangeiro.lower())
         csv_pai = visao.tabelas[0].csv
         paifilename = os.path.join(path, csv_pai)
         dfpai = pd.read_csv(paifilename, encoding=ENCODE, dtype=str)
@@ -536,7 +554,7 @@ class GerenteRisco():
         Creates collection if it not exists
         Args:
             db: MongoDBClient connection with database setted
-            tabela: nome da coleção do MongoDB a utilizar (cria se não existe)
+            base: Base Origem
             path: caminho do(s) arquivo(s) csv OU
             arquivo: caminho e nome do arquivo csv
             unique: lista de campos que terão indice único (e
@@ -553,18 +571,28 @@ class GerenteRisco():
         for arquivo in lista_arquivos:
             df = pd.read_csv(os.path.join(path, arquivo), encoding=ENCODE)
             data_json = json.loads(df.to_json(orient='records'))
-<<<<<<< HEAD
-            if arquivo not in db.collection_names():
-                db.create_collection(arquivo)
-            db[arquivo].insert(data_json)
-=======
             collection_name = base.nome + '.' + arquivo[:-4]
             if collection_name not in db.collection_names():
                 db.create_collection(collection_name)
             db[collection_name].insert(data_json)
->>>>>>> 2aad1a485bd5384c6cbb850c057ae5d11d9ee3e5
 
-    def load_mongo(self, db, base, parametros_ativos=None):
+    def load_mongo(self, db, base=None, collection_name=None,
+                   parametros_ativos=None):
+        """Recupera da base mongodb em um lista
+        Args:
+            db: MongoDBClient connection with database setted
+            base: Base Origem OU
+            collection_name: nome da coleção do MongoDB
+            parametros_ativos: subconjunto do parâmetros de risco a serem
+            aplicados 
+
+        Returns:
+            lista contendo os campos filtrados. 1ª linha com nomes de campo
+
+        """
+        if base is None and collection_name is None:
+            raise AttributeError('Base Origem ou collection name devem ser'
+                                 'obrigatoriamente informado')
         logger.debug(parametros_ativos)
         if parametros_ativos:
             riscos = set([parametro.lower()
@@ -583,51 +611,66 @@ class GerenteRisco():
         else:
             filtro = {}
         logger.debug(filtro)
-        mongo_debug = list(db[base.nome].find(filtro))
-        mongo_list = db[base.nome].find(filtro)
-        logger.debug(mongo_debug)
+        print(filtro)
+        if collection_name:
+            list_collections = [collection_name]
+        else:
+            list_collections = [name for name in
+                                db.collection_names() if base.nome in name]
         result = []
-        if mongo_list:
-            result = [[key for key in mongo_list[0].keys()]]
+        for collection_name in list_collections:
+            mongo_list = db[collection_name].find(filtro)
+            if mongo_list.count() == 0:
+                filtro = {}
+                mongo_list = db[collection_name].find(filtro)
+            try:
+                result = [[key for key in mongo_list[0].keys()]]
+            except IndexError as err:
+                logger.error('load_mongo retornou vazio. Collection name:')
+                logger.error(collection_name)
+                logger.error(filtro)
+                logger.error(err, exc_info=True)
+                print('************', collection_name, filtro, mongo_list.count())
+                return []
             for linha in mongo_list:
                 result.append([value for value in linha.values()])
         logger.debug('Result ')
         logger.debug(result)
         return result
 
-    def load_juncao_mongo(self, db, visao, path=tmpdir,
-                          parametros_ativos=None):
-        # TODO: Fazer juncao_mongo
+    def aplica_juncao_mongo(self, db, visao,
+                          parametros_ativos=None,
+                          filtrar=False):
+        base = visao.base
         numero_juncoes = len(visao.tabelas)
         tabela = visao.tabelas[numero_juncoes - 1]
-        filhofilename = os.path.join(path, tabela.csv)
-        dffilho = pd.read_csv(filhofilename, encoding=ENCODE,
-                              dtype=str)
+        filhoname = base.nome + '.' + tabela.csv[:-4]
+        print(filhoname)
+        lista = self.load_mongo(db, collection_name=filhoname)
+        dffilho = pd.DataFrame(lista[1:], columns=lista[0])
         if hasattr(tabela, 'type'):
             how = tabela.type
         else:
             how = 'inner'
-        # print(tabela.csv, tabela.estrangeiro, tabela.primario)
         # A primeira precisa ser "pulada", sempre é a junção 2 tabelas
         # de cada vez. Se numero_juncoes for >2, entrará aqui fazendo
         # a junção em cadeia desde o último até o primeiro filho
         for r in range(numero_juncoes - 2, 0, -1):
-            paifilhofilename = os.path.join(path, visao.tabelas[r].csv)
-            dfpaifilho = pd.read_csv(paifilhofilename, encoding=ENCODE,
-                                     dtype=str)
-            # print(tabela.csv, tabela.estrangeiro, tabela.primario)
-            dffilho = dfpaifilho.merge(dffilho, how=how,
-                                       left_on=tabela.primario.lower(),
-                                       right_on=tabela.estrangeiro.lower())
             tabela = visao.tabelas[r]
-            paifilhofilename = os.path.join(path, tabela.csv)
+            paifilhoname = base.nome + '.' + tabela.csv[:-4]
             if hasattr(tabela, 'type'):
                 how = tabela.type
             else:
                 how = 'inner'
-        csv_pai = visao.tabelas[0].csv
-        paifilename = os.path.join(path, csv_pai)
-        dfpai = pd.read_csv(paifilename, encoding=ENCODE, dtype=str)
+            lista = self.load_mongo(db, collection_name=paifilhoname)
+            dfpaifilho = pd.DataFrame(lista[1:], columns=lista[0])
+            # print(tabela.csv, tabela.estrangeiro, tabela.primario)
+            dffilho = dfpaifilho.merge(dffilho, how=how,
+                                       left_on=tabela.primario.lower(),
+                                       right_on=tabela.estrangeiro.lower())
+        painame = base.nome + '.' + visao.tabelas[0].csv[:-4]
+        lista = self.load_mongo(db, collection_name=painame)
+        dfpai = pd.DataFrame(lista[1:], columns=lista[0])
         dfpai = dfpai.merge(dffilho, how=how,
                             left_on=tabela.primario.lower(),
                             right_on=tabela.estrangeiro.lower())
@@ -639,5 +682,7 @@ class GerenteRisco():
             result_df = dfpai
             result_list = [result_df.columns.tolist()]
         result_list.extend(result_df.values.tolist())
-        # parametros_ativos=parametros_ativos)
+        if filtrar:
+            return self.aplica_risco(result_list,
+                                     parametros_ativos=parametros_ativos)
         return result_list
