@@ -252,7 +252,7 @@ def risco():
         except Exception as err:
             logger.error(err, exc_info=True)
             flash('Erro ao arquivar base! ' +
-                    'Detalhes no log da aplicação.')
+                  'Detalhes no log da aplicação.')
             flash(type(err))
             flash(err)
         return redirect(url_for('risco', baseid=baseid))

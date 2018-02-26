@@ -267,7 +267,7 @@ class GerenteRisco():
             OU
             arquivo (str): Arquivo csv de onde carregar a lista a ser filtrada
             parametros_ativos: subconjunto do parâmetros de risco a serem
-            aplicados 
+            aplicados
 
         Returns:
             lista contendo os campos filtrados. 1ª linha com nomes de campo
@@ -487,7 +487,7 @@ class GerenteRisco():
     def aplica_juncao(self, visao, path=tmpdir, filtrar=False,
                       parametros_ativos=None):
         """Lê, um a um, os csvs configurados em visao.tabelas. Carrega em
-        DataFrames e faz merge destes, 
+        DataFrames e faz merge destes.
 
         Args:
             visao: objeto de Banco de Dados que espeficica as configurações
@@ -495,7 +495,7 @@ class GerenteRisco():
             path: caminho da base de arquivos csv
             filtrar: aplica_risco após merge dos DataFrames
             parametros_ativos: subconjunto do parâmetros de risco a serem
-            aplicados 
+            aplicados
 
         Returns:
             lista contendo os campos filtrados. 1ª linha com nomes de campo
@@ -584,7 +584,7 @@ class GerenteRisco():
             base: Base Origem OU
             collection_name: nome da coleção do MongoDB
             parametros_ativos: subconjunto do parâmetros de risco a serem
-            aplicados 
+            aplicados
 
         Returns:
             lista contendo os campos filtrados. 1ª linha com nomes de campo
@@ -628,9 +628,7 @@ class GerenteRisco():
             except IndexError as err:
                 logger.error('load_mongo retornou vazio. Collection name:')
                 logger.error(collection_name)
-                logger.error(filtro)
                 logger.error(err, exc_info=True)
-                print('************', collection_name, filtro, mongo_list.count())
                 return []
             for linha in mongo_list:
                 result.append([value for value in linha.values()])
@@ -639,8 +637,8 @@ class GerenteRisco():
         return result
 
     def aplica_juncao_mongo(self, db, visao,
-                          parametros_ativos=None,
-                          filtrar=False):
+                            parametros_ativos=None,
+                            filtrar=False):
         # TODO: Usar métodos próprios do MongoDB ao invés de DataFrames para
         # trazer dados já filtrados e melhorar desempenho
         base = visao.base
