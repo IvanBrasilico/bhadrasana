@@ -641,6 +641,8 @@ class GerenteRisco():
     def aplica_juncao_mongo(self, db, visao,
                           parametros_ativos=None,
                           filtrar=False):
+        # TODO: Usar métodos próprios do MongoDB ao invés de DataFrames para
+        # trazer dados já filtrados e melhorar desempenho
         base = visao.base
         numero_juncoes = len(visao.tabelas)
         tabela = visao.tabelas[numero_juncoes - 1]

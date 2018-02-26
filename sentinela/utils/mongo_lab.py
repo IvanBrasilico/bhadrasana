@@ -1,3 +1,9 @@
+"""
+Arquivo temporário para testes exploratórios 
+com novos métodos MongoDB
+"""
+
+
 from pymongo import MongoClient
 import pandas as pd
 
