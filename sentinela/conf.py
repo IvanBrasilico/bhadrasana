@@ -2,7 +2,7 @@ import os
 import pickle
 import tempfile
 
-CSV_DOWNLOAD = 'sentinela/files/'
+CSV_DOWNLOAD = 'sentinela/CSV/'
 APP_PATH = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(APP_PATH, 'files')
 CSV_FOLDER = os.path.join(APP_PATH, 'CSV')

@@ -147,7 +147,7 @@ class FlaskTestCase(unittest.TestCase):
         print(data)
         assert b'Redirecting...' in data
 
-    def test_x_aplica_risco(self):
+    def test_aplica_risco(self):
         if self.http_server is not None:
             rv = self.app.get('/aplica_risco?&baseid=4&padraoid=4&visaoid=0&\
                                &parametroid=24&parametros_ativos=comida',
@@ -156,6 +156,7 @@ class FlaskTestCase(unittest.TestCase):
             rv = self.app.get('/aplica_risco?&baseid=4&padraoid=4&visaoid=0&\
                                &parametroid=24&parametros_ativos=comida')
         data = self.data(rv)
+        assert b'Lista de Riscos da Base None' in data 
 
     def _post(self, url, data, follow_redirects=True):
         if self.http_server is not None:
@@ -193,21 +194,21 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting..' in data
 
-    """def test_exportacsv(self):
+    def test_exportacsv(self):
         if self.http_server is not None:
-            rv = self.app.get('/exporta_csv?padraoid=1&riscoid=1',
+            rv = self.app.get('/exporta_csv?padraoid=4&riscoid=26',
                               params=dict(csrf_token=self.csrf_token))
         else:
-            rv = self.app.get('/exporta_csv?padraoid=1&riscoid=1')
+            rv = self.app.get('/exporta_csv?padraoid=4&riscoid=26')
         data = self.data(rv)
-        assert b'Redirecting...' in data"""
+        assert b'Redirecting...' in data
 
     def _paramid(self, nome):
         parametro = app.dbsession.query(app.ParametroRisco).filter(
             app.ParametroRisco.nome_campo == nome).first()
         return parametro.id
 
-    def test_excluiparametro(self):
+    def test_zexcluiparametro(self):
         param = self._paramid('comida')
         if self.http_server is not None:
             rv = self.app.get('/exclui_parametro?\
@@ -220,7 +221,7 @@ class FlaskTestCase(unittest.TestCase):
         print(data)
         assert b'Redirecting...' in data
 
-    def _valorid(self, nome):
+    """def _valorid(self, nome):
         valor = app.dbsession.query(app.ValorParametro).filter(
             app.ValorParametro.valor == nome).first()
         return valor.id
@@ -235,7 +236,7 @@ class FlaskTestCase(unittest.TestCase):
             rv = self.app.get('/exclui_valor?padraoid=4&\
                               &riscoid=26&valorid=' + str(valor))
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        assert b'Redirecting...' in data"""
 
     def test_editadepara(self):
         if self.http_server is not None:
