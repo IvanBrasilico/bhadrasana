@@ -282,39 +282,44 @@ def risco():
     gerente = GerenteRisco()
     lista_risco = []
     csv_salvo = ''
-    if acao == 'mongo':
-        if padrao:
-            gerente.set_padraorisco(padrao)
-        lista_risco = gerente.load_mongo(db, abase,
-                                         parametros_ativos)
-    else:
-        if padrao:
-            gerente.set_padraorisco(padrao)
-        if path:
+    try:
+        if acao == 'mongo':
+            if padrao:
+                gerente.set_padraorisco(padrao)
             if visaoid == '0':
-                dir_content = os.listdir(base_csv)
-                arquivo = ''
-                if len(dir_content) == 1:
-                    arquivo = os.path.join(base_csv, dir_content[0])
-                try:
-                    # Aplicar somente na importação???
-                    # gerente.checa_depara(abase)
-                    lista_risco = gerente.load_csv(arquivo)
-                    if padrao:
-                        lista_risco = gerente.aplica_risco(
-                            lista_risco,
-                            parametros_ativos=parametros_ativos
-                        )
-                except Exception as err:
-                    logger.error(err, exc_info=True)
-                    flash(err)
+                lista_risco = gerente.load_mongo(db, abase,
+                                                 parametros_ativos)
             else:
                 avisao = dbsession.query(Visao).filter(
                     Visao.id == visaoid).first()
                 if avisao is None:
                     flash('Visão não encontrada!')
                 else:
-                    try:
+                    lista_risco = gerente.aplica_juncao_mongo(
+                        db, avisao, filtrar=True,
+                        parametros_ativos=parametros_ativos)
+        else:
+            if padrao:
+                gerente.set_padraorisco(padrao)
+            if path:
+                if visaoid == '0':
+                    dir_content = os.listdir(base_csv)
+                    arquivo = ''
+                    if len(dir_content) == 1:
+                        arquivo = os.path.join(base_csv, dir_content[0])
+                        # Aplicar somente na importação???
+                        # gerente.checa_depara(abase)
+                        lista_risco = gerente.load_csv(arquivo)
+                        if padrao:
+                            lista_risco = gerente.aplica_risco(
+                                lista_risco,
+                                parametros_ativos=parametros_ativos)
+                else:
+                    avisao = dbsession.query(Visao).filter(
+                        Visao.id == visaoid).first()
+                    if avisao is None:
+                        flash('Visão não encontrada!')
+                    else:
                         logger.debug(
                             ' '.join(['Aplicando junção*** ', str(avisao),
                                       path, ','.join(parametros_ativos)]))
@@ -323,17 +328,18 @@ def risco():
                             filtrar=True,
                             parametros_ativos=parametros_ativos
                         )
-                    except Exception as err:
-                        logger.error(err, exc_info=True)
-                        flash('Erro ao aplicar junção! ' +
-                              'Detalhes no log da aplicação.')
-                        flash(type(err))
-                        flash(err)
+    except Exception as err:
+        logger.error(err, exc_info=True)
+        flash('Erro ao aplicar risco! ' +
+              'Detalhes no log da aplicação.')
+        flash(type(err))
+        flash(err)
 
     if lista_risco:  # Salvar resultado
         static_path = app.config.get('STATIC_FOLDER', 'static')
         csv_salvo = os.path.join(APP_PATH, static_path, 'baixar.csv')
         gerente.save_csv(lista_risco, csv_salvo)
+
     return render_template('aplica_risco.html',
                            lista_arquivos=lista_arquivos,
                            bases=bases,
