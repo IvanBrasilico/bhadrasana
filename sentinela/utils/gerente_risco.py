@@ -145,9 +145,9 @@ class GerenteRisco():
 
     def set_padraorisco(self, padraorisco):
         """Vincula o Gerente a um objeto padraoriscoOriginal
-        Atenção: TODOS os parâmetros de risco ativos no Gerente serão
+        Atenção: **Todos** os parâmetros de risco ativos no Gerente serão
         zerados!!!
-        TODOS os parâmetros de risco vinculados à padraoriscoOriginal serão
+        **Todos** os parâmetros de risco vinculados à padraoriscoOriginal serão
         adicionados aos riscos ativos!!!
         """
         self._padraorisco = padraorisco
@@ -376,6 +376,7 @@ class GerenteRisco():
             lista: passar uma lista pré-prenchida para usar a função com outros
             tipos de fontes/arquivos. Se passada uma lista, função não
             abrirá arquivo .csv, usará os valores da função
+            path: caminho do arquivo .csv
 
         O arquivo .csv ou a lista DEVEM estar no formato valor, tipo_filtro
         """
@@ -599,6 +600,7 @@ class GerenteRisco():
                           for parametro in parametros_ativos])
         else:
             riscos = set([key.lower() for key in self._riscosativos.keys()])
+        filtro = {}
         listadefiltros = []
         for campo in riscos:
             dict_filtros = self._riscosativos.get(campo)
@@ -608,8 +610,6 @@ class GerenteRisco():
                 listadefiltros.append(filtro)
         if listadefiltros:
             filtro = {'$or': listadefiltros}
-        else:
-            filtro = {}
         logger.debug(filtro)
         print(filtro)
         if collection_name:

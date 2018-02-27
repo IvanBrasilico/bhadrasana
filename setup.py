@@ -40,6 +40,7 @@ setup(
             'coverage',
             'flake8',
             'flake8-quotes',
+            'flake8-todo',
             'flask-webtest',
             'isort',
             'autopep8',
@@ -47,6 +48,7 @@ setup(
             'pytest',
             'pytest-cov',
             'pytest-mock',
+            'radon',
             'sphinx',
             'testfixtures',
             'tox'

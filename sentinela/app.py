@@ -80,7 +80,8 @@ def login():
         username = request.form.get('username')
         password = request.form.get('senha')
         registered_user = authenticate(username, password)
-        logger.info('User found: ', registered_user)
+        logger.info('User found: ')
+        logger.info(registered_user)
         if registered_user is not None:
             logger.info('Logged in..')
             login_user(registered_user)
@@ -397,6 +398,7 @@ def edita_risco():
                         base_id, CSV_FOLDER)
                 except ValueError as err:
                     base_headers = []
+                    logger.error(err, exc_info=True)
             headers.extend(base_headers)
         if len(headers) == 0:
             flash('Aviso: nenhuma base exemplo ou configuração muda títulos '
