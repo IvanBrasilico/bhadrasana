@@ -239,7 +239,6 @@ def risco():
     parametros = []
     if path:
         base_csv = os.path.join(CSV_FOLDER, baseid, path)
-
     if acao == 'arquivar' or acao == 'excluir':
         try:
             if abase and base_csv:
