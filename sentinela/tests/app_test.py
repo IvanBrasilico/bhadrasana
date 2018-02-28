@@ -227,7 +227,7 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting...' in data
 
-    """def test_z_excluiparametro(self):
+    def test_z_excluiparametro(self):
         param = self._paramid('comida')
         if self.http_server is not None:
             rv = self.app.get('/exclui_parametro?\
@@ -238,7 +238,7 @@ class FlaskTestCase(unittest.TestCase):
                               padraoid=4&riscoid=' + str(param))
         data = self.data(rv)
         print(data)
-        assert b'Redirecting...' in data"""
+        assert b'Redirecting...' in data
 
     def _valorid(self, nome):
         valor = app.dbsession.query(app.ValorParametro).filter(
