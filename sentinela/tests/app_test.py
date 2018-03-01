@@ -149,20 +149,74 @@ class FlaskTestCase(unittest.TestCase):
         return parametro.id
 
     def test_7_adicionavalor(self):
-        risco = self._paramid('comida')
+        parametro = self._paramid('comida')
         if self.http_server is not None:
-            rv = self.app.get('/adiciona_valor?padraoid=4&riscoid='+str(risco)+'&\
+            rv = self.app.get('/adiciona_valor?padraoid=4&riscoid='+str(parametro)+'&\
                               &novo_valor=temaki&filtro=igual',
                               params=dict(csrf_token=self.csrf_token))
         else:
             rv = self.app.get(
-                '/adiciona_valor?padraoid=4&riscoid='+ str(risco) +
+                '/adiciona_valor?padraoid=4&riscoid='+ str(parametro) +
                 '&novo_valor=temaki&filtro=igual')
         data = self.data(rv)
         print(data)
         assert b'Redirecting...' in data
 
-    def test_8_aplica_risco(self):
+    # importa csv
+    def test_8_importacsv(self):
+        parametro = self._paramid('comida')
+        file = {
+            'csv': (BytesIO(
+                b'valor, tipo_filtro\nhot roll, igual\nchurros, igual'
+                ), 'alimento.csv')
+        }
+        if self.http_server is not None:
+            rv = self.app.get('/importa_csv/4/'+ str(parametro),
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self._post(
+                '/importa_csv/4/'+str(parametro)
+                , data=file, follow_redirects=False)
+        data = self.data(rv)
+        assert b'Redirecting..' in data
+
+    def test_9_exportacsv(self):
+        parametro = self._paramid('comida')
+        if self.http_server is not None:
+            rv = self.app.get('/exporta_csv?padraoid=4&riscoid=' + str(parametro),
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/exporta_csv?padraoid=4&riscoid=' + str(parametro))
+        data = self.data(rv)
+        assert b'Redirecting...' in data
+
+    # editar depara
+    def test_a_editadepara(self):
+        if self.http_server is not None:
+            rv = self.app.get('/edita_depara?baseid=4',
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/edita_depara?baseid=4')
+        data = self.data(rv)
+        print(data)
+        assert b'AJNA' in data
+
+    def test_b_adicionadepara(self):
+        if self.http_server is not None:
+            rv = self.app.get(
+                '/adiciona_depara?baseid=4&\
+                &antigo=iguaria&novo=alimento',
+                params=dict(csrf_token=self.csrf_token)
+            )
+        else:
+            rv = self.app.get(
+                '/adiciona_depara?baseid=4&antigo=iguaria&novo=alimento'
+            )
+        data = self.data(rv)
+        print(data)
+        assert b'Redirecting...' in data
+
+    def test_c_aplica_risco(self):
         if self.http_server is not None:
             rv = self.app.get('/aplica_risco?&baseid=4&padraoid=4&visaoid=0&\
                                &parametroid=24&filename=2018/01/01&parametros_ativos=comida',
@@ -173,7 +227,7 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Lista de Riscos da Base None' not in data
 
-    def test_9_exclui_risco(self):
+    def test_exclui_risco(self):
         if self.http_server is not None:
             rv = self.app.get('/aplica_risco?&baseid=4&filename=2018/01/01&acao=excluir',
                               params=dict(csrf_token=self.csrf_token))
@@ -181,6 +235,7 @@ class FlaskTestCase(unittest.TestCase):
             rv = self.app.get('/aplica_risco?&baseid=4&filename=2018/01/01&acao=excluir')
         data = self.data(rv)
         print(data)
+        assert b'Redirecting...' in data
 
     def _post(self, url, data, follow_redirects=True):
         if self.http_server is not None:
@@ -191,12 +246,12 @@ class FlaskTestCase(unittest.TestCase):
                                follow_redirects=follow_redirects)
         return rv
 
-    def test_importacsv(self):
+    """def test_importacsv(self):
         if self.http_server is not None:
             rv = self.app.get('/importa_csv/1/1',
                               params=dict(csrf_token=self.csrf_token))
         else:
-            rv = self.app.get('/importa_csv/1/1')
+            rv = self.app.get('/importa_csv/4/26')
         data = self.data(rv)
         assert b'Redirecting...' in data
         rv = self._post(
@@ -216,18 +271,9 @@ class FlaskTestCase(unittest.TestCase):
         rv = self._post(
             '/importa_csv/1/1', data=file, follow_redirects=False)
         data = self.data(rv)
-        assert b'Redirecting..' in data
+        assert b'Redirecting..' in data"""
 
-    def test_exportacsv(self):
-        if self.http_server is not None:
-            rv = self.app.get('/exporta_csv?padraoid=4&riscoid=26',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/exporta_csv?padraoid=4&riscoid=26')
-        data = self.data(rv)
-        assert b'Redirecting...' in data
-
-    def test_z_excluiparametro(self):
+    def test_excluiparametro(self):
         param = self._paramid('comida')
         if self.http_server is not None:
             rv = self.app.get('/exclui_parametro?\
@@ -245,7 +291,7 @@ class FlaskTestCase(unittest.TestCase):
             app.ValorParametro.valor == nome).first()
         return valor.id
 
-    def test_excluivalor(self):
+    def test_d_excluivalor(self):
         valor = self._valorid('temaki')
         if self.http_server is not None:
             rv = self.app.get('/exclui_valor?padraoid=4&\
@@ -257,44 +303,19 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting...' in data
 
-    def test_editadepara(self):
-        if self.http_server is not None:
-            rv = self.app.get('/edita_depara?baseid=4',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/edita_depara?baseid=4')
-        data = self.data(rv)
-        print(data)
-        assert b'AJNA' in data
-
-    def test_adicionadepara(self):
-        if self.http_server is not None:
-            rv = self.app.get(
-                '/adiciona_depara?baseid=4&\
-                &antigo=iguaria&novo=alimento',
-                params=dict(csrf_token=self.csrf_token)
-            )
-        else:
-            rv = self.app.get(
-                '/adiciona_depara?baseid=4&antigo=iguaria&novo=alimento'
-            )
-        data = self.data(rv)
-        print(data)
-        assert b'Redirecting...' in data
-
     def _deparaid(self, nome):
         depara = app.dbsession.query(app.DePara).filter(
             app.DePara.titulo_ant == nome).first()
         return depara.id
 
-    def test_excluidepara(self):
+    def test_e_excluidepara(self):
         depara = self._deparaid('iguaria')
         if self.http_server is not None:
             rv = self.app.get('/exclui_depara?baseid=3&\
                               &tituloid=' + str(depara),
                               params=dict(csrf_token=self.csrf_token))
         else:
-            rv = self.app.get('/exclui_depara?baseid=3&\
+            rv = self.app.get('/exclui_depara?baseid=4&\
                               &tituloid=' + str(depara))
         data = self.data(rv)
         print(data)
