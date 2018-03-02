@@ -340,6 +340,7 @@ class GerenteRisco():
             for tipo_filtro, lista_filtros in dict_filtros.items():
                 for valor in lista_filtros:
                     lista.append((valor, tipo_filtro.name))
+        sanitizar(campo)
         filename = os.path.join(path, campo + '.csv')
         with open(filename,
                   'w', encoding=ENCODE, newline='') as f:
@@ -444,10 +445,11 @@ class GerenteRisco():
             listas = defaultdict(list)
             for linha in reader:
                 ind = 0
+                print(cabecalho[-1])
                 for coluna in linha:
                     coluna = coluna.strip()
                     if coluna:
-                        listas[cabecalho[ind].strip()].append(
+                        listas[cabecalho[ind].strip().replace('/ ','')].append(
                             [coluna, filtro.name])
                     ind += 1
         for key, value in listas.items():

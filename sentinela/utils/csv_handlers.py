@@ -90,7 +90,7 @@ def muda_titulos_lista(lista, de_para_dict, make_copy=True):
         lista = deepcopy(lista)
     for r in range(len(lista[0])):
         # Se título não está no de_para, retorna ele mesmo
-        titulo = sanitizar(lista[0][r])
+        titulo = sanitizar(lista[0][r], norm_function=ascii_sanitizar)
         novo_titulo = de_para_dict.get(titulo, titulo)
         lista[0][r] = novo_titulo
     return lista
