@@ -89,6 +89,7 @@ requests==2.18.4
 rope==0.10.7
 scipy==1.0.0
 seaborn==0.8.1
+selenium==3.9.0
 simplegeneric==0.8.1
 six==1.11.0
 smmap2==2.0.3
