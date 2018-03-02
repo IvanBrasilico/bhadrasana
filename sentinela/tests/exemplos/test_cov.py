@@ -83,10 +83,10 @@ class TestModel(unittest.TestCase):
         print('lista')
         print(lista[0])
         for old, new in de_para_dict.items():
-            assert old in ''.join(lista_old[0])
-            assert new not in ''.join(lista_old[0])
+            assert old in ' '.join(lista_old[0])
+            assert new not in ' '.join(lista_old[0])
         for old, new in de_para_dict.items():
-            assert new in ''.join(lista_nova[0])
+            assert new in ' '.join(lista_nova[0])
         padraorisco = PadraoRisco('PlanilhaCOV')
         self.session.add(padraorisco)
         self.session.commit()
