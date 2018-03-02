@@ -445,11 +445,11 @@ class GerenteRisco():
             listas = defaultdict(list)
             for linha in reader:
                 ind = 0
-                print(cabecalho[-1])
                 for coluna in linha:
                     coluna = coluna.strip()
                     if coluna:
-                        listas[cabecalho[ind].strip().replace('/ ','')].append(
+                        listas[
+                            cabecalho[ind].strip().replace('/ ', '')].append(
                             [coluna, filtro.name])
                     ind += 1
         for key, value in listas.items():

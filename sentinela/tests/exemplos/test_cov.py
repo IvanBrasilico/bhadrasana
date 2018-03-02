@@ -33,7 +33,7 @@ class TestModel(unittest.TestCase):
         gerente.import_named_csv(CSV_NAMEDRISCO_TEST)
         gerente.parametros_tocsv(self.tmpdir)  # path='.')
         gerente.clear_risco()
-        gerente.parametros_fromcsv('nome motorista', path=self.tmpdir)
+        gerente.parametros_fromcsv('Nome Motorista', path=self.tmpdir)
         # , path='.')
 
     def test_planilhas_BD(self):

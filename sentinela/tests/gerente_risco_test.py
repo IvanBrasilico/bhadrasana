@@ -15,8 +15,10 @@ CSV_NAMEDRISCO_TEST = 'sentinela/tests/sample/csv_namedrisco_example.csv'
 CSV_FOLDER_TEST = 'tests/CSV'
 CSV_FOLDER_DEST = 'tests/DEST'
 
-CSV_ALIMENTOS = os.path.join(APP_PATH, CSV_FOLDER_TEST, 'alimentoseesportes.csv')
-CSV_ADITIVOS = os.path.join(APP_PATH, CSV_FOLDER_TEST, 'aditivoseaventuras.csv')
+CSV_ALIMENTOS = os.path.join(
+    APP_PATH, CSV_FOLDER_TEST, 'alimentoseesportes.csv')
+CSV_ADITIVOS = os.path.join(
+    APP_PATH, CSV_FOLDER_TEST, 'aditivoseaventuras.csv')
 
 
 # SCH_VIAGENS é um zip
@@ -191,7 +193,7 @@ class TestGerenteRisco(unittest.TestCase):
         lista_risco = gerente.aplica_risco(lista)
         assert len(lista_risco) == 2
 
-    def test_juntacsv(self): #
+    def test_juntacsv(self):
         gerente = self.gerente
         autores = type('Tabela', (object, ),
                        {'csv': 'autores.csv',
@@ -235,14 +237,15 @@ class TestGerenteRisco(unittest.TestCase):
         # print(result)
         # assert False  # Uncomment to view output
 
-    def test_headers(self): #
+    def test_headers(self):
         gerente = self.gerente
-        headers = gerente.get_headers_base(1, os.path.join(APP_PATH, CSV_FOLDER_TEST))
+        headers = gerente.get_headers_base(
+            1, os.path.join(APP_PATH, CSV_FOLDER_TEST))
         print(headers)
         assert len(headers) == 24
         assert isinstance(headers, set)
 
-    def test_importa_base(self): #
+    def test_importa_base(self):
         gerente = self.gerente
         data = datetime.date.today().strftime('%Y-%m-%d')
         if os.path.exists(CSV_FOLDER_DEST):
