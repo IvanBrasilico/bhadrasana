@@ -508,31 +508,31 @@ class GerenteRisco():
         """
         numero_juncoes = len(visao.tabelas)
         tabela = visao.tabelas[numero_juncoes - 1]
-        filhofilename = os.path.join(path, tabela.csv)
+        filhofilename = os.path.join(path, tabela.csv_file)
         dffilho = pd.read_csv(filhofilename, encoding=ENCODE,
                               dtype=str)
         if hasattr(tabela, 'type'):
             how = tabela.type
         else:
             how = 'inner'
-        # print(tabela.csv, tabela.estrangeiro, tabela.primario)
+        # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
         # A primeira precisa ser "pulada", sempre é a junção 2 tabelas
         # de cada vez. Se numero_juncoes for >2, entrará aqui fazendo
         # a junção em cadeia desde o último até o primeiro filho
         for r in range(numero_juncoes - 2, 0, -1):
             tabela = visao.tabelas[r]
-            paifilhofilename = os.path.join(path, tabela.csv)
+            paifilhofilename = os.path.join(path, tabela.csv_file)
             if hasattr(tabela, 'type'):
                 how = tabela.type
             else:
                 how = 'inner'
             dfpaifilho = pd.read_csv(paifilhofilename, encoding=ENCODE,
                                      dtype=str)
-            # print(tabela.csv, tabela.estrangeiro, tabela.primario)
+            # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
             dffilho = dfpaifilho.merge(dffilho, how=how,
                                        left_on=tabela.primario.lower(),
                                        right_on=tabela.estrangeiro.lower())
-        csv_pai = visao.tabelas[0].csv
+        csv_pai = visao.tabelas[0].csv_file
         paifilename = os.path.join(path, csv_pai)
         dfpai = pd.read_csv(paifilename, encoding=ENCODE, dtype=str)
         dfpai = dfpai.merge(dffilho, how=how,
@@ -615,6 +615,8 @@ class GerenteRisco():
         logger.debug(filtro)
         print(filtro)
         if collection_name:
+            if collection_name.find('.csv') != -1:
+                collection_name = collection_name[:-4]
             list_collections = [collection_name]
         else:
             list_collections = [name for name in
@@ -646,7 +648,7 @@ class GerenteRisco():
         base = visao.base
         numero_juncoes = len(visao.tabelas)
         tabela = visao.tabelas[numero_juncoes - 1]
-        filhoname = base.nome + '.' + tabela.csv[:-4]
+        filhoname = base.nome + '.' + tabela.csv
         print(filhoname)
         lista = self.load_mongo(db, collection_name=filhoname)
         dffilho = pd.DataFrame(lista[1:], columns=lista[0])
@@ -659,7 +661,7 @@ class GerenteRisco():
         # a junção em cadeia desde o último até o primeiro filho
         for r in range(numero_juncoes - 2, 0, -1):
             tabela = visao.tabelas[r]
-            paifilhoname = base.nome + '.' + tabela.csv[:-4]
+            paifilhoname = base.nome + '.' + tabela.csv
             if hasattr(tabela, 'type'):
                 how = tabela.type
             else:
@@ -670,7 +672,7 @@ class GerenteRisco():
             dffilho = dfpaifilho.merge(dffilho, how=how,
                                        left_on=tabela.primario.lower(),
                                        right_on=tabela.estrangeiro.lower())
-        painame = base.nome + '.' + visao.tabelas[0].csv[:-4]
+        painame = base.nome + '.' + visao.tabelas[0].csv
         lista = self.load_mongo(db, collection_name=painame)
         dfpai = pd.DataFrame(lista[1:], columns=lista[0])
         dfpai = dfpai.merge(dffilho, how=how,

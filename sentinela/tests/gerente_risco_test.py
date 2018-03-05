@@ -196,14 +196,16 @@ class TestGerenteRisco(unittest.TestCase):
     def test_juntacsv(self):
         gerente = self.gerente
         autores = type('Tabela', (object, ),
-                       {'csv': 'autores.csv',
+                       {'csv': 'autores',
                         'primario': 'id',
-                        'estrangeiro': 'livroid'
+                        'estrangeiro': 'livroid',
+                        'csv_file': 'autores.csv'
                         })
         livro = type('Tabela', (object, ),
-                     {'csv': 'livros.csv',
+                     {'csv': 'livros',
                       'primario': 'id',
-                      'filhos': [autores]
+                      'filhos': [autores],
+                      'csv_file': 'livros.csv'                      
                       })
         autores_livro = type('Visao', (object, ),
                              {'nome': 'autores_livro',
@@ -211,16 +213,18 @@ class TestGerenteRisco(unittest.TestCase):
                               'colunas': []
                               })
         sub_capitulos = type('Tabela', (object, ),
-                             {'csv': 'subcapitulos.csv',
+                             {'csv': 'subcapitulos',
                               'primario': 'id',
                               'estrangeiro': 'capituloid',
-                              'type': 'outer'
+                              'type': 'outer',
+                              'csv_file': 'subcapitulos.csv'
                               })
         capitulos = type('Tabela', (object, ),
-                         {'csv': 'capitulos.csv',
+                         {'csv': 'capitulos',
                           'primario': 'id',
                           'estrangeiro': 'livroid',
-                          'filhos': [sub_capitulos]
+                          'filhos': [sub_capitulos],
+                          'csv_file': 'capitulos.csv'
                           })
         capitulos_livro = type('Visao', (object, ),
                                {'nome': 'capitulos_livro',
