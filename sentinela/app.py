@@ -54,9 +54,9 @@ app = Flask(__name__, static_url_path='/static')
 conn = MongoClient(host=MONGODB_URI)
 db = conn[DATABASE]
 DBUser.dbsession = db
-mongo_info = [str(s) for s in conn.address if isinstance(
-    s, str) or isinstance(s, int)]
-logger.info('MongoDB connected ' + ':'.join(mongo_info))
+""" mongo_info = [str(s) for s in conn.address if isinstance(
+   s, str) or isinstance(s, int)]
+logger.info('MongoDB connected ' + ':'.join(mongo_info))"""
 login_manager.init_app(app)
 # CORS(app)
 csrf = CSRFProtect(app)

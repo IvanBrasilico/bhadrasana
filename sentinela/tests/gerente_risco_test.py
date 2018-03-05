@@ -5,6 +5,7 @@ import os
 import shutil
 import tempfile
 import unittest
+from pymongo import MongoClient
 
 from sentinela.conf import APP_PATH
 from sentinela.models.models import Filtro
