@@ -296,25 +296,22 @@ class FlaskTestCase(unittest.TestCase):
         assert b'Redirecting...' in data
 
     # testes dos erros
-    """def test_importacsv(self):
+    def test_importacsv(self):
         if self.http_server is not None:
-            rv = self.app.get('/importa_csv/1/1',
+            rv = self.app.get('/importa_csv/4/26',
                               params=dict(csrf_token=self.csrf_token))
         else:
-            rv = self.app.get('/importa_csv/4/26')
-        data = self.data(rv)
-        assert b'Redirecting...' in data
-        rv = self._post(
-            '/importa_csv/1/1', data={'file': ''}, follow_redirects=False)
+            rv = self._post(
+                '/importa_csv/4/26', data={'csv': ''}, follow_redirects=False)
         data = self.data(rv)
         assert b'Redirecting..' in data
         file = {
-            'csv': (BytesIO(b'FILE CONTENT'), '')
+            'csv': (BytesIO(b'FILE CONTENT'), 'arq.png')
         }
         rv = self._post(
-            '/importa_csv/1/1', data=file, follow_redirects=False)
+            '/importa_csv/4/26', data=file, follow_redirects=False)
         data = self.data(rv)
-        assert b'Redirecting..' in data"""
+        assert b'Redirecting..' in data
 
     def test_excluiparametro(self):
         param = self._paramid('comida')
@@ -393,14 +390,15 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting...' in data
 
-    """def test_arvoreteste(self):
+    def test_arvoreteste(self):
         if self.http_server is not None:
             rv = self.app.get('/arvore_teste',
                               params=dict(csrf_token=self.csrf_token))
         else:
             rv = self.app.get('/arvore_teste')
         data = self.data(rv)
-        assert b'AJNA' in data"""
+        print(data)
+        assert b'Escala' in data
 
     def test_f_juncoes(self):
         if self.http_server is not None:
@@ -483,7 +481,7 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting...' in data
 
-    """def test_arvore(self):
+    def test_arvore(self):
         if self.http_server is not None:
             rv = self.app.get('/arvore?selected_module=carga&\
                               &selected_model=Escala&\
@@ -491,10 +489,11 @@ class FlaskTestCase(unittest.TestCase):
                               params=dict(csrf_token=self.csrf_token))
         else:
             rv = self.app.get('/arvore?selected_module=carga&\
-                              &selected_model=Escala&\
-                              &selected_field=Escala&instance_id=E-01')
+                              &selected_model=Escala&selected_field=Escala&\
+                              &instance_id=E-01')
         data = self.data(rv)
-        assert b'AJNA' in data"""
+        print(data)
+        assert b'odyniec' in data
 
     def test_consultabases(self):
         if self.http_server is not None:
