@@ -5,7 +5,7 @@ import os
 import shutil
 import tempfile
 import unittest
-from pymongo import MongoClient
+# from pymongo import MongoClient
 
 from sentinela.conf import APP_PATH
 from sentinela.models.models import Filtro
@@ -206,14 +206,14 @@ class TestGerenteRisco(unittest.TestCase):
                      {'csv': 'livros',
                       'primario': 'id',
                       'filhos': [autores],
-                      'csv_file': 'livros.csv'                      
+                      'csv_file': 'livros.csv'
                       })
         autores_livro = type('Visao', (object, ),
                              {'nome': 'autores_livro',
                               'tabelas': [livro, autores],
                               'colunas': []
                               })
-        sub_capitulos = type('Tabela', (object, ),
+        """sub_capitulos = type('Tabela', (object, ),
                              {'csv': 'subcapitulos',
                               'primario': 'id',
                               'estrangeiro': 'capituloid',
@@ -232,6 +232,7 @@ class TestGerenteRisco(unittest.TestCase):
                                 'tabelas': [livro, capitulos, sub_capitulos],
                                 'colunas': []
                                 })
+        """
         path = 'sentinela/tests/juncoes'
         result = gerente.aplica_juncao(autores_livro, path=path)
         print(result)
