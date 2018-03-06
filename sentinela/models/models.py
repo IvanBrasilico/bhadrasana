@@ -248,3 +248,8 @@ class Tabela(Base):
         self.estrangeiro = estrangeiro
         self.pai_id = pai_id
         self.visao_id = visao_id
+
+    @property
+    def csv_file(self):
+        if self.csv.find('.csv') == -1:
+            return self.csv + '.csv'

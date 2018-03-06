@@ -49,7 +49,7 @@
                     </form>
                     {% if basesid %}
                     <div class="table">
-                        <table class="inlineTable table table-bordered table-hover table-responsive" cellspacing="0" cellpadding="0" id="parametros">
+                        <table class="inlineTable table table-bordered table-hover table-responsive" cellspacing="0" cellpadding="0" id="bases_or">
                             {% for base in basesid %}
                             <tr id="{{ base.id }}">
                                 <td align="center">{{base.nome}}</td>
@@ -109,14 +109,10 @@
                 <button onclick="exporta_csv({{ riscoid }})" id="btn_incluir" type="button" class="btn btn-default" {% if not riscoid %}
                     disabled {% endif %}>Exportar CSV</button>
             </h4>
-            <div class="table-responsive col-sm-6">
+            <div class="table-responsive">
                 {% if riscoid %}
                 <form id="frmvalores" onsubmit="" class="form-group">
-
-                    <div class="form-group col-sm-2">
-                        <input id="id_risco" class="form-control" type="text" value="{{ riscoid }}" disabled>
-                    </div>
-
+                    <input id="id_risco" type="hidden" value="{{ riscoid }}" disabled>
                     <div class="form-group col-sm-4">
                         <input id="valor" class="form-control" type="text" placeholder="Valor do parâmetro">
                     </div>

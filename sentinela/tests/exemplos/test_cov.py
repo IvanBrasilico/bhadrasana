@@ -33,7 +33,7 @@ class TestModel(unittest.TestCase):
         gerente.import_named_csv(CSV_NAMEDRISCO_TEST)
         gerente.parametros_tocsv(self.tmpdir)  # path='.')
         gerente.clear_risco()
-        gerente.parametros_fromcsv('alimento', path=self.tmpdir)
+        gerente.parametros_fromcsv('Nome Motorista', path=self.tmpdir)
         # , path='.')
 
     def test_planilhas_BD(self):
@@ -41,7 +41,7 @@ class TestModel(unittest.TestCase):
         gerente.import_named_csv(CSV_NAMEDRISCO_TEST, self.session)
         gerente.parametros_tocsv(self.tmpdir)  # path='.')
         gerente.clear_risco()
-        gerente.parametros_fromcsv('alimento', path=self.tmpdir)
+        gerente.parametros_fromcsv('nome motorista', path=self.tmpdir)
         # , path='.')
 
     def test_planilhaCOV(self):
@@ -83,10 +83,10 @@ class TestModel(unittest.TestCase):
         print('lista')
         print(lista[0])
         for old, new in de_para_dict.items():
-            assert old in ''.join(lista_old[0])
-            assert new not in ''.join(lista_old[0])
+            assert old in ' '.join(lista_old[0])
+            assert new not in ' '.join(lista_old[0])
         for old, new in de_para_dict.items():
-            assert new in ''.join(lista_nova[0])
+            assert new in ' '.join(lista_nova[0])
         padraorisco = PadraoRisco('PlanilhaCOV')
         self.session.add(padraorisco)
         self.session.commit()
@@ -95,7 +95,6 @@ class TestModel(unittest.TestCase):
         #                         padraorisco=padraorisco)
         # lista_risco = gerente.aplica_risco(arquivo=PLANILHA_TEST)
         # print(lista_risco)
-        # assert False
 
 
 if __name__ == '__main__':
