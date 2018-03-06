@@ -98,4 +98,17 @@
         )
     }
 
+    $(function () {
+        var lista = []
+        {% for item in lista_autocomplete %}
+        lista[lista.length] = "{{item}}"
+        {% endfor %}
+        $("#titulo_ant").autocomplete({
+            source: lista
+        });
+        $("#titulo_novo").autocomplete({
+            source: lista
+        });
+    });
+
 </script> {% endblock %}

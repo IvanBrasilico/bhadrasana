@@ -213,7 +213,6 @@
     </div>
 </div>
 {% endblock %} {% block scripts %} {{super()}}
-<script src="/static/js/jquery-ui.min.js"></script>
 <script>
     function valor_parametro(riscoid) {
         window.location.assign('/edita_risco?padraoid=' + $("#padrao").val() + '&riscoid=' + riscoid)

@@ -113,16 +113,7 @@ class FlaskTestCase(unittest.TestCase):
             app.Tabela.csv == nome).first()
         return tabela.id
 
-    def test_1_home(self):
-        if self.http_server is not None:
-            rv = self.app.get('/',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/')
-        data = self.data(rv)
-        assert b'AJNA' in data
-
-    # adiciona base
+# adiciona base
     """def test_n_adicionabase(self):
         if self.http_server is not None:
             rv = self.app.get('/adiciona_base/<nomedabase>',
@@ -133,6 +124,40 @@ class FlaskTestCase(unittest.TestCase):
         print(data)
         assert False
         # assert b'' in data"""
+
+    def test_1_home(self):
+        if self.http_server is not None:
+            rv = self.app.get('/',
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/')
+        data = self.data(rv)
+        assert b'AJNA' in data
+
+    def test_11_editadepara(self):
+        if self.http_server is not None:
+            rv = self.app.get('/edita_depara?baseid=4',
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/edita_depara?baseid=4')
+        data = self.data(rv)
+        print(data)
+        assert b'AJNA' in data
+
+    def test_12_adicionadepara(self):
+        if self.http_server is not None:
+            rv = self.app.get(
+                '/adiciona_depara?baseid=4&\
+                &antigo=iguaria&novo=alimento',
+                params=dict(csrf_token=self.csrf_token)
+            )
+        else:
+            rv = self.app.get(
+                '/adiciona_depara?baseid=4&antigo=iguaria&novo=alimento'
+            )
+        data = self.data(rv)
+        print(data)
+        assert b'Redirecting...' in data
 
     def test_2_importabase(self):
         if self.http_server is not None:
@@ -178,7 +203,7 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Lista de Riscos' in data
 
-    def test_5_editarisco(self):
+    def test_41_editarisco(self):
         if self.http_server is not None:
             rv = self.app.get('/edita_risco?padraoid=4&riscoid=26',
                               params=dict(csrf_token=self.csrf_token))
@@ -188,7 +213,7 @@ class FlaskTestCase(unittest.TestCase):
         print(data)
         assert b'AJNA' in data
 
-    def test_6_adicionaparametro(self):
+    def test_42_adicionaparametro(self):
         if self.http_server is not None:
             rv = self.app.get('/adiciona_parametro?padraoid=4&\
                               &risco_novo=comida',
@@ -200,7 +225,7 @@ class FlaskTestCase(unittest.TestCase):
         print(data)
         assert b'Redirecting...' in data
 
-    def test_7_adicionavalor(self):
+    def test_43_adicionavalor(self):
         parametro = self._paramid('comida')
         if self.http_server is not None:
             rv = self.app.get('/adiciona_valor?padraoid=4&riscoid=' + str(parametro) + '&\
@@ -215,7 +240,7 @@ class FlaskTestCase(unittest.TestCase):
         assert b'Redirecting...' in data
 
     # importa csv
-    def test_8_importacsv(self):
+    def test_5_importacsv(self):
         parametro = self._paramid('comida')
         file = {
             'csv': (BytesIO(
@@ -232,7 +257,7 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting..' in data
 
-    def test_9_exportacsv(self):
+    def test_51_exportacsv(self):
         parametro = self._paramid('comida')
         if self.http_server is not None:
             rv = self.app.get('/exporta_csv?padraoid=4&riscoid=' +
@@ -244,46 +269,20 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting...' in data
 
-    # editar depara
-    def test_a_editadepara(self):
-        if self.http_server is not None:
-            rv = self.app.get('/edita_depara?baseid=4',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/edita_depara?baseid=4')
-        data = self.data(rv)
-        print(data)
-        assert b'AJNA' in data
-
-    def test_b_adicionadepara(self):
-        if self.http_server is not None:
-            rv = self.app.get(
-                '/adiciona_depara?baseid=4&\
-                &antigo=iguaria&novo=alimento',
-                params=dict(csrf_token=self.csrf_token)
-            )
-        else:
-            rv = self.app.get(
-                '/adiciona_depara?baseid=4&antigo=iguaria&novo=alimento'
-            )
-        data = self.data(rv)
-        print(data)
-        assert b'Redirecting...' in data
-
-    def test_c_aplica_risco(self):
+    def test_6_aplica_risco(self):
         if self.http_server is not None:
             rv = self.app.get('/aplica_risco?&baseid=4&padraoid=4&visaoid=0&\
                                &parametroid=24&filename=2018/01/01&\
                                &parametros_ativos=comida',
                               params=dict(csrf_token=self.csrf_token))
         else:
-            rv = self.app.get('/aplica_risco?&baseid=4&padraoid=4&visaoid=0&\
-                               &parametroid=24&filename=2018/01/01&\
+            rv = self.app.get('/aplica_risco?&filename=2018/01/01&acao=aplicar&baseid=4&padraoid=4&visaoid=0&\
                                &parametros_ativos=comida')
         data = self.data(rv)
+        print(data)
         assert b'Lista de Riscos da Base None' not in data
 
-    def test_exclui_risco(self):
+    def test_7_exclui_risco(self):
         if self.http_server is not None:
             rv = self.app.get('/aplica_risco?&baseid=4&\
                               &filename=2018/01/01&acao=excluir',
@@ -326,7 +325,7 @@ class FlaskTestCase(unittest.TestCase):
         print(data)
         assert b'Redirecting...' in data
 
-    def test_d_excluivalor(self):
+    def test_b_excluivalor(self):
         valor = self._valorid('temaki')
         if self.http_server is not None:
             rv = self.app.get('/exclui_valor?padraoid=4&\
@@ -338,7 +337,7 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting...' in data
 
-    def test_e_excluidepara(self):
+    def test_c_excluidepara(self):
         depara = self._deparaid('iguaria')
         if self.http_server is not None:
             rv = self.app.get('/exclui_depara?baseid=3&\
@@ -400,7 +399,7 @@ class FlaskTestCase(unittest.TestCase):
         print(data)
         assert b'Escala' in data
 
-    def test_f_juncoes(self):
+    def test_d_juncoes(self):
         if self.http_server is not None:
             rv = self.app.get('/juncoes?visaoid=1',
                               params=dict(csrf_token=self.csrf_token))
@@ -409,7 +408,7 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'AJNA' in data
 
-    def test_g_adicionavisao(self):
+    def test_e_adicionavisao(self):
         if self.http_server is not None:
             rv = self.app.get('/adiciona_visao?visao_novo=visaotest',
                               params=dict(csrf_token=self.csrf_token))
@@ -419,7 +418,7 @@ class FlaskTestCase(unittest.TestCase):
         print(data)
         assert b'Redirecting...' in data
 
-    def test_h_adicionacoluna(self):
+    def test_f_adicionacoluna(self):
         visaoid = self._visaoid('visaotest')
         if self.http_server is not None:
             rv = self.app.get('/adiciona_coluna?visaoid=' + str(visaoid) +
@@ -431,7 +430,7 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting...' in data
 
-    def test_i_adicionatabela(self):
+    def test_g_adicionatabela(self):
         visaoid = self._visaoid('visaotest')
         if self.http_server is not None:
             rv = self.app.get('/adiciona_tabela?visaoid=' + str(visaoid) +
@@ -445,7 +444,7 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting...' in data
 
-    def test_j_excluicoluna(self):
+    def test_h_excluicoluna(self):
         visaoid = self._visaoid('visaotest')
         colunaid = self._colunaid('colunatest')
         if self.http_server is not None:
@@ -458,7 +457,7 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting...' in data
 
-    def test_k_excluitabela(self):
+    def test_i_excluitabela(self):
         visaoid = self._visaoid('visaotest')
         tabelaid = self._tabelaid('c')
         if self.http_server is not None:
@@ -471,7 +470,7 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting...' in data
 
-    def test_l_excluivisao(self):
+    def test_j_excluivisao(self):
         visaoid = self._visaoid('visaotest')
         if self.http_server is not None:
             rv = self.app.get('/exclui_visao?visaoid=' + str(visaoid),

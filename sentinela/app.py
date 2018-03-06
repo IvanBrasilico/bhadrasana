@@ -536,15 +536,19 @@ def edita_depara():
     baseid = request.args.get('baseid')
     bases = dbsession.query(BaseOrigem).all()
     titulos = []
+    headers = []
     if baseid:
         base = dbsession.query(BaseOrigem).filter(
             BaseOrigem.id == baseid
         ).first()
         if base:
             titulos = base.deparas
+        gerente = GerenteRisco()
+        headers = gerente.get_headers_base(baseid, os.path.join(CSV_FOLDER))
     return render_template('muda_titulos.html', bases=bases,
                            baseid=baseid,
-                           titulos=titulos)
+                           titulos=titulos,
+                           lista_autocomplete=headers)
 
 
 @app.route('/adiciona_depara')
