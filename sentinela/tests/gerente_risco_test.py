@@ -14,7 +14,7 @@ from sentinela.utils.gerente_risco import GerenteRisco
 CSV_RISCO_TEST = 'sentinela/tests/sample/csv_risco_example.csv'
 CSV_NAMEDRISCO_TEST = 'sentinela/tests/sample/csv_namedrisco_example.csv'
 CSV_FOLDER_TEST = 'tests/CSV'
-CSV_FOLDER_DEST = 'tests/DEST'
+CSV_FOLDER_DEST = 'sentinela/tests/DEST'
 
 CSV_ALIMENTOS = os.path.join(
     APP_PATH, CSV_FOLDER_TEST, 'alimentoseesportes.csv')
@@ -245,8 +245,7 @@ class TestGerenteRisco(unittest.TestCase):
         gerente = self.gerente
         headers = gerente.get_headers_base(
             1, os.path.join(APP_PATH, CSV_FOLDER_TEST))
-        print(headers)
-        assert len(headers) == 24
+        assert len(headers) == 4
         assert isinstance(headers, set)
 
     def test_importa_base(self):
