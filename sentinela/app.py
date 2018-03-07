@@ -719,9 +719,6 @@ def juncoes():
     colunas = []
     headers = []
     if baseid:
-        base = dbsession.query(BaseOrigem).filter(
-            BaseOrigem.id == baseid
-        ).first()
         gerente = GerenteRisco()
         headers = gerente.get_headers_base(baseid, CSV_FOLDER, arquivo=True)
     if visaoid:

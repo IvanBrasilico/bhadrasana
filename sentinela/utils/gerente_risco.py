@@ -487,7 +487,7 @@ class GerenteRisco():
         for word in cabecalhos:
             new_word = sanitizar(word, norm_function=unicode_sanitizar)
             cabecalhos_nao_repetidos.add(new_word)
-        if arquivo == True:
+        if arquivo is True:
             return arquivos
         return cabecalhos_nao_repetidos
 
