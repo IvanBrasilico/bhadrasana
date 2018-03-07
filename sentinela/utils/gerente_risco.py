@@ -507,7 +507,7 @@ class GerenteRisco():
          utilizar :func:`aplica_risco`
         """
         numero_juncoes = len(visao.tabelas)
-        tabela = visao.tabelas[numero_juncoes - 1]
+        tabela = visao.tabelas[-1]
         filhofilename = os.path.join(path, tabela.csv_file)
         dffilho = pd.read_csv(filhofilename, encoding=ENCODE,
                               dtype=str)
@@ -520,24 +520,27 @@ class GerenteRisco():
         # de cada vez. Se numero_juncoes for >2, entrará aqui fazendo
         # a junção em cadeia desde o último até o primeiro filho
         for r in range(numero_juncoes - 2, 0, -1):
-            tabela = visao.tabelas[r]
-            paifilhofilename = os.path.join(path, tabela.csv_file)
+            estrangeiro = tabela.estrangeiro.lower()
             if hasattr(tabela, 'type'):
                 how = tabela.type
             else:
                 how = 'inner'
+            tabela = visao.tabelas[r]
+            primario = tabela.primario.lower()
+            paifilhofilename = os.path.join(path, tabela.csv_file)
             dfpaifilho = pd.read_csv(paifilhofilename, encoding=ENCODE,
                                      dtype=str)
-            # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
             dffilho = dfpaifilho.merge(dffilho, how=how,
-                                       left_on=tabela.primario.lower(),
-                                       right_on=tabela.estrangeiro.lower())
+                                       left_on=primario,
+                                       right_on=estrangeiro)
         csv_pai = visao.tabelas[0].csv_file
         paifilename = os.path.join(path, csv_pai)
         dfpai = pd.read_csv(paifilename, encoding=ENCODE, dtype=str)
+        # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
         dfpai = dfpai.merge(dffilho, how=how,
                             left_on=tabela.primario.lower(),
                             right_on=tabela.estrangeiro.lower())
+        print(dfpai)
         if visao.colunas:
             colunas = [coluna.nome.lower() for coluna in visao.colunas]
             result_df = dfpai[colunas]

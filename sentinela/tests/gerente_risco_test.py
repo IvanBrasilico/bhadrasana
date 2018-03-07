@@ -213,7 +213,7 @@ class TestGerenteRisco(unittest.TestCase):
                               'tabelas': [livro, autores],
                               'colunas': []
                               })
-        """sub_capitulos = type('Tabela', (object, ),
+        sub_capitulos = type('Tabela', (object, ),
                              {'csv': 'subcapitulos',
                               'primario': 'id',
                               'estrangeiro': 'capituloid',
@@ -232,15 +232,13 @@ class TestGerenteRisco(unittest.TestCase):
                                 'tabelas': [livro, capitulos, sub_capitulos],
                                 'colunas': []
                                 })
-        """
         path = 'sentinela/tests/juncoes'
         result = gerente.aplica_juncao(autores_livro, path=path)
         print(result)
         assert len(result) == 4
-        # result = gerente.aplica_juncao(capitulos_livro, path=path)
-        # print(result)
-        # assert len(result) == 9
-        # print(result)
+        result = gerente.aplica_juncao(capitulos_livro, path=path)
+        print(result)
+        assert len(result) == 9
         # assert False  # Uncomment to view output
 
     def test_headers(self):
