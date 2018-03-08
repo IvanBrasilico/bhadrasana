@@ -147,14 +147,14 @@ def importa_base():
                 if baseid is None or baseid == 0:
                     flash('Selecionar base original e clicar em submeter!')
                 else:  # Validado - tentar upload e procesamento
-                    abase = dbsession.query(BaseOrigem).filter(
-                        BaseOrigem.id == baseid).first()
-                    if abase is None:
-                        raise ValueError('Informe uma base válida!!!')
-                    if not data:
-                        data = datetime.date.today().strftime('%Y-%m-%d')
-                    logger.debug(data)
                     try:
+                        abase = dbsession.query(BaseOrigem).filter(
+                            BaseOrigem.id == baseid).first()
+                        if abase is None:
+                            raise ValueError('Informe uma base válida!!!')
+                        if not data:
+                            data = datetime.date.today().strftime('%Y-%m-%d')
+                        logger.debug(data)
                         gerente = GerenteRisco()
                         tempfile_name = os.path.join(tmpdir, filename)
                         file.save(tempfile_name)

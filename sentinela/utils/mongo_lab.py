@@ -1,7 +1,4 @@
-"""
-Arquivo temporário para testes exploratórios
-com novos métodos MongoDB
-"""
+"""Arquivo temporário para testes exploratórios com novos métodos MongoDB."""
 from pymongo import MongoClient
 
 from sentinela.models.models import (Visao,

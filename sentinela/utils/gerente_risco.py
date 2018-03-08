@@ -584,6 +584,11 @@ class GerenteRisco():
             collection_name = base.nome + '.' + arquivo[:-4]
             if collection_name not in db.collection_names():
                 db.create_collection(collection_name)
+            # TODO: Estudar possibilidade de evitar inserções duplicadas,
+            # em caso de evidência de inseração duplicada fazer upsert
+            # É complicado, pois é necessário ter a metadata de cada tabela,
+            # isto é, o campo que será considerado 'chave' para a inserção ou
+            # update
             db[collection_name].insert(data_json)
 
     def load_mongo(self, db, base=None, collection_name=None,
