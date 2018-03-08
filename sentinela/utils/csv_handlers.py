@@ -12,7 +12,6 @@ import csv
 import glob
 import io
 import os
-import unicodedata
 from zipfile import ZipFile
 
 from ajna_commons.utils.sanitiza import ascii_sanitizar, sanitizar

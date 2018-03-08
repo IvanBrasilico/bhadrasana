@@ -17,6 +17,7 @@ from sentinela.models.models import (Filtro, PadraoRisco, ParametroRisco,
                                      ValorParametro)
 from sentinela.utils.csv_handlers import muda_titulos_lista, sch_processing
 
+
 def equality(listaoriginal, nomecampo, listavalores):
     df = pd.DataFrame(listaoriginal[1:], columns=listaoriginal[0])
     df = df[df[nomecampo].isin(listavalores)]
