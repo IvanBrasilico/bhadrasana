@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 # from pymongo import MongoClient
+from io import BytesIO
 from sentinela.conf import APP_PATH
 from sentinela.models.models import Filtro
 from sentinela.utils.gerente_risco import GerenteRisco
@@ -288,6 +289,18 @@ class TestGerenteRisco(unittest.TestCase):
     def test_loadmongo(self):
         gerente = self.gerente
         db = self.db
-        result = gerente.load_mongo(db, base='tests')
+        result = gerente.load_mongo(db, collection_name='arquivo.csv')
+        print(result)
+        # assert False
+
+    def test_tomongo(self):
+        gerente = self.gerente
+        db = self.db
+        base = type('BaseOrigem', (object, ), {
+                    'id':'1',
+                    'nome':'baseteste'
+                    })
+        file = os.path.join('sentinela', 'tests', 'CSV', 'test.csv')
+        result = gerente.csv_to_mongo(db, base, arquivo=CSV_ALIMENTOS)
         print(result)
         # assert False
