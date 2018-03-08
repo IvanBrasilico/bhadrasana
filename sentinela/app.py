@@ -38,11 +38,11 @@ from ajna_commons.flask.conf import (ALLOWED_EXTENSIONS, DATABASE, MONGODB_URI,
 from ajna_commons.flask.login import (DBUser, authenticate, is_safe_url,
                                       login_manager)
 from ajna_commons.flask.log import logger
+from ajna_commons.utils.sanitiza import sanitizar, unicode_sanitizar
 from sentinela.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER
 from sentinela.models.models import (Base, BaseOrigem, Coluna, DePara,
                                      MySession, PadraoRisco, ParametroRisco,
                                      Tabela, ValorParametro, Visao)
-from sentinela.utils.csv_handlers import (sanitizar, unicode_sanitizar)
 from sentinela.utils.gerente_base import Filtro, GerenteBase
 from sentinela.utils.gerente_risco import GerenteRisco, tmpdir
 

@@ -6,10 +6,11 @@ import tempfile
 import unittest
 from zipfile import ZipFile
 
-from sentinela.utils.csv_handlers import (ENCODE, ascii_sanitizar,
+from ajna_commons.utils.sanitiza import (ascii_sanitizar, sanitizar,
+                                         sanitizar_lista, unicode_sanitizar)
+from sentinela.utils.csv_handlers import (ENCODE,
                                           muda_titulos_csv, muda_titulos_lista,
-                                          sanitizar, sanitizar_lista,
-                                          sch_processing, unicode_sanitizar)
+                                          sch_processing)
 
 tmpdir = tempfile.mkdtemp()
 

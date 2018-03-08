@@ -10,13 +10,12 @@ from collections import defaultdict
 import pandas as pd
 
 from ajna_commons.flask.log import logger
+from ajna_commons.utils.sanitiza import sanitizar, sanitizar_lista, \
+    unicode_sanitizar
 from sentinela.conf import ENCODE, tmpdir
 from sentinela.models.models import (Filtro, PadraoRisco, ParametroRisco,
                                      ValorParametro)
-from sentinela.utils.csv_handlers import (muda_titulos_lista, sanitizar,
-                                          sanitizar_lista, sch_processing,
-                                          unicode_sanitizar)
-
+from sentinela.utils.csv_handlers import muda_titulos_lista, sch_processing
 
 def equality(listaoriginal, nomecampo, listavalores):
     df = pd.DataFrame(listaoriginal[1:], columns=listaoriginal[0])
