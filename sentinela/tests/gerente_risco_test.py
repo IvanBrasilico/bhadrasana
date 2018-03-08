@@ -5,8 +5,8 @@ import os
 import shutil
 import tempfile
 import unittest
-# from pymongo import MongoClient
 
+# from pymongo import MongoClient
 from sentinela.conf import APP_PATH
 from sentinela.models.models import Filtro
 from sentinela.utils.gerente_risco import GerenteRisco
@@ -41,9 +41,14 @@ class TestGerenteRisco(unittest.TestCase):
         self.tmpdir = tempfile.mkdtemp()
         # Ensure the file is read/write by the creator only
         self.saved_umask = os.umask(0o077)
+        self.db = unittest.mock.MagicMock(return_value='OK')
 
     def tearDown(self):
         os.umask(self.saved_umask)
+
+    def test_criapadrao(self):
+        gerente = self.gerente
+        gerente.cria_padraorisco('padraorisco', session=self.db)
 
     def test_aplica_igual(self):
         lista = self.lista
@@ -279,3 +284,10 @@ class TestGerenteRisco(unittest.TestCase):
                                  data,
                                  CSV_ADITIVOS)
         shutil.rmtree(CSV_FOLDER_DEST)
+
+    def test_loadmongo(self):
+        gerente = self.gerente
+        db = self.db
+        result = gerente.load_mongo(db, base='tests')
+        print(result)
+        # assert False
