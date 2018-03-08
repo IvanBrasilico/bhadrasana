@@ -113,17 +113,26 @@ class FlaskTestCase(unittest.TestCase):
             app.Tabela.csv == nome).first()
         return tabela.id
 
-# adiciona base
-    """def test_n_adicionabase(self):
+    def _excluibase(self):
+        app.dbsession.query(app.BaseOrigem).filter(
+            app.BaseOrigem.nome == 'baseteste').delete()
+        app.dbsession.commit()
+
+    def _excluipadrao(self):
+        app.dbsession.query(app.PadraoRisco).filter(
+            app.PadraoRisco.nome == 'padraoteste').delete()
+        app.dbsession.commit()
+
+    # adiciona base
+    def test_adicionabase(self):
         if self.http_server is not None:
-            rv = self.app.get('/adiciona_base/<nomedabase>',
+            rv = self.app.get('/adiciona_base/baseteste',
                               params=dict(csrf_token=self.csrf_token))
         else:
-            rv = self.app.get('/adiciona_base/<nomedabase>')
+            rv = self.app.get('/adiciona_base/baseteste')
         data = self.data(rv)
-        print(data)
-        assert False
-        # assert b'' in data"""
+        assert b'Redirecting...' in data
+        self._excluibase()
 
     def test_1_home(self):
         if self.http_server is not None:
@@ -183,16 +192,16 @@ class FlaskTestCase(unittest.TestCase):
         assert b'clicar em submeter!' not in data
         # assert b'Escolha Base' in data
 
-    """def test_n_adicionapadraorisco(self):
+    def test_adicionapadraorisco(self):
         if self.http_server is not None:
-            rv = self.app.get('/adiciona_padrao/<>',
+            rv = self.app.get('/adiciona_padrao/padraoteste',
                               params=dict(csrf_token=self.csrf_token))
         else:
-            rv = self.app.get('/adiciona_padrao/<>')
+            rv = self.app.get('/adiciona_padrao/padraoteste')
         data = self.data(rv)
         print(data)
-        assert False
-        # assert b'' in data"""
+        self._excluipadrao()
+        assert b'Redirecting...' in data
 
     def test_4_risco(self):
         if self.http_server is not None:

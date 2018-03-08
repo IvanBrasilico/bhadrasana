@@ -711,10 +711,16 @@ def arvore_teste():
 @app.route('/juncoes')
 @login_required
 def juncoes():
+    baseid = request.args.get('baseid')
     visaoid = request.args.get('visaoid')
+    bases = dbsession.query(BaseOrigem).all()
     visoes = dbsession.query(Visao).order_by(Visao.nome).all()
     tabelas = []
     colunas = []
+    headers = []
+    if baseid:
+        gerente = GerenteRisco()
+        headers = gerente.get_headers_base(baseid, CSV_FOLDER, arquivo=True)
     if visaoid:
         tabelas = dbsession.query(Tabela).filter(
             Tabela.visao_id == visaoid
@@ -723,14 +729,18 @@ def juncoes():
             Coluna.visao_id == visaoid
         ).all()
     return render_template('gerencia_juncoes.html',
+                           baseid=baseid,
+                           bases=bases,
                            visaoid=visaoid,
                            visoes=visoes,
                            colunas=colunas,
-                           tabelas=tabelas)
+                           tabelas=tabelas,
+                           lista_autocomplete=headers)
 
 
 @app.route('/adiciona_visao')
 def adiciona_visao():
+    baseid = request.args.get('baseid')
     visao_novo = request.args.get('visao_novo')
     visao = Visao(visao_novo)
     visao.nome = visao_novo
@@ -740,7 +750,8 @@ def adiciona_visao():
         Visao.nome == visao_novo
     ).first()
     return redirect(url_for('juncoes',
-                            visaoid=visao.id))
+                            visaoid=visao.id,
+                            baseid=baseid))
 
 
 @app.route('/exclui_visao')

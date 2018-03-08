@@ -14,7 +14,7 @@ from sentinela.utils.gerente_risco import GerenteRisco
 CSV_RISCO_TEST = 'sentinela/tests/sample/csv_risco_example.csv'
 CSV_NAMEDRISCO_TEST = 'sentinela/tests/sample/csv_namedrisco_example.csv'
 CSV_FOLDER_TEST = 'tests/CSV'
-CSV_FOLDER_DEST = 'tests/DEST'
+CSV_FOLDER_DEST = 'sentinela/tests/DEST'
 
 CSV_ALIMENTOS = os.path.join(
     APP_PATH, CSV_FOLDER_TEST, 'alimentoseesportes.csv')
@@ -213,7 +213,7 @@ class TestGerenteRisco(unittest.TestCase):
                               'tabelas': [livro, autores],
                               'colunas': []
                               })
-        """sub_capitulos = type('Tabela', (object, ),
+        sub_capitulos = type('Tabela', (object, ),
                              {'csv': 'subcapitulos',
                               'primario': 'id',
                               'estrangeiro': 'capituloid',
@@ -232,23 +232,20 @@ class TestGerenteRisco(unittest.TestCase):
                                 'tabelas': [livro, capitulos, sub_capitulos],
                                 'colunas': []
                                 })
-        """
         path = 'sentinela/tests/juncoes'
         result = gerente.aplica_juncao(autores_livro, path=path)
         print(result)
         assert len(result) == 4
-        # result = gerente.aplica_juncao(capitulos_livro, path=path)
-        # print(result)
-        # assert len(result) == 9
-        # print(result)
+        result = gerente.aplica_juncao(capitulos_livro, path=path)
+        print(result)
+        assert len(result) == 9
         # assert False  # Uncomment to view output
 
     def test_headers(self):
         gerente = self.gerente
         headers = gerente.get_headers_base(
             1, os.path.join(APP_PATH, CSV_FOLDER_TEST))
-        print(headers)
-        assert len(headers) == 24
+        assert len(headers) == 4
         assert isinstance(headers, set)
 
     def test_importa_base(self):

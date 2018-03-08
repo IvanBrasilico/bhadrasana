@@ -1,5 +1,14 @@
 {% extends "layout.html" %} {% block content %}{{super()}}
 <div id="main" class="container-fluid">
+    <div class="row">
+        <select class="form-control" name="base" id="base">
+            <option value="0">Selecionar</option>
+            {% for base in bases %}
+            <option value="{{ base.id }}">{{ base.nome }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
     <div id="top" class="row">
         <h4>
             <big>
@@ -121,27 +130,12 @@
 <div id="bottom" class="row">
     <p>&nbsp;&nbsp;&nbsp;&nbsp;AJNA - Receita Federal do Brasil 2017</p>
 </div>
-</div>
-<div class="modal fade" id="visao" tabindex="-1" role="dialog" aria-labelledby="ModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title" id="ModalLabel">Editar visao</h1>
-            </div>
-            <div class="modal-body">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %} {% block scripts %} {{super()}}
 <script src="/static/js/jquery-ui.min.js"></script>
 <script>
     $(function () {
         var submit_form = function (e) {
-            window.location.assign('/juncoes?visaoid=' + $("#visao").val()
+            window.location.assign('/juncoes?visaoid=' + $("#visao").val() + '&baseid=' + $("#base").val()
                 + '&tabelaid=' + $('#tabela').val()
             )
         };
@@ -156,13 +150,13 @@
     });
 
     function valor_parametro(visaoid) {
-        window.location.assign('/juncoes?visaoid=' + visaoid)
+        window.location.assign('/juncoes?visaoid=' + visaoid + '&baseid=' + $("#base").val())
     };
 
     function adiciona_visao() {
         var visao_novo = $("#visao_novo").val();
         if (visao_novo != '') {
-            window.location.assign('/adiciona_visao?visao_novo=' + visao_novo)
+            window.location.assign('/adiciona_visao?visao_novo=' + visao_novo + '&baseid=' + $("#base").val())
         }
     };
     function exclui_visao(visaoid) {
@@ -200,5 +194,23 @@
             '&tabelaid=' + tabelaid)
     }
 
+    $(function () {
+        var lista = []
+        {% for item in lista_autocomplete %}
+        lista[lista.length] = "{{item}}"
+        {% endfor %}
+        $("#col_nova").autocomplete({
+            source: lista
+        });
+        $("#csv").autocomplete({
+            source: lista
+        });
+        $("#primario").autocomplete({
+            source: lista
+        });
+        $("#estrangeiro").autocomplete({
+            source: lista
+        });
+    });
 
 </script> {% endblock %}
