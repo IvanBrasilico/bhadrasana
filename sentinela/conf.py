@@ -1,6 +1,9 @@
 import os
 import pickle
 import tempfile
+from ajna_commons.conf import ENCODE
+
+ENCODE = ENCODE
 
 CSV_DOWNLOAD = 'sentinela/CSV/'
 APP_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -9,7 +12,6 @@ CSV_FOLDER = os.path.join(APP_PATH, 'CSV')
 CSV_FOLDER_TEST = os.path.join(APP_PATH, 'tests/CSV')
 ALLOWED_EXTENSIONS = set(['txt', 'csv', 'zip'])
 tmpdir = tempfile.mkdtemp()
-ENCODE = 'latin1'
 
 try:
     SECRET = None
