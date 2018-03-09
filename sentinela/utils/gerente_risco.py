@@ -660,7 +660,7 @@ class GerenteRisco():
         base = visao.base
         numero_juncoes = len(visao.tabelas)
         tabela = visao.tabelas[numero_juncoes - 1]
-        filhoname = base.nome + '.' + tabela.csv
+        filhoname = base.nome + '.' + tabela.csv_file
         print(filhoname)
         lista = self.load_mongo(db, collection_name=filhoname)
         dffilho = pd.DataFrame(lista[1:], columns=lista[0])
@@ -673,18 +673,18 @@ class GerenteRisco():
         # a junção em cadeia desde o último até o primeiro filho
         for r in range(numero_juncoes - 2, 0, -1):
             tabela = visao.tabelas[r]
-            paifilhoname = base.nome + '.' + tabela.csv
+            paifilhoname = base.nome + '.' + tabela.csv_file
             if hasattr(tabela, 'type'):
                 how = tabela.type
             else:
                 how = 'inner'
             lista = self.load_mongo(db, collection_name=paifilhoname)
             dfpaifilho = pd.DataFrame(lista[1:], columns=lista[0])
-            # print(tabela.csv, tabela.estrangeiro, tabela.primario)
+            # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
             dffilho = dfpaifilho.merge(dffilho, how=how,
                                        left_on=tabela.primario.lower(),
                                        right_on=tabela.estrangeiro.lower())
-        painame = base.nome + '.' + visao.tabelas[0].csv
+        painame = base.nome + '.' + visao.tabelas[0].csv_file
         lista = self.load_mongo(db, collection_name=painame)
         dfpai = pd.DataFrame(lista[1:], columns=lista[0])
         dfpai = dfpai.merge(dffilho, how=how,

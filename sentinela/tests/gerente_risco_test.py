@@ -7,7 +7,6 @@ import tempfile
 import unittest
 
 # from pymongo import MongoClient
-from io import BytesIO
 from sentinela.conf import APP_PATH
 from sentinela.models.models import Filtro
 from sentinela.utils.gerente_risco import GerenteRisco
@@ -297,10 +296,34 @@ class TestGerenteRisco(unittest.TestCase):
         gerente = self.gerente
         db = self.db
         base = type('BaseOrigem', (object, ), {
-                    'id':'1',
-                    'nome':'baseteste'
+                    'id': '1',
+                    'nome': 'baseteste'
                     })
-        file = os.path.join('sentinela', 'tests', 'CSV', 'test.csv')
-        result = gerente.csv_to_mongo(db, base, arquivo=CSV_ALIMENTOS)
-        print(result)
+        gerente.csv_to_mongo(db, base, arquivo=CSV_ALIMENTOS)
         # assert False
+    
+    """def test_juntamongo(self):
+        gerente = self.gerente
+        db = self.db
+        base = type('Base', (object, ), {
+                    'nome': 'baseteste'
+                    })
+        autores = type('Tabela', (object, ),
+                       {'csv': 'autores',
+                        'primario': 'id',
+                        'estrangeiro': 'livroid',
+                        'csv_file': 'autores.csv'
+                        })
+        livro = type('Tabela', (object, ),
+                     {'csv': 'livros',
+                      'primario': 'id',
+                      'filhos': [autores],
+                      'csv_file': 'livros.csv'
+                      })
+        visao = type('Visao', (object, ), {
+                     'base': base,
+                     'tabelas': [autores, livro],
+                     'colunas': []
+                     })
+        gerente.aplica_juncao_mongo(db, visao)
+        #assert False"""
