@@ -301,7 +301,7 @@ class TestGerenteRisco(unittest.TestCase):
                     })
         gerente.csv_to_mongo(db, base, arquivo=CSV_ALIMENTOS)
         # assert False
-    
+
     """def test_juntamongo(self):
         gerente = self.gerente
         db = self.db

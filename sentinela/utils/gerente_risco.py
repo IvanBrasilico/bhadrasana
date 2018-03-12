@@ -8,6 +8,7 @@ import shutil
 from collections import defaultdict
 
 import pandas as pd
+import pymongo
 
 from ajna_commons.flask.log import logger
 from ajna_commons.utils.sanitiza import sanitizar, sanitizar_lista, \
@@ -579,7 +580,8 @@ class GerenteRisco():
         else:
             lista_arquivos = os.listdir(path)
         for arquivo in lista_arquivos:
-            df = pd.read_csv(os.path.join(path, arquivo), encoding=ENCODE, dtype=str)
+            df = pd.read_csv(os.path.join(path, arquivo),
+                             encoding=ENCODE, dtype=str)
             data_json = json.loads(df.to_json(orient='records'))
             collection_name = base.nome + '.' + arquivo[:-4]
             if collection_name not in db.collection_names():
@@ -589,7 +591,11 @@ class GerenteRisco():
             # É complicado, pois é necessário ter a metadata de cada tabela,
             # isto é, o campo que será considerado 'chave' para a inserção ou
             # update
-            db[collection_name].insert(data_json)
+            for linha in data_json:
+                try:
+                    db[collection_name].insert(linha)
+                except pymongo.errors.DuplicateKeyError:
+                    pass
 
     def load_mongo(self, db, base=None, collection_name=None,
                    parametros_ativos=None):
