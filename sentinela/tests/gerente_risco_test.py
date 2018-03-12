@@ -5,8 +5,8 @@ import os
 import shutil
 import tempfile
 import unittest
-# from pymongo import MongoClient
 
+# from pymongo import MongoClient
 from sentinela.conf import APP_PATH
 from sentinela.models.models import Filtro
 from sentinela.utils.gerente_risco import GerenteRisco
@@ -41,9 +41,14 @@ class TestGerenteRisco(unittest.TestCase):
         self.tmpdir = tempfile.mkdtemp()
         # Ensure the file is read/write by the creator only
         self.saved_umask = os.umask(0o077)
+        self.db = unittest.mock.MagicMock(return_value='OK')
 
     def tearDown(self):
         os.umask(self.saved_umask)
+
+    def test_criapadrao(self):
+        gerente = self.gerente
+        gerente.cria_padraorisco('padraorisco', session=self.db)
 
     def test_aplica_igual(self):
         lista = self.lista
@@ -279,3 +284,46 @@ class TestGerenteRisco(unittest.TestCase):
                                  data,
                                  CSV_ADITIVOS)
         shutil.rmtree(CSV_FOLDER_DEST)
+
+    def test_loadmongo(self):
+        gerente = self.gerente
+        db = self.db
+        result = gerente.load_mongo(db, collection_name='arquivo.csv')
+        print(result)
+        # assert False
+
+    def test_tomongo(self):
+        gerente = self.gerente
+        db = self.db
+        base = type('BaseOrigem', (object, ), {
+                    'id': '1',
+                    'nome': 'baseteste'
+                    })
+        gerente.csv_to_mongo(db, base, arquivo=CSV_ALIMENTOS)
+        # assert False
+    
+    """def test_juntamongo(self):
+        gerente = self.gerente
+        db = self.db
+        base = type('Base', (object, ), {
+                    'nome': 'baseteste'
+                    })
+        autores = type('Tabela', (object, ),
+                       {'csv': 'autores',
+                        'primario': 'id',
+                        'estrangeiro': 'livroid',
+                        'csv_file': 'autores.csv'
+                        })
+        livro = type('Tabela', (object, ),
+                     {'csv': 'livros',
+                      'primario': 'id',
+                      'filhos': [autores],
+                      'csv_file': 'livros.csv'
+                      })
+        visao = type('Visao', (object, ), {
+                     'base': base,
+                     'tabelas': [autores, livro],
+                     'colunas': []
+                     })
+        gerente.aplica_juncao_mongo(db, visao)
+        #assert False"""
