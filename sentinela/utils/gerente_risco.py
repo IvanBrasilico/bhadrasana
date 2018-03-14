@@ -468,11 +468,11 @@ class GerenteRisco():
         if not os.path.isdir(caminho):
             return set()
         # Procura ano, depois mes, depois dia, vai adicionando no caminho
-        for r in range(3):  
+        for r in range(3):
             ano_mes_dia = sorted(os.listdir(caminho))
             if len(ano_mes_dia) == 0:
                 raise ValueError('Não há nenhuma base do tipo desejado '
-                             'para consulta')
+                                 'para consulta')
             ano_mes_dia = ano_mes_dia[-1]
             caminho = os.path.join(caminho, ano_mes_dia)
         for arquivo in os.listdir(caminho):
