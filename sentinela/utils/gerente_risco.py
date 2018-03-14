@@ -467,17 +467,14 @@ class GerenteRisco():
         caminho = os.path.join(path, str(baseorigemid))
         if not os.path.isdir(caminho):
             return set()
-        ultimo_ano = sorted(os.listdir(caminho))
-        logger.debug(ultimo_ano)
-        if len(ultimo_ano) == 0:
-            raise ValueError('Não há nenhuma base do tipo desejado '
+        # Procura ano, depois mes, depois dia, vai adicionando no caminho
+        for r in range(3):  
+            ano_mes_dia = sorted(os.listdir(caminho))
+            if len(ano_mes_dia) == 0:
+                raise ValueError('Não há nenhuma base do tipo desejado '
                              'para consulta')
-        ultimo_ano = ultimo_ano[-1]
-        caminho = os.path.join(caminho, ultimo_ano)
-        ultimo_mes = sorted(os.listdir(caminho))[-1]
-        caminho = os.path.join(caminho, ultimo_mes)
-        ultimo_dia = sorted(os.listdir(caminho))[-1]
-        caminho = os.path.join(caminho, ultimo_dia)
+            ano_mes_dia = ano_mes_dia[-1]
+            caminho = os.path.join(caminho, ano_mes_dia)
         for arquivo in os.listdir(caminho):
             arquivos.append(arquivo[:-4])
             with open(os.path.join(caminho, arquivo),
