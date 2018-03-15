@@ -8,6 +8,7 @@ import shutil
 from collections import defaultdict
 
 import pandas as pd
+import pymongo
 
 from ajna_commons.flask.log import logger
 from ajna_commons.utils.sanitiza import sanitizar, sanitizar_lista, \
@@ -466,17 +467,14 @@ class GerenteRisco():
         caminho = os.path.join(path, str(baseorigemid))
         if not os.path.isdir(caminho):
             return set()
-        ultimo_ano = sorted(os.listdir(caminho))
-        logger.debug(ultimo_ano)
-        if len(ultimo_ano) == 0:
-            raise ValueError('Não há nenhuma base do tipo desejado '
-                             'para consulta')
-        ultimo_ano = ultimo_ano[-1]
-        caminho = os.path.join(caminho, ultimo_ano)
-        ultimo_mes = sorted(os.listdir(caminho))[-1]
-        caminho = os.path.join(caminho, ultimo_mes)
-        ultimo_dia = sorted(os.listdir(caminho))[-1]
-        caminho = os.path.join(caminho, ultimo_dia)
+        # Procura ano, depois mes, depois dia, vai adicionando no caminho
+        for r in range(3):
+            ano_mes_dia = sorted(os.listdir(caminho))
+            if len(ano_mes_dia) == 0:
+                raise ValueError('Não há nenhuma base do tipo desejado '
+                                 'para consulta')
+            ano_mes_dia = ano_mes_dia[-1]
+            caminho = os.path.join(caminho, ano_mes_dia)
         for arquivo in os.listdir(caminho):
             arquivos.append(arquivo[:-4])
             with open(os.path.join(caminho, arquivo),
@@ -579,7 +577,8 @@ class GerenteRisco():
         else:
             lista_arquivos = os.listdir(path)
         for arquivo in lista_arquivos:
-            df = pd.read_csv(os.path.join(path, arquivo), encoding=ENCODE)
+            df = pd.read_csv(os.path.join(path, arquivo),
+                             encoding=ENCODE, dtype=str)
             data_json = json.loads(df.to_json(orient='records'))
             collection_name = base.nome + '.' + arquivo[:-4]
             if collection_name not in db.collection_names():
@@ -589,7 +588,11 @@ class GerenteRisco():
             # É complicado, pois é necessário ter a metadata de cada tabela,
             # isto é, o campo que será considerado 'chave' para a inserção ou
             # update
-            db[collection_name].insert(data_json)
+            for linha in data_json:
+                try:
+                    db[collection_name].insert(linha)
+                except pymongo.errors.DuplicateKeyError:
+                    pass
 
     def load_mongo(self, db, base=None, collection_name=None,
                    parametros_ativos=None):
@@ -660,7 +663,7 @@ class GerenteRisco():
         base = visao.base
         numero_juncoes = len(visao.tabelas)
         tabela = visao.tabelas[numero_juncoes - 1]
-        filhoname = base.nome + '.' + tabela.csv
+        filhoname = base.nome + '.' + tabela.csv_file
         print(filhoname)
         lista = self.load_mongo(db, collection_name=filhoname)
         dffilho = pd.DataFrame(lista[1:], columns=lista[0])
@@ -673,18 +676,18 @@ class GerenteRisco():
         # a junção em cadeia desde o último até o primeiro filho
         for r in range(numero_juncoes - 2, 0, -1):
             tabela = visao.tabelas[r]
-            paifilhoname = base.nome + '.' + tabela.csv
+            paifilhoname = base.nome + '.' + tabela.csv_file
             if hasattr(tabela, 'type'):
                 how = tabela.type
             else:
                 how = 'inner'
             lista = self.load_mongo(db, collection_name=paifilhoname)
             dfpaifilho = pd.DataFrame(lista[1:], columns=lista[0])
-            # print(tabela.csv, tabela.estrangeiro, tabela.primario)
+            # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
             dffilho = dfpaifilho.merge(dffilho, how=how,
                                        left_on=tabela.primario.lower(),
                                        right_on=tabela.estrangeiro.lower())
-        painame = base.nome + '.' + visao.tabelas[0].csv
+        painame = base.nome + '.' + visao.tabelas[0].csv_file
         lista = self.load_mongo(db, collection_name=painame)
         dfpai = pd.DataFrame(lista[1:], columns=lista[0])
         dfpai = dfpai.merge(dffilho, how=how,

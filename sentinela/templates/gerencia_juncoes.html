@@ -1,6 +1,12 @@
 {% extends "layout.html" %} {% block content %}{{super()}}
 <div id="main" class="container-fluid">
     <div class="row">
+        <div class="col-sm-6">
+        <h4>
+            <big>
+                <b>Escolha a Base:</b>
+            </big>
+        </h4>
         <select class="form-control" name="base" id="base">
             <option value="0">Selecionar</option>
             {% for base in bases %}
@@ -8,7 +14,9 @@
             </option>
             {% endfor %}
         </select>
+        </div>
     </div>
+    <br>
     <div id="top" class="row">
         <h4>
             <big>
@@ -55,7 +63,7 @@
                             <input class="form-control ui-autocomplete-input" autocomplete="off" id="col_nova" type="text" placeholder="Nova Coluna">
                             <div class="input-group-btn">
                                 <button type="button" class="btn btn-default" onclick="adiciona_coluna()" id="btn_col" aria-haspopup="true" aria-expanded="false"
-                                    title="Adicionar">
+                                    title="Adicionar" {% if not visaoid %} disabled{% endif %}>
                                     OK
                                 </button>
                             </div>
@@ -98,11 +106,10 @@
             <div class="form-group col-sm-2">
                 <input id="estrangeiro" class="form-control" type="text" placeholder="Estrangeiro">
             </div>
-            <div class="form-group col-sm-2">
-                <input id="pai_id" class="form-control" type="text" placeholder="Pai_id">
-            </div>
             <div class="form-group">
-                <button onclick="adiciona_tabela()" id="btn_incluir" type="button" class="btn btn-success">Incluir</button>
+                <button onclick="adiciona_tabela()" id="btn_incluir" type="button" class="btn btn-success" {% if not visaoid %} disabled{%
+                    endif %}>
+                    Incluir</button>
             </div>
         </form>
         <div class="table">
@@ -212,5 +219,9 @@
             source: lista
         });
     });
+
+    {% if baseid %}
+    $('#base').val({{ baseid }});
+    {% endif %}
 
 </script> {% endblock %}

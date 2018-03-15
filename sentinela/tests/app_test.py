@@ -229,7 +229,8 @@ class FlaskTestCase(unittest.TestCase):
                               params=dict(csrf_token=self.csrf_token))
         else:
             rv = self.app.get(
-                '/adiciona_parametro?padraoid=4&risco_novo=comida')
+                '/adiciona_parametro?padraoid=4&risco_novo=comida&\
+                &lista=lista, teste')
         data = self.data(rv)
         print(data)
         assert b'Redirecting...' in data
@@ -321,8 +322,38 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting..' in data
 
+    def test_importabase(self):
+        file = {
+            'file':
+                (BytesIO(b'iguaria, esporte\n temaki, corrida'),
+                 'plan_test.csv'),
+            'baseid': None,
+            'data': '2018-01-01'
+        }
+        if self.http_server is not None:
+            rv = self.app.get('/importa_base',
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self._post('/importa_base',
+                            data={'file': ''},
+                            follow_redirects=True
+                            )
+        data = self.data(rv)
+        print(data)
+        png = {
+            'file': (BytesIO(b'FILE CONTENT'), 'arq.png')
+        }
+        rv = self._post('/importa_base', data=png, follow_redirects=True)
+        data = self.data(rv)
+        print(data)
+        rv = self._post('/importa_base', data=file, follow_redirects=True)
+        data = self.data(rv)
+        print(data)
+        # assert False
+
     def test_excluiparametro(self):
         param = self._paramid('comida')
+        lista = [self._paramid('lista'), self._paramid('teste')]
         if self.http_server is not None:
             rv = self.app.get('/exclui_parametro?\
                               padraoid=4&riscoid=' + str(param),
@@ -331,6 +362,10 @@ class FlaskTestCase(unittest.TestCase):
             rv = self.app.get('/exclui_parametro?\
                               padraoid=4&riscoid=' + str(param))
         data = self.data(rv)
+        for i in lista:
+            rv = self.app.get('/exclui_parametro?\
+                              padraoid=4&riscoid=' + str(i))
+            data = self.data(rv)
         print(data)
         assert b'Redirecting...' in data
 
