@@ -165,7 +165,7 @@ def importa_base():
                                                               remove=True)
                         # Sanitizar base já na importação para evitar
                         # processamento repetido depois
-                        gerente.ativa_sanitizacao()
+                        gerente.ativa_sanitizacao(ascii_sanitizar)
                         gerente.checa_depara(abase)  # Aplicar na importação???
                         logger.debug(lista_arquivos)
                         gerente.pre_processa_arquivos(lista_arquivos)
