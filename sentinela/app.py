@@ -44,7 +44,7 @@ from sentinela.models.models import (Base, BaseOrigem, Coluna, DePara,
                                      MySession, PadraoRisco, ParametroRisco,
                                      Tabela, ValorParametro, Visao)
 from sentinela.utils.gerente_base import Filtro, GerenteBase
-from sentinela.utils.gerente_risco import GerenteRisco, tmpdir
+from sentinela.utils.gerente_risco import GerenteRisco, SemHeaders, tmpdir
 
 mysession = MySession(Base)
 dbsession = mysession.session
@@ -287,8 +287,8 @@ def risco():
             if padrao:
                 gerente.set_padraorisco(padrao)
             if visaoid == '0':
-                lista_risco = gerente.load_mongo(db, abase,
-                                                 parametros_ativos)
+                lista_risco = gerente.load_mongo(db, base=abase,
+                                                 parametros_ativos=parametros_ativos)
             else:
                 avisao = dbsession.query(Visao).filter(
                     Visao.id == visaoid).first()
@@ -395,7 +395,7 @@ def edita_risco():
                 try:
                     base_headers = gerente.get_headers_base(
                         base_id, CSV_FOLDER)
-                except ValueError as err:
+                except SemHeaders as err:
                     base_headers = []
                     logger.error(err, exc_info=True)
             headers.extend(base_headers)
@@ -534,7 +534,9 @@ def exclui_valor():
 @login_required
 def edita_depara():
     baseid = request.args.get('baseid')
+    padraoid = request.args.get('padraoid')
     bases = dbsession.query(BaseOrigem).all()
+    padroes = dbsession.query(PadraoRisco).all()
     titulos = []
     headers = []
     if baseid:
@@ -543,10 +545,18 @@ def edita_depara():
         ).first()
         if base:
             titulos = base.deparas
-        gerente = GerenteRisco()
-        headers = gerente.get_headers_base(baseid, os.path.join(CSV_FOLDER))
+        try:
+            padroes_risco = dbsession.query(ParametroRisco).filter(
+                                      ParametroRisco.padraorisco_id == padraoid).all()
+            headers = [head.nome_campo for head in padroes_risco]
+            print(headers)
+        except SemHeaders as err:
+            flash('Aviso: nenhuma base exemplo ou configuração muda títulos '
+                  'encontrada para sugestão de campo parâmetro.')
     return render_template('muda_titulos.html', bases=bases,
+                           padroes=padroes,
                            baseid=baseid,
+                           padraoid=padraoid,
                            titulos=titulos,
                            lista_autocomplete=headers)
 

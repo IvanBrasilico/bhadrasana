@@ -19,6 +19,10 @@ from sentinela.models.models import (Filtro, PadraoRisco, ParametroRisco,
 from sentinela.utils.csv_handlers import muda_titulos_lista, sch_processing
 
 
+class SemHeaders(Exception):
+    pass
+
+
 def equality(listaoriginal, nomecampo, listavalores):
     df = pd.DataFrame(listaoriginal[1:], columns=listaoriginal[0])
     df = df[df[nomecampo].isin(listavalores)]
@@ -471,7 +475,7 @@ class GerenteRisco():
         for r in range(3):
             ano_mes_dia = sorted(os.listdir(caminho))
             if len(ano_mes_dia) == 0:
-                raise ValueError('Não há nenhuma base do tipo desejado '
+                raise SemHeaders('Não há nenhuma base do tipo desejado '
                                  'para consulta')
             ano_mes_dia = ano_mes_dia[-1]
             caminho = os.path.join(caminho, ano_mes_dia)
@@ -509,7 +513,7 @@ class GerenteRisco():
          utilizar :func:`aplica_risco`
         """
         numero_juncoes = len(visao.tabelas)
-        tabela = visao.tabelas[-1]
+        tabela = visao.tabelas[numero_juncoes - 1]
         filhofilename = os.path.join(path, tabela.csv_file)
         dffilho = pd.read_csv(filhofilename, encoding=ENCODE,
                               dtype=str)
@@ -630,6 +634,7 @@ class GerenteRisco():
         logger.debug(filtro)
         print(filtro)
         if collection_name:
+            print(collection_name)
             if collection_name.find('.csv') != -1:
                 collection_name = collection_name[:-4]
             list_collections = [collection_name]

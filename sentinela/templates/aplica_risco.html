@@ -40,10 +40,10 @@
                             <button class="btn btn-default btn-info" onclick="aplica_risco('{{filename}}', 'aplicar')">Aplicar</button>
                         </td>
                         <td align="center">
-                            <button class="btn btn-warning" onclick="aplica_risco('{{filename}}', 'arquivar')">Arquivar</button>
+                            <button id="btn_arquivar" class="btn btn-warning" onclick="arquiva_risco('{{filename}}', 'arquivar')">Arquivar</button>
                         </td>
                         <td align="center">
-                            <button class="btn btn-danger" onclick="aplica_risco('{{filename}}', 'excluir')">Excluir</button>
+                            <button id="btn_excluir" class="btn btn-danger" onclick="exclui_risco('{{filename}}', 'excluir')">Excluir</button>
                         </td>
                     </tr>
                     {% endfor %}{% if not lista_arquivos %}
@@ -58,8 +58,8 @@
             <h4>
                 <b>Visualização:</b>
             </h4>
-            Em bases com várias tabelas originais (vários arquivos csv ou sch/txt), é preciso definir os campos a exibir e a forma de vizualização na aba "Editar
-            Visão"
+            Em bases com várias tabelas originais (vários arquivos csv ou sch/txt), é preciso definir os campos a exibir e a forma de
+            vizualização na aba "Editar Visão"
 
             <select class="form-control" name="visao" id="visao">
                 <option value="0">Selecionar</option>
@@ -164,9 +164,33 @@
         </div>
     </div>
 </div>
-{% endif %} {% endblock %} {% block scripts %} {{super()}}
+{% endif %}
+<div class="modal fade" id="confirmacaomodal" tabindex="-1" role="dialog" aria-labelledby="ModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title" id="ModalLabel">Excluir</h1>
+                </div>
+                <div class="modal-body">
+                    <h4>Deseja realmente prosseguir com a operação?</h4>
+                    <div class="form-group">
+                        <div class="col-sm-6">
+                            <button type="button" class="btn btn-danger" onclick="aplica_risco()" data-dismiss="modal">Excluir</button>
+                        </div>
+                        <div class="col-sm-6">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %} {% block scripts %} {{super()}}
 <script>
-    function parametros_selecionados(){
+    function parametros_selecionados() {
         parametros_selecionados = [];
         $("input:checkbox[name=parametro]:checked").each(function () {
             parametros_selecionados.push($(this).val());
@@ -205,10 +229,30 @@
     $('#pd_risco td:first-child').click(function () {
         var id_risco = $(this).attr('id')
         mostra_valores(id_risco)
+        $('#valoresmodal').modal().show()
     })
     $(document).ready(function () {
-        $('#valoresmodal').modal();
+        
     })
+    function confirmacao(filename, acao) {
+       
+    };
+    function exclui_risco(filename, acao) {
+        $("#btn_excluir").click(function (event) {
+            var apagar = confirm('Deseja realmente excluir este registro?');
+            if (apagar) {
+                // aqui vai a instrução para apagar registro
+                window.location.assign('/aplica_risco?filename=' + filename +
+                    '&acao=' + acao +
+                    '&baseid=' + $("#base").val() +
+                    '&padraoid=' + $("#padrao").val() +
+                    '&visaoid=' + $("#visao").val()
+                )
+            } else {
+                event.preventDefault();
+            }
+        });
+    };
 </script>
 
 <style>

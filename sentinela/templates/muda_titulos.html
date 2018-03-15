@@ -4,6 +4,26 @@
         <div class="container-fluid">
             <div class="col-sm-3">
                 <h4>
+                    <label for="padrao">
+                        <big>
+                            <b>Escolha o Padrão de Risco:</b>
+                        </big>
+                    </label>
+                </h4>
+            </div>
+            <div class="col-sm-2">
+                <h4>
+                    <select class="form-control" name="padrao" id="padrao">
+                        <option value="0">Selecione...</option>
+                        {% for padrao in padroes %} {% if padrao.nome != 'CARGA' %}
+                        <option value="{{ padrao.id }}" {% if padrao.id|int()==padraoid|int() %} selected="selected" {% endif %}>{{ padrao.nome }}
+                        </option>
+                        {% endif %} {% endfor %}
+                    </select>
+                </h4>
+            </div>
+            <div class="col-sm-3">
+                <h4>
                     <label for="base">
                         <big>
                             <b>Escolha a Base Origem:</b>
@@ -46,8 +66,7 @@
         </div>
         <div id="list" class="row col-sm-7">
             <div class="table">
-                <table class="inlineTable table table-striped table-bordered table-hover table-responsive" 
-                    id="titulos">
+                <table class="inlineTable table table-striped table-bordered table-hover table-responsive" id="titulos">
                     <tr>
                         <th align="center">Titulo Antigo</th>
                         <th align="center">Titulo Novo</th>
@@ -74,7 +93,7 @@
 <script>
     $(function () {
         var submit_form = function (e) {
-            window.location.assign('/edita_depara?baseid=' + $("#base").val()
+            window.location.assign('/edita_depara?baseid=' + $("#base").val() + '&padraoid=' + $("#padrao").val()
             )
         };
         $('#base').bind('change', submit_form);
@@ -103,9 +122,6 @@
         {% for item in lista_autocomplete %}
         lista[lista.length] = "{{item}}"
         {% endfor %}
-        $("#titulo_ant").autocomplete({
-            source: lista
-        });
         $("#titulo_novo").autocomplete({
             source: lista
         });

@@ -253,3 +253,4 @@ class Tabela(Base):
     def csv_file(self):
         if self.csv.find('.csv') == -1:
             return self.csv + '.csv'
+        return self.csv
