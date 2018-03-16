@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 from collections import defaultdict
+from flask import flash
 
 import pandas as pd
 import pymongo
@@ -475,10 +476,9 @@ class GerenteRisco():
         for r in range(3):
             ano_mes_dia = sorted(os.listdir(caminho))
             if len(ano_mes_dia) == 0:
-                raise SemHeaders('Não há nenhuma base do tipo desejado '
-                                 'para consulta')
-            ano_mes_dia = ano_mes_dia[-1]
-            caminho = os.path.join(caminho, ano_mes_dia)
+                flash('Não foi possível carregar o autocomplete')
+                break
+            caminho = os.path.join(caminho, ano_mes_dia[-1])
         for arquivo in os.listdir(caminho):
             arquivos.append(arquivo[:-4])
             with open(os.path.join(caminho, arquivo),
@@ -488,7 +488,8 @@ class GerenteRisco():
                 cabecalhos.extend(cabecalho)
         for word in cabecalhos:
             new_word = sanitizar(word, norm_function=unicode_sanitizar)
-            cabecalhos_nao_repetidos.add(new_word)
+            if new_word not in cabecalhos_nao_repetidos:
+                cabecalhos_nao_repetidos.add(new_word)
         if arquivo is True:
             return arquivos
         return cabecalhos_nao_repetidos

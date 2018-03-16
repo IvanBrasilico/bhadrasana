@@ -386,20 +386,20 @@ def edita_risco():
     if basesid:
         logger.debug(basesid)
         for base in basesid:
+            gerente = GerenteRisco()
             logger.debug(base)
             base_id = base.id
+            headers = gerente.get_headers_base(
+                base_id, path=CSV_FOLDER)
+            headers = list(headers)
             base_headers = [depara.titulo_novo for depara in
                             dbsession.query(DePara).filter(
                                 DePara.base_id == base_id
                             ).all()]
             if not base_headers:
-                gerente = GerenteRisco()
-                try:
-                    base_headers = gerente.get_headers_base(
-                        base_id, CSV_FOLDER)
-                except SemHeaders as err:
-                    base_headers = []
-                    logger.error(err, exc_info=True)
+                base_headers = gerente.get_headers_base(
+                    base_id, path=CSV_FOLDER)
+                base_headers = list(base_headers)
             headers.extend(base_headers)
         if len(headers) == 0:
             flash('Aviso: nenhuma base exemplo ou configuração muda títulos '

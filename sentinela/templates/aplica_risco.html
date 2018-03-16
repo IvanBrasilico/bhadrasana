@@ -40,10 +40,10 @@
                             <button class="btn btn-default btn-info" onclick="aplica_risco('{{filename}}', 'aplicar')">Aplicar</button>
                         </td>
                         <td align="center">
-                            <button id="btn_arquivar" class="btn btn-warning" onclick="arquiva_risco('{{filename}}', 'arquivar')">Arquivar</button>
+                            <button id="arquivar" class="btn btn-warning" onclick="confirmacao('{{filename}}', 'arquivar')">Arquivar</button>
                         </td>
                         <td align="center">
-                            <button id="btn_excluir" class="btn btn-danger" onclick="exclui_risco('{{filename}}', 'excluir')">Excluir</button>
+                            <button id="excluir" class="btn btn-danger" onclick="confirmacao('{{filename}}', 'excluir')">Excluir</button>
                         </td>
                     </tr>
                     {% endfor %}{% if not lista_arquivos %}
@@ -169,16 +169,15 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title" id="ModalLabel">Excluir</h1>
+                    <h3 class="modal-title" id="ModalLabel"><b>Deseja realmente prosseguir com a operação?</b></h3>
                 </div>
-                <div class="modal-body">
-                    <h4>Deseja realmente prosseguir com a operação?</h4>
+                <div class="modal-body modal-body-dif">
                     <div class="form-group">
                         <div class="col-sm-6">
-                            <button type="button" class="btn btn-danger" onclick="aplica_risco()" data-dismiss="modal">Excluir</button>
+                            <button id="btn_exec_acao" type="button" class="btn btn-danger btn-block" data-dismiss="modal" >Sim</button>
                         </div>
                         <div class="col-sm-6">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-default btn-block" data-dismiss="modal">Cancelar</button>
                         </div>
                     </div>
                 </div>
@@ -229,35 +228,29 @@
     $('#pd_risco td:first-child').click(function () {
         var id_risco = $(this).attr('id')
         mostra_valores(id_risco)
-        $('#valoresmodal').modal().show()
     })
     $(document).ready(function () {
+        $('#valoresmodal').modal()
+    })
+    
+    $(document).ready(function () {
+        $('#excluir').on('click', function(){
+            $('#confirmacaomodal').modal()
+        })
+        $('#arquivar').on('click', function(){
+            $('#confirmacaomodal').modal()
+        })
         
     })
     function confirmacao(filename, acao) {
-       
-    };
-    function exclui_risco(filename, acao) {
-        $("#btn_excluir").click(function (event) {
-            var apagar = confirm('Deseja realmente excluir este registro?');
-            if (apagar) {
-                // aqui vai a instrução para apagar registro
-                window.location.assign('/aplica_risco?filename=' + filename +
-                    '&acao=' + acao +
-                    '&baseid=' + $("#base").val() +
-                    '&padraoid=' + $("#padrao").val() +
-                    '&visaoid=' + $("#visao").val()
-                )
-            } else {
-                event.preventDefault();
-            }
+        var filename = filename
+        var acao = acao
+        console.log(filename, acao)
+        $('#btn_exec_acao').on('click', function(){
+            aplica_risco(filename, acao)
         });
     };
-</script>
 
-<style>
-    .modal-body-dif {
-        max-height: calc(50vh - 150px);
-        overflow-y: auto;
-    }
-</style> {% endblock %}
+    /* Mostrar valores por AJAX*/
+</script>
+{% endblock %}
