@@ -38,7 +38,8 @@ from ajna_commons.flask.conf import (ALLOWED_EXTENSIONS, DATABASE, MONGODB_URI,
 from ajna_commons.flask.login import (DBUser, authenticate, is_safe_url,
                                       login_manager)
 from ajna_commons.flask.log import logger
-from ajna_commons.utils.sanitiza import sanitizar, unicode_sanitizar
+from ajna_commons.utils.sanitiza import (ascii_sanitizar,
+                                         sanitizar, unicode_sanitizar)
 from sentinela.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER
 from sentinela.models.models import (Base, BaseOrigem, Coluna, DePara,
                                      MySession, PadraoRisco, ParametroRisco,
@@ -287,8 +288,9 @@ def risco():
             if padrao:
                 gerente.set_padraorisco(padrao)
             if visaoid == '0':
-                lista_risco = gerente.load_mongo(db, base=abase,
-                                                 parametros_ativos=parametros_ativos)
+                lista_risco = gerente.load_mongo(
+                    db, base=abase,
+                    parametros_ativos=parametros_ativos)
             else:
                 avisao = dbsession.query(Visao).filter(
                     Visao.id == visaoid).first()
@@ -547,7 +549,7 @@ def edita_depara():
             titulos = base.deparas
         try:
             padroes_risco = dbsession.query(ParametroRisco).filter(
-                                      ParametroRisco.padraorisco_id == padraoid).all()
+                ParametroRisco.padraorisco_id == padraoid).all()
             headers = [head.nome_campo for head in padroes_risco]
             print(headers)
         except SemHeaders as err:
