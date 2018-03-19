@@ -6,7 +6,6 @@ import json
 import os
 import shutil
 from collections import defaultdict
-from flask import flash
 
 import pandas as pd
 import pymongo
@@ -514,9 +513,8 @@ class GerenteRisco():
         """
         numero_juncoes = len(visao.tabelas)
         dffilho = None
-        if numero_juncoes > 1:   # Caso apenas uma tabela esteja na visão,
-                                 # não há junção
-            tabela = visao.tabelas[numero_juncoes - 1]
+        if numero_juncoes > 1:  # Caso apenas uma tabela esteja na visão,
+            tabela = visao.tabelas[numero_juncoes - 1]  # não há junção
             filhofilename = os.path.join(path, tabela.csv_file)
             dffilho = pd.read_csv(filhofilename, encoding=ENCODE,
                                   dtype=str)
@@ -673,9 +671,7 @@ class GerenteRisco():
         numero_juncoes = len(visao.tabelas)
         dffilho = None
         if numero_juncoes > 1:   # Caso apenas uma tabela esteja na visão,
-                                 # não há junção
-
-            tabela = visao.tabelas[numero_juncoes - 1]
+            tabela = visao.tabelas[numero_juncoes - 1]  # não há junção
             filhoname = base.nome + '.' + tabela.csv_file
             print(filhoname)
             lista = self.load_mongo(db, collection_name=filhoname)
