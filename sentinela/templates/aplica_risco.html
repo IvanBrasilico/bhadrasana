@@ -40,10 +40,10 @@
                             <button class="btn btn-default btn-info" onclick="aplica_risco('{{filename}}', 'aplicar')">Aplicar</button>
                         </td>
                         <td align="center">
-                            <button class="btn btn-warning" onclick="aplica_risco('{{filename}}', 'arquivar')">Arquivar</button>
+                            <button id="arquivar" class="btn btn-warning" onclick="confirmacao('{{filename}}', 'arquivar')">Arquivar</button>
                         </td>
                         <td align="center">
-                            <button class="btn btn-danger" onclick="aplica_risco('{{filename}}', 'excluir')">Excluir</button>
+                            <button id="excluir" class="btn btn-danger" onclick="confirmacao('{{filename}}', 'excluir')">Excluir</button>
                         </td>
                     </tr>
                     {% endfor %}{% if not lista_arquivos %}
@@ -58,8 +58,8 @@
             <h4>
                 <b>Visualização:</b>
             </h4>
-            Em bases com várias tabelas originais (vários arquivos csv ou sch/txt), é preciso definir os campos a exibir e a forma de vizualização na aba "Editar
-            Visão"
+            Em bases com várias tabelas originais (vários arquivos csv ou sch/txt), é preciso definir os campos a exibir e a forma de
+            vizualização na aba "Editar Visão"
 
             <select class="form-control" name="visao" id="visao">
                 <option value="0">Selecionar</option>
@@ -164,9 +164,32 @@
         </div>
     </div>
 </div>
-{% endif %} {% endblock %} {% block scripts %} {{super()}}
+{% endif %}
+<div class="modal fade" id="confirmacaomodal" tabindex="-1" role="dialog" aria-labelledby="ModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="ModalLabel"><b>Deseja realmente prosseguir com a operação?</b></h3>
+                </div>
+                <div class="modal-body modal-body-dif">
+                    <div class="form-group">
+                        <div class="col-sm-6">
+                            <button id="btn_exec_acao" type="button" class="btn btn-danger btn-block" data-dismiss="modal" >Sim</button>
+                        </div>
+                        <div class="col-sm-6">
+                            <button type="button" class="btn btn-default btn-block" data-dismiss="modal">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %} {% block scripts %} {{super()}}
 <script>
-    function parametros_selecionados(){
+    function parametros_selecionados() {
         parametros_selecionados = [];
         $("input:checkbox[name=parametro]:checked").each(function () {
             parametros_selecionados.push($(this).val());
@@ -207,13 +230,27 @@
         mostra_valores(id_risco)
     })
     $(document).ready(function () {
-        $('#valoresmodal').modal();
+        $('#valoresmodal').modal()
     })
-</script>
+    
+    $(document).ready(function () {
+        $('#excluir').on('click', function(){
+            $('#confirmacaomodal').modal()
+        })
+        $('#arquivar').on('click', function(){
+            $('#confirmacaomodal').modal()
+        })
+        
+    })
+    function confirmacao(filename, acao) {
+        var filename = filename
+        var acao = acao
+        console.log(filename, acao)
+        $('#btn_exec_acao').on('click', function(){
+            aplica_risco(filename, acao)
+        });
+    };
 
-<style>
-    .modal-body-dif {
-        max-height: calc(50vh - 150px);
-        overflow-y: auto;
-    }
-</style> {% endblock %}
+    /* Mostrar valores por AJAX*/
+</script>
+{% endblock %}

@@ -38,13 +38,14 @@ from ajna_commons.flask.conf import (ALLOWED_EXTENSIONS, DATABASE, MONGODB_URI,
 from ajna_commons.flask.login import (DBUser, authenticate, is_safe_url,
                                       login_manager)
 from ajna_commons.flask.log import logger
-from ajna_commons.utils.sanitiza import sanitizar, unicode_sanitizar
+from ajna_commons.utils.sanitiza import (ascii_sanitizar,
+                                         sanitizar, unicode_sanitizar)
 from sentinela.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER
 from sentinela.models.models import (Base, BaseOrigem, Coluna, DePara,
                                      MySession, PadraoRisco, ParametroRisco,
                                      Tabela, ValorParametro, Visao)
 from sentinela.utils.gerente_base import Filtro, GerenteBase
-from sentinela.utils.gerente_risco import GerenteRisco, tmpdir
+from sentinela.utils.gerente_risco import GerenteRisco, SemHeaders, tmpdir
 
 mysession = MySession(Base)
 dbsession = mysession.session
@@ -287,8 +288,9 @@ def risco():
             if padrao:
                 gerente.set_padraorisco(padrao)
             if visaoid == '0':
-                lista_risco = gerente.load_mongo(db, abase,
-                                                 parametros_ativos)
+                lista_risco = gerente.load_mongo(
+                    db, base=abase,
+                    parametros_ativos=parametros_ativos)
             else:
                 avisao = dbsession.query(Visao).filter(
                     Visao.id == visaoid).first()
@@ -296,7 +298,7 @@ def risco():
                     flash('Visão não encontrada!')
                 else:
                     lista_risco = gerente.aplica_juncao_mongo(
-                        db, avisao, filtrar=True,
+                        db, avisao, filtrar=padrao is not None,
                         parametros_ativos=parametros_ativos)
         else:
             if padrao:
@@ -325,7 +327,7 @@ def risco():
                                       path, ','.join(parametros_ativos)]))
                         lista_risco = gerente.aplica_juncao(
                             avisao, path=base_csv,
-                            filtrar=True,
+                            filtrar=padrao is not None,
                             parametros_ativos=parametros_ativos
                         )
     except Exception as err:
@@ -384,20 +386,20 @@ def edita_risco():
     if basesid:
         logger.debug(basesid)
         for base in basesid:
+            gerente = GerenteRisco()
             logger.debug(base)
             base_id = base.id
+            headers = gerente.get_headers_base(
+                base_id, path=CSV_FOLDER)
+            headers = list(headers)
             base_headers = [depara.titulo_novo for depara in
                             dbsession.query(DePara).filter(
                                 DePara.base_id == base_id
                             ).all()]
             if not base_headers:
-                gerente = GerenteRisco()
-                try:
-                    base_headers = gerente.get_headers_base(
-                        base_id, CSV_FOLDER)
-                except ValueError as err:
-                    base_headers = []
-                    logger.error(err, exc_info=True)
+                base_headers = gerente.get_headers_base(
+                    base_id, path=CSV_FOLDER)
+                base_headers = list(base_headers)
             headers.extend(base_headers)
         if len(headers) == 0:
             flash('Aviso: nenhuma base exemplo ou configuração muda títulos '
@@ -534,7 +536,9 @@ def exclui_valor():
 @login_required
 def edita_depara():
     baseid = request.args.get('baseid')
+    padraoid = request.args.get('padraoid')
     bases = dbsession.query(BaseOrigem).all()
+    padroes = dbsession.query(PadraoRisco).all()
     titulos = []
     headers = []
     if baseid:
@@ -543,10 +547,18 @@ def edita_depara():
         ).first()
         if base:
             titulos = base.deparas
-        gerente = GerenteRisco()
-        headers = gerente.get_headers_base(baseid, os.path.join(CSV_FOLDER))
+        try:
+            padroes_risco = dbsession.query(ParametroRisco).filter(
+                ParametroRisco.padraorisco_id == padraoid).all()
+            headers = [head.nome_campo for head in padroes_risco]
+            print(headers)
+        except SemHeaders as err:
+            flash('Aviso: nenhuma base exemplo ou configuração muda títulos '
+                  'encontrada para sugestão de campo parâmetro.')
     return render_template('muda_titulos.html', bases=bases,
+                           padroes=padroes,
                            baseid=baseid,
+                           padraoid=padraoid,
                            titulos=titulos,
                            lista_autocomplete=headers)
 
