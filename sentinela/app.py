@@ -298,7 +298,7 @@ def risco():
                     flash('Visão não encontrada!')
                 else:
                     lista_risco = gerente.aplica_juncao_mongo(
-                        db, avisao, filtrar=True,
+                        db, avisao, filtrar=padrao is not None,
                         parametros_ativos=parametros_ativos)
         else:
             if padrao:
@@ -327,7 +327,7 @@ def risco():
                                       path, ','.join(parametros_ativos)]))
                         lista_risco = gerente.aplica_juncao(
                             avisao, path=base_csv,
-                            filtrar=True,
+                            filtrar=padrao is not None,
                             parametros_ativos=parametros_ativos
                         )
     except Exception as err:

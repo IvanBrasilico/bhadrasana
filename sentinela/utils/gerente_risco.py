@@ -513,15 +513,17 @@ class GerenteRisco():
          utilizar :func:`aplica_risco`
         """
         numero_juncoes = len(visao.tabelas)
-        tabela = visao.tabelas[numero_juncoes - 1]
-        filhofilename = os.path.join(path, tabela.csv_file)
-        dffilho = pd.read_csv(filhofilename, encoding=ENCODE,
-                              dtype=str)
-        if hasattr(tabela, 'type'):
-            how = tabela.type
-        else:
-            how = 'inner'
-        # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
+        dffilho = None
+        if numero_juncoes > 1:   # Caso apenas uma tabela esteja na visão,
+                                 # não há junção
+            tabela = visao.tabelas[numero_juncoes - 1]
+            filhofilename = os.path.join(path, tabela.csv_file)
+            dffilho = pd.read_csv(filhofilename, encoding=ENCODE,
+                                  dtype=str)
+            if hasattr(tabela, 'type'):
+                how = tabela.type
+            else:
+                how = 'inner'
         # A primeira precisa ser "pulada", sempre é a junção 2 tabelas
         # de cada vez. Se numero_juncoes for >2, entrará aqui fazendo
         # a junção em cadeia desde o último até o primeiro filho
@@ -543,10 +545,11 @@ class GerenteRisco():
         paifilename = os.path.join(path, csv_pai)
         dfpai = pd.read_csv(paifilename, encoding=ENCODE, dtype=str)
         # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
-        dfpai = dfpai.merge(dffilho, how=how,
-                            left_on=tabela.primario.lower(),
-                            right_on=tabela.estrangeiro.lower())
-        print(dfpai)
+        if dffilho:
+            dfpai = dfpai.merge(dffilho, how=how,
+                                left_on=tabela.primario.lower(),
+                                right_on=tabela.estrangeiro.lower())
+        # print(dfpai)
         if visao.colunas:
             colunas = [coluna.nome.lower() for coluna in visao.colunas]
             result_df = dfpai[colunas]
@@ -555,6 +558,7 @@ class GerenteRisco():
             result_df = dfpai
             result_list = [result_df.columns.tolist()]
         result_list.extend(result_df.values.tolist())
+        print(result_list)
         if filtrar:
             return self.aplica_risco(result_list,
                                      parametros_ativos=parametros_ativos)
@@ -667,15 +671,19 @@ class GerenteRisco():
         # trazer dados já filtrados e melhorar desempenho
         base = visao.base
         numero_juncoes = len(visao.tabelas)
-        tabela = visao.tabelas[numero_juncoes - 1]
-        filhoname = base.nome + '.' + tabela.csv_file
-        print(filhoname)
-        lista = self.load_mongo(db, collection_name=filhoname)
-        dffilho = pd.DataFrame(lista[1:], columns=lista[0])
-        if hasattr(tabela, 'type'):
-            how = tabela.type
-        else:
-            how = 'inner'
+        dffilho = None
+        if numero_juncoes > 1:   # Caso apenas uma tabela esteja na visão,
+                                 # não há junção
+
+            tabela = visao.tabelas[numero_juncoes - 1]
+            filhoname = base.nome + '.' + tabela.csv_file
+            print(filhoname)
+            lista = self.load_mongo(db, collection_name=filhoname)
+            dffilho = pd.DataFrame(lista[1:], columns=lista[0])
+            if hasattr(tabela, 'type'):
+                how = tabela.type
+            else:
+                how = 'inner'
         # A primeira precisa ser "pulada", sempre é a junção 2 tabelas
         # de cada vez. Se numero_juncoes for >2, entrará aqui fazendo
         # a junção em cadeia desde o último até o primeiro filho
@@ -695,9 +703,10 @@ class GerenteRisco():
         painame = base.nome + '.' + visao.tabelas[0].csv_file
         lista = self.load_mongo(db, collection_name=painame)
         dfpai = pd.DataFrame(lista[1:], columns=lista[0])
-        dfpai = dfpai.merge(dffilho, how=how,
-                            left_on=tabela.primario.lower(),
-                            right_on=tabela.estrangeiro.lower())
+        if dffilho:
+            dfpai = dfpai.merge(dffilho, how=how,
+                                left_on=tabela.primario.lower(),
+                                right_on=tabela.estrangeiro.lower())
         if visao.colunas:
             colunas = [coluna.nome.lower() for coluna in visao.colunas]
             result_df = dfpai[colunas]
