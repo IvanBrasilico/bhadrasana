@@ -476,7 +476,6 @@ class GerenteRisco():
         for r in range(3):
             ano_mes_dia = sorted(os.listdir(caminho))
             if len(ano_mes_dia) == 0:
-                flash('Não foi possível carregar o autocomplete')
                 break
             caminho = os.path.join(caminho, ano_mes_dia[-1])
         for arquivo in os.listdir(caminho):
