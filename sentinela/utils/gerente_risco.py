@@ -543,7 +543,7 @@ class GerenteRisco():
         paifilename = os.path.join(path, csv_pai)
         dfpai = pd.read_csv(paifilename, encoding=ENCODE, dtype=str)
         # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
-        if dffilho:
+        if dffilho is not None:
             dfpai = dfpai.merge(dffilho, how=how,
                                 left_on=tabela.primario.lower(),
                                 right_on=tabela.estrangeiro.lower())
