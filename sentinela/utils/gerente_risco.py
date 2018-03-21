@@ -5,7 +5,7 @@ import csv
 import json
 import os
 import shutil
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 import pandas as pd
 import pymongo
@@ -643,24 +643,37 @@ class GerenteRisco():
         else:
             list_collections = [name for name in
                                 db.collection_names() if base.nome in name]
-        result = []
+        result = OrderedDict()
         for collection_name in list_collections:
             mongo_list = db[collection_name].find(filtro)
             if mongo_list.count() == 0:
                 filtro = {}
                 mongo_list = db[collection_name].find(filtro)
             try:
-                result = [[key for key in mongo_list[0].keys()]]
+                headers = [[key for key in mongo_list[0].keys()]]
+                # number_of_headers = len(headers)
             except IndexError as err:
                 logger.error('load_mongo retornou vazio. Collection name:')
                 logger.error(collection_name)
                 logger.error(err, exc_info=True)
                 return []
             for linha in mongo_list:
-                result.append([value for value in linha.values()])
+                for key, value in linha.items():
+                    if result.get(key) is None:
+                        result[key] = []
+                    result[key].append(value)
+                # result.append(valores)
         logger.debug('Result ')
         logger.debug(result)
-        return result
+        headers = [key for key in result.keys()]
+        comprimento = len(result[headers[0]])
+        lista = [headers]
+        for i in range(comprimento - 1):
+            linha = []
+            for key in headers:
+                linha.append(result[key][i])
+            lista.append(linha)
+        return lista
 
     def aplica_juncao_mongo(self, db, visao,
                             parametros_ativos=None,
