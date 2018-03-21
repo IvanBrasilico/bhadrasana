@@ -1,47 +1,37 @@
 {% extends "layout.html" %} {% block content %}{{super()}}
 <div id="main" class="container-fluid">
-    <div class="row">
-        <div class="col-sm-6">
-        <h4>
-            <big>
-                <b>Escolha a Base:</b>
-            </big>
-        </h4>
-        <select class="form-control" name="base" id="base">
-            <option value="0">Selecionar</option>
-            {% for base in bases %}
-            <option value="{{ base.id }}">{{ base.nome }}
-            </option>
-            {% endfor %}
-        </select>
-        </div>
-    </div>
-    <br>
     <div id="top" class="row">
         <h4>
             <big>
-                <b>Escolha a Visao a editar:</b>
+                <b>Escolha a Base e a Visão a editar:</b>
             </big>
         </h4>
     </div>
     <div class="row">
         <div class="col-sm-6">
-            {% if visoes %}
+            <div class="col-sm-6">
+                <select class="form-control" onchange="visao()" name="base" id="base">
+                    <option value="0">Selecionar</option>
+                    {% for base in bases %}
+                    <option value="{{ base.id }}">{{ base.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
             <form id="frmvisoes" class="form-group">
-                <div class="form-group">
-                    <div class="form-group col-sm-9">
-                        <div class="input-group">
-                            <input class="form-control ui-autocomplete-input" autocomplete="off" id="visao_novo" type="text" placeholder="Nova Visao">
-                            <div class="input-group-btn">
-                                <button type="button" class="btn btn-default" onclick="adiciona_visao()" id="btn_visao" aria-haspopup="true" aria-expanded="false"
-                                    title="Adicionar">
-                                    OK
-                                </button>
-                            </div>
+                <div class="form-group col-sm-6">
+                    <div class="input-group">
+                        <input class="form-control ui-autocomplete-input" autocomplete="off" id="visao_novo" type="text" placeholder="Nova Visao">
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-default" onclick="adiciona_visao()" id="btn_visao" aria-haspopup="true" aria-expanded="false"
+                                title="Adicionar">
+                                OK
+                            </button>
                         </div>
                     </div>
                 </div>
             </form>
+            {% if visoes %}
             <div class="table">
                 <table class="inlineTable table table-bordered table-hover table-responsive" cellspacing="0" cellpadding="0" id="visoes">
                     {% for visao in visoes %}
@@ -151,10 +141,15 @@
         $('#tabela').bind('change', submit_form);
     });
 
-    $('#visoes td:first-child').click(function () {
-        var visaoid = $(this).attr('id')
-        valor_parametro(visaoid)
-    });
+    function visao() {
+        var baseid = $("#base").val();
+        if (baseid != 0) {
+            $('#visoes td:first-child').click(function () {
+                var visaoid = $(this).attr('id')
+                valor_parametro(visaoid)
+            });
+        }
+    };
 
     function valor_parametro(visaoid) {
         window.location.assign('/juncoes?visaoid=' + visaoid + '&baseid=' + $("#base").val())
@@ -202,21 +197,27 @@
     }
 
     $(function () {
-        var lista = []
-        {% for item in lista_autocomplete %}
-        lista[lista.length] = "{{item}}"
+        var colunas = []
+        var arquivos = []
+        {% for item in lista_colunas %}
+        colunas[colunas.length] = "{{item}}"
         {% endfor %}
+
+        {% for item in lista_arquivos %}
+        arquivos[arquivos.length] = "{{item}}"
+        {% endfor %}
+
         $("#col_nova").autocomplete({
-            source: lista
+            source: colunas
         });
         $("#csv").autocomplete({
-            source: lista
+            source: arquivos
         });
         $("#primario").autocomplete({
-            source: lista
+            source: colunas
         });
         $("#estrangeiro").autocomplete({
-            source: lista
+            source: colunas
         });
     });
 

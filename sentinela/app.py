@@ -738,9 +738,12 @@ def juncoes():
     tabelas = []
     colunas = []
     headers = []
+    arquivos = []
     if baseid:
         gerente = GerenteRisco()
-        headers = gerente.get_headers_base(baseid, CSV_FOLDER, arquivo=True)
+        arquivos = gerente.get_headers_base(baseid, CSV_FOLDER, csvs=True)
+        headers = gerente.get_headers_base(baseid, CSV_FOLDER)
+        list(headers)
     if visaoid:
         tabelas = dbsession.query(Tabela).filter(
             Tabela.visao_id == visaoid
@@ -755,7 +758,8 @@ def juncoes():
                            visoes=visoes,
                            colunas=colunas,
                            tabelas=tabelas,
-                           lista_autocomplete=headers)
+                           lista_colunas=headers,
+                           lista_arquivos=arquivos)
 
 
 @app.route('/adiciona_visao')
