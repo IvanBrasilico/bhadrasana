@@ -137,7 +137,6 @@
         AJNA - Receita Federal do Brasil 2017
     </div>
 </div>
-{% if valores %}
 <div class="modal fade" id="valoresmodal" tabindex="-1" role="dialog" aria-labelledby="ModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -146,14 +145,10 @@
             </div>
             <div class="modal-body modal-body-dif">
                 <div class="table-responsive col-md-12">
-                    <table class="inlineTable table table-striped table-bordered table-hover table-condensed table-responsive" cellspacing="0"
+                    <table id="valores" class="inlineTable table table-striped table-bordered table-hover table-condensed table-responsive" cellspacing="0"
                         cellpadding="0" id="parametros" align="center">
-                        {% for valor in valores %}
                         <tr>
-                            <td>{{valor.valor}}</td>
-                            <td>{{valor.tipo_filtro}}</td>
                         </tr>
-                        {% endfor %}
                     </table>
                     &nbsp;
                 </div>
@@ -164,29 +159,30 @@
         </div>
     </div>
 </div>
-{% endif %}
 <div class="modal fade" id="confirmacaomodal" tabindex="-1" role="dialog" aria-labelledby="ModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title" id="ModalLabel"><b>Deseja realmente prosseguir com a operação?</b></h3>
-                </div>
-                <div class="modal-body modal-body-dif">
-                    <div class="form-group">
-                        <div class="col-sm-6">
-                            <button id="btn_exec_acao" type="button" class="btn btn-danger btn-block" data-dismiss="modal" >Sim</button>
-                        </div>
-                        <div class="col-sm-6">
-                            <button type="button" class="btn btn-default btn-block" data-dismiss="modal">Cancelar</button>
-                        </div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="ModalLabel">
+                    <b>Deseja realmente prosseguir com a operação?</b>
+                </h3>
+            </div>
+            <div class="modal-body modal-body-dif">
+                <div class="form-group">
+                    <div class="col-sm-6">
+                        <button id="btn_exec_acao" type="button" class="btn btn-danger btn-block" data-dismiss="modal">Sim</button>
+                    </div>
+                    <div class="col-sm-6">
+                        <button type="button" class="btn btn-default btn-block" data-dismiss="modal">Cancelar</button>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
+</div>
 {% endblock %} {% block scripts %} {{super()}}
 <script>
     function parametros_selecionados() {
@@ -194,8 +190,9 @@
         $("input:checkbox[name=parametro]:checked").each(function () {
             parametros_selecionados.push($(this).val());
         });
-        return parametros_selecionados
-    }
+        return parametros_selecionados;
+    };
+
     function aplica_risco(filename, acao) {
         window.location.assign('/aplica_risco?filename=' + filename +
             '&acao=' + acao +
@@ -203,54 +200,65 @@
             '&padraoid=' + $("#padrao").val() +
             '&visaoid=' + $("#visao").val() +
             '&parametros_ativos=' + parametros_selecionados()
-        )
-    }
+        );
+    };
+
     $(function () {
         var submit_form = function (e) {
             window.location.assign('/risco?baseid=' + $("#base").val() +
                 '&padraoid=' + $("#padrao").val() +
                 '&visaoid=' + $("#visao").val() +
                 '&parametros_ativos=' + parametros_selecionados()
-            )
+            );
         };
         $('#base').bind('change', submit_form);
         $('#padrao').bind('change', submit_form);
         $('#visao').bind('change', submit_form);
     });
-    function mostra_valores(parametroid) {
-        window.location.assign('/risco?baseid=' + $("#base").val() +
-            '&padraoid=' + $("#padrao").val() +
-            '&visaoid=' + $("#visao").val() +
-            '&parametroid=' + parametroid +
-            '&parametros_ativos=' + parametros_selecionados()
-        )
-    }
-    $('#pd_risco td:first-child').click(function () {
-        var id_risco = $(this).attr('id')
-        mostra_valores(id_risco)
-    })
+
     $(document).ready(function () {
-        $('#valoresmodal').modal()
-    })
-    
+        $('#pd_risco td:first-child').click(function () {
+            $('#valores tr').remove();
+            var id_risco = $(this).attr('id')
+            url = '/valores?parametroid=' + id_risco
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function (data) {
+                    console.log(data)
+                    $(data).each(function () {
+                        $(this).each(function () {
+                            $('#valores').append(
+                                $('<tr>').append(
+                                    $('<td>').text(this[0]),
+                                    $('<td>').text(this[1])
+                                )
+                            )
+                        });
+                    });
+                    $('#valoresmodal').modal();
+                }
+            });
+        });
+    });
+
     $(document).ready(function () {
-        $('#excluir').on('click', function(){
+        $('#excluir').on('click', function () {
             $('#confirmacaomodal').modal()
         })
-        $('#arquivar').on('click', function(){
+        $('#arquivar').on('click', function () {
             $('#confirmacaomodal').modal()
-        })
-        
-    })
+        });
+    });
+
     function confirmacao(filename, acao) {
         var filename = filename
         var acao = acao
         console.log(filename, acao)
-        $('#btn_exec_acao').on('click', function(){
+        $('#btn_exec_acao').on('click', function () {
             aplica_risco(filename, acao)
         });
     };
 
     /* Mostrar valores por AJAX*/
-</script>
-{% endblock %}
+</script> {% endblock %}

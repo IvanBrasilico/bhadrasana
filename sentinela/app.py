@@ -20,8 +20,8 @@ import datetime
 import os
 import shutil
 
-from flask import (Flask, abort, flash, redirect, render_template, request,
-                   session, url_for)
+from flask import (Flask, abort, flash, jsonify, redirect, render_template,
+                   request, session, url_for)
 from flask_bootstrap import Bootstrap
 # from flask_cors import CORS
 from flask_login import current_user, login_required, login_user, logout_user
@@ -271,14 +271,6 @@ def risco():
     ).first()
     if padrao is not None:
         parametros = padrao.parametros
-    parametro_id = request.args.get('parametroid')
-    valores = []
-    if parametro_id:
-        paramrisco = dbsession.query(ParametroRisco).filter(
-            ParametroRisco.id == parametro_id
-        ).first()
-        if paramrisco:
-            valores = paramrisco.valores
 
     gerente = GerenteRisco()
     lista_risco = []
@@ -352,10 +344,26 @@ def risco():
                            visaoid=visaoid,
                            parametros=parametros,
                            parametros_ativos=parametros_ativos,
-                           valores=valores,
                            filename=path,
                            csv_salvo=os.path.basename(csv_salvo),
                            lista_risco=lista_risco)
+
+
+@app.route('/valores')
+@login_required
+def valores():
+    parametro_id = request.args.get('parametroid')
+    result = []
+    if parametro_id:
+        paramrisco = dbsession.query(ParametroRisco).filter(
+            ParametroRisco.id == parametro_id
+        ).first()
+        if paramrisco:
+            valores = paramrisco.valores
+            result.append([
+                [item.valor, str(item.tipo_filtro)] for item in valores
+            ])
+    return jsonify(result)
 
 
 @app.route('/edita_risco', methods=['POST', 'GET'])
