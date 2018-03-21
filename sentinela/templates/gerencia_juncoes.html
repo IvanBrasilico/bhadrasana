@@ -142,14 +142,13 @@
     });
 
     function visao() {
-        var baseid = $("#base").val();
-        if (baseid != 0) {
-            $('#visoes td:first-child').click(function () {
-                var visaoid = $(this).attr('id')
-                valor_parametro(visaoid)
-            });
-        }
+        window.location.assign('/juncoes?baseid=' + $("#base").val())
     };
+
+    $('#visoes td:first-child').click(function () {
+        var visaoid = $(this).attr('id')
+        valor_parametro(visaoid)
+    });
 
     function valor_parametro(visaoid) {
         window.location.assign('/juncoes?visaoid=' + visaoid + '&baseid=' + $("#base").val())
