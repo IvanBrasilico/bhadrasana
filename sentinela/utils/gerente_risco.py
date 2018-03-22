@@ -5,7 +5,7 @@ import csv
 import json
 import os
 import shutil
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
 
 import pandas as pd
 import pymongo
