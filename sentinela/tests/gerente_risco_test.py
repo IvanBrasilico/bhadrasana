@@ -304,11 +304,23 @@ class TestGerenteRisco(unittest.TestCase):
                     })
         result = gerente.load_mongo(db, collection_name='CARGA.csv')
         print(result)
+        # assert False"""
+
+    @unittest.expectedFailure
+    def test_fail_tomongo(self):
+        gerente = self.gerente
+        db = self.db
+        base = type('BaseOrigem', (object, ), {
+                    'id': '1',
+                    'nome': 'baseteste'
+                    })
+        gerente.csv_to_mongo(db, base)
+        # gerente.csv_to_mongo(db, base, arquivo=CSV_ALIMENTOS)
         # assert False
 
     def test_tomongo(self):
         gerente = self.gerente
-        db = self.mongodb
+        db = self.db
         base = type('BaseOrigem', (object, ), {
                     'id': '1',
                     'nome': 'baseteste'
@@ -316,7 +328,7 @@ class TestGerenteRisco(unittest.TestCase):
         gerente.csv_to_mongo(db, base, arquivo=CSV_ALIMENTOS)
         # assert False
 
-    def test_juntamongo(self):
+    """def test_juntamongo(self):
         gerente = self.gerente
         db = self.db
         base = type('Base', (object, ), {

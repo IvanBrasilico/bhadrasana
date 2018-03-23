@@ -404,10 +404,7 @@ def edita_risco():
                             dbsession.query(DePara).filter(
                                 DePara.base_id == base_id
                             ).all()]
-            if not base_headers:
-                base_headers = gerente.get_headers_base(
-                    base_id, path=CSV_FOLDER)
-                base_headers = list(base_headers)
+            base_headers = list(base_headers)
             headers.extend(base_headers)
         if len(headers) == 0:
             flash('Aviso: nenhuma base exemplo ou configuração muda títulos '

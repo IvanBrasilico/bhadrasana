@@ -219,7 +219,6 @@ class FlaskTestCase(unittest.TestCase):
         else:
             rv = self.app.get('/edita_risco?padraoid=4&riscoid=26')
         data = self.data(rv)
-        print(data)
         assert b'AJNA' in data
 
     def test_42_adicionaparametro(self):
@@ -232,7 +231,6 @@ class FlaskTestCase(unittest.TestCase):
                 '/adiciona_parametro?padraoid=4&risco_novo=comida&\
                 &lista=lista, teste')
         data = self.data(rv)
-        print(data)
         assert b'Redirecting...' in data
 
     def test_43_adicionavalor(self):
@@ -246,8 +244,17 @@ class FlaskTestCase(unittest.TestCase):
                 '/adiciona_valor?padraoid=4&riscoid=' + str(parametro) +
                 '&novo_valor=temaki&filtro=igual')
         data = self.data(rv)
-        print(data)
         assert b'Redirecting...' in data
+
+    def test_44_valores(self):
+        parametro = self._paramid('comida')
+        if self.http_server is not None:
+            rv = self.app.get('/valores?parametroid=' + str(parametro),
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/valores?parametroid=' + str(parametro))
+        data = self.data(rv)
+        assert b'temaki' in data
 
     # importa csv
     def test_5_importacsv(self):
@@ -311,14 +318,13 @@ class FlaskTestCase(unittest.TestCase):
                               params=dict(csrf_token=self.csrf_token))
         else:
             rv = self._post(
-                '/importa_csv/4/26', data={'csv': ''}, follow_redirects=False)
+                '/importa_csv/4/26', data={'': ''}, follow_redirects=False)
         data = self.data(rv)
-        assert b'Redirecting..' in data
         file = {
-            'csv': (BytesIO(b'FILE CONTENT'), 'arq.png')
+            'csv': (BytesIO(b'FILE CONTENT'), 'arq.csv')
         }
         rv = self._post(
-            '/importa_csv/4/26', data=file, follow_redirects=False)
+            '/importa_csv/4/None', data=file, follow_redirects=False)
         data = self.data(rv)
         assert b'Redirecting..' in data
 
@@ -335,7 +341,7 @@ class FlaskTestCase(unittest.TestCase):
                               params=dict(csrf_token=self.csrf_token))
         else:
             rv = self._post('/importa_base',
-                            data={'file': ''},
+                            data={'file': None},
                             follow_redirects=True
                             )
         data = self.data(rv)
@@ -350,6 +356,16 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         print(data)
         # assert False
+
+    def test_arquivar(self):
+        if self.http_server is not None:
+            rv = self.app.get('/importa_csv/4/26',
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get(
+                '/aplica_risco?baseid=5&acao=arquivar')
+        data = self.data(rv)
+        print(data)
 
     def test_excluiparametro(self):
         param = self._paramid('comida')
@@ -445,10 +461,10 @@ class FlaskTestCase(unittest.TestCase):
 
     def test_d_juncoes(self):
         if self.http_server is not None:
-            rv = self.app.get('/juncoes?visaoid=1',
+            rv = self.app.get('/juncoes?baseid=1&visaoid=1',
                               params=dict(csrf_token=self.csrf_token))
         else:
-            rv = self.app.get('/juncoes?visaoid=1')
+            rv = self.app.get('/juncoes?baseid=1&visaoid=1')
         data = self.data(rv)
         assert b'AJNA' in data
 
