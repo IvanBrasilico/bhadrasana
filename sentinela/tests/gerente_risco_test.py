@@ -1,7 +1,7 @@
 """Testes para o módulo gerente_risco"""
 import csv
 import datetime
-# import mongomock
+import mongomock
 import os
 import shutil
 import tempfile
@@ -39,14 +39,14 @@ class TestGerenteRisco(unittest.TestCase):
             reader = csv.reader(f)
             self.lista = [linha for linha in reader]
         self.gerente = GerenteRisco()
-        # self.client = mongomock.MongoClient()
-        # self.mongodb = self.client['CARGA']
-        # self.mongodb.collection.drop()
-        # for _i in 'abx':
-        #    self.mongodb.collection.create_index(
-        #        _i, unique=False, name='idx' + _i,
-        #        sparse=True, background=True)
-        # self.bulk_op = self.mongodb.collection.initialize_ordered_bulk_op()
+        self.client = mongomock.MongoClient()
+        self.mongodb = self.client['CARGA']
+        self.mongodb.collection.drop()
+        for _i in 'abx':
+            self.mongodb.collection.create_index(
+                _i, unique=False, name='idx' + _i,
+                sparse=True, background=True)
+        self.bulk_op = self.mongodb.collection.initialize_ordered_bulk_op()
         self.tmpdir = tempfile.mkdtemp()
         # Ensure the file is read/write by the creator only
         self.saved_umask = os.umask(0o077)
@@ -294,7 +294,7 @@ class TestGerenteRisco(unittest.TestCase):
                                  CSV_ADITIVOS)
         shutil.rmtree(CSV_FOLDER_DEST)
 
-    """def test_loadmongo(self):
+    def test_loadmongo(self):
         gerente = self.gerente
         db = self.mongodb
         db.create_collection('CARGA')
@@ -304,7 +304,7 @@ class TestGerenteRisco(unittest.TestCase):
                     })
         result = gerente.load_mongo(db, collection_name='CARGA.csv')
         print(result)
-        # assert False"""
+        # assert False
 
     @unittest.expectedFailure
     def test_fail_tomongo(self):
