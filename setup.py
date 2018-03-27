@@ -23,7 +23,6 @@ setup(
         'pymongo',
         'raven',
         'redis',
-        'mongomock',
         'sqlalchemy'
     ],
     dependency_links=[
@@ -53,7 +52,8 @@ setup(
             'radon',
             'sphinx',
             'testfixtures',
-            'tox'
+            'tox',
+            'mongomock'
         ],
     },
     classifiers=[
