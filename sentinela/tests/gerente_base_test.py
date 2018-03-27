@@ -58,6 +58,7 @@ class TestModel(unittest.TestCase):
                 for linha in lista:
                     html.write('{}\n'.format(linha))
         assert '<ul' in lista[0]
+        assert len(olista) == 12
 
     def test_buscapai(self):
         escala = self.dbsession.query(Escala).filter(

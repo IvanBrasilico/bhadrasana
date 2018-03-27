@@ -187,7 +187,8 @@ class TestGerenteRisco(unittest.TestCase):
         gerente.import_named_csv(CSV_NAMEDRISCO_TEST)
         lista_risco = gerente.aplica_risco(lista)
         assert len(lista_risco) == 6
-        lista_named_csv = gerente.import_named_csv(CSV_NAMEDRISCO_TEST, tolist=True)
+        lista_named_csv = gerente.import_named_csv(CSV_NAMEDRISCO_TEST,
+                                                   tolist=True)
         assert len(lista_named_csv) == 3
 
     def test_parametrostocsv(self):
