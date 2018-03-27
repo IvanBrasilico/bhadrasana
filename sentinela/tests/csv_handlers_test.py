@@ -10,7 +10,7 @@ from ajna_commons.utils.sanitiza import (ascii_sanitizar, sanitizar,
                                          sanitizar_lista, unicode_sanitizar)
 from sentinela.utils.csv_handlers import (ENCODE,
                                           muda_titulos_csv, muda_titulos_lista,
-                                          sch_processing)
+                                          retificar_linhas, sch_processing)
 
 tmpdir = tempfile.mkdtemp()
 
@@ -49,6 +49,11 @@ class TestCsvHandlers(unittest.TestCase):
         self.lista = muda_titulos_lista(self.lista,
                                         TestCsvHandlers.titulos_novos)
         self.comparalistas(lista_old, self.lista)
+
+    def test_retificar_linha(self):
+        headers = ['cpf', 'cnpj']
+        linha = ['1123', '1325', '9513']
+        retificar_linhas(linha, headers)
 
     def comparalistas(self, lista_old, lista):
         for old, new in TestCsvHandlers.titulos_novos.items():

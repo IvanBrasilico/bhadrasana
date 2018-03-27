@@ -21,7 +21,8 @@ CSV_ALIMENTOS = os.path.join(
     APP_PATH, CSV_FOLDER_TEST, 'alimentoseesportes.csv')
 CSV_ADITIVOS = os.path.join(
     APP_PATH, CSV_FOLDER_TEST, 'aditivoseaventuras.csv')
-
+ZIP = os.path.join(
+    APP_PATH, CSV_FOLDER_TEST, 'tests.zip')
 
 # SCH_VIAGENS é um zip
 # contendo o conteúdo de csv alimentos e csv aditivos,
@@ -186,6 +187,8 @@ class TestGerenteRisco(unittest.TestCase):
         gerente.import_named_csv(CSV_NAMEDRISCO_TEST)
         lista_risco = gerente.aplica_risco(lista)
         assert len(lista_risco) == 6
+        lista_named_csv = gerente.import_named_csv(CSV_NAMEDRISCO_TEST, tolist=True)
+        assert len(lista_named_csv) == 3
 
     def test_parametrostocsv(self):
         lista = self.lista
@@ -255,6 +258,7 @@ class TestGerenteRisco(unittest.TestCase):
         result = gerente.aplica_juncao(capitulos_livro, path=path)
         print(result)
         assert len(result) == 9
+        gerente.aplica_juncao(capitulos_livro, path=path, filtrar=True)
         # assert False  # Uncomment to view output
 
     def test_headers(self):
@@ -272,6 +276,10 @@ class TestGerenteRisco(unittest.TestCase):
         data = datetime.date.today().strftime('%Y-%m-%d')
         if os.path.exists(CSV_FOLDER_DEST):
             shutil.rmtree(CSV_FOLDER_DEST)
+        gerente.importa_base(CSV_FOLDER_DEST,
+                             '3',
+                             data,
+                             ZIP)
         gerente.importa_base(CSV_FOLDER_DEST,
                              '1',
                              data,

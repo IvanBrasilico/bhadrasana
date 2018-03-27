@@ -35,9 +35,8 @@ class TestModel(unittest.TestCase):
 
     def test_lista_dir(self):
         # TODO: criar arquivo de testes
-        # self.gerente.set_path('1/2017/0329', test=True)
+        self.gerente.set_path('1/2018/01/02', test=True)
         # self._escala(self.gerente.dict_models)
-        pass
 
     def test_filtra(self):
         self.gerente.set_module('carga')
@@ -53,6 +52,7 @@ class TestModel(unittest.TestCase):
             Escala.Escala == 'E-1').first()
         if escala:
             lista = self.gerente.recursive_tree(escala)
+            olista = self.gerente.recursive_tree(escala, recursive=False)
             print(lista)
             with open('tree.html', 'w') as html:
                 for linha in lista:

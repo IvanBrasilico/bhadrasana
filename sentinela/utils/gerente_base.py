@@ -144,7 +144,7 @@ class GerenteBase:
                     result.append('<ul>')
                     if isinstance(arvore_filho, list):
                         for filho in arvore_filho:
-                            result.append('<li><a href="#" id="' + filho.id +
+                            result.append('<li><a href="#" id=" %s' % filho.id +
                                           '">' + type(filho).__name__ +
                                           '</a></li>')
                     else:
