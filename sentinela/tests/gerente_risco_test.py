@@ -241,10 +241,12 @@ class TestGerenteRisco(unittest.TestCase):
                           'filhos': [sub_capitulos],
                           'csv_file': 'capitulos.csv'
                           })
+        nome = type('Tabela', (object, ),
+                    {'nome': 'nome'})
         capitulos_livro = type('Visao', (object, ),
                                {'nome': 'capitulos_livro',
                                 'tabelas': [livro, capitulos, sub_capitulos],
-                                'colunas': []
+                                'colunas': [nome]
                                 })
         path = 'sentinela/tests/juncoes'
         result = gerente.aplica_juncao(autores_livro, path=path)
@@ -261,6 +263,9 @@ class TestGerenteRisco(unittest.TestCase):
             1, os.path.join(APP_PATH, CSV_FOLDER_TEST))
         assert len(headers) == 4
         assert isinstance(headers, set)
+        headers = gerente.get_headers_base(
+            1, os.path.join(APP_PATH, CSV_FOLDER_TEST), csvs=True)
+        assert len(headers) == 2
 
     def test_importa_base(self):
         gerente = self.gerente
@@ -298,15 +303,10 @@ class TestGerenteRisco(unittest.TestCase):
         gerente = self.gerente
         db = self.mongodb
         db.create_collection('CARGA')
-        base = type('BaseOrigem', (object, ), {
-                    'id': '1',
-                    'nome': 'CARGA'
-                    })
         result = gerente.load_mongo(db, collection_name='CARGA.csv')
         print(result)
         # assert False
 
-    @unittest.expectedFailure
     def test_fail_tomongo(self):
         gerente = self.gerente
         db = self.db
@@ -314,7 +314,8 @@ class TestGerenteRisco(unittest.TestCase):
                     'id': '1',
                     'nome': 'baseteste'
                     })
-        gerente.csv_to_mongo(db, base)
+        with self.assertRaises(AttributeError):
+            gerente.csv_to_mongo(db, base)
         # gerente.csv_to_mongo(db, base, arquivo=CSV_ALIMENTOS)
         # assert False
 
@@ -330,7 +331,8 @@ class TestGerenteRisco(unittest.TestCase):
 
     """def test_juntamongo(self):
         gerente = self.gerente
-        db = self.db
+        db = self.mongodb
+        db.create_collection('baseteste.livros')
         base = type('Base', (object, ), {
                     'nome': 'baseteste'
                     })
@@ -338,13 +340,13 @@ class TestGerenteRisco(unittest.TestCase):
                        {'csv': 'autores',
                         'primario': 'id',
                         'estrangeiro': 'livroid',
-                        'csv_file': 'autores.csv'
+                        'csv_file': 'autores'
                         })
         livro = type('Tabela', (object, ),
                      {'csv': 'livros',
                       'primario': 'id',
                       'filhos': [autores],
-                      'csv_file': 'livros.csv'
+                      'csv_file': 'livros'
                       })
         visao = type('Visao', (object, ), {
                      'base': base,
@@ -352,4 +354,5 @@ class TestGerenteRisco(unittest.TestCase):
                      'colunas': []
                      })
         gerente.aplica_juncao_mongo(db, visao)
-        #assert False"""
+        #assert False
+        """

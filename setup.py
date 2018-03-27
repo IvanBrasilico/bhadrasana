@@ -23,6 +23,7 @@ setup(
         'pymongo',
         'raven',
         'redis',
+        'mongomock',
         'sqlalchemy'
     ],
     dependency_links=[
