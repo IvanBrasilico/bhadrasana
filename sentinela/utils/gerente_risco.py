@@ -24,12 +24,30 @@ class SemHeaders(Exception):
 
 
 def equality(listaoriginal, nomecampo, listavalores):
+    """Realiza a filtragem dos riscos nas listas
+    Args:
+        listaoriginal: Lista importada do CSV
+        nomecampo: Nome do campo a ser buscado
+        listavalores: Lista de valores a serem buscados
+    Returns:
+        Retorna uma lista com itens da listaoriginal que são iguais ao da
+        listavalores
+    """
     df = pd.DataFrame(listaoriginal[1:], columns=listaoriginal[0])
     df = df[df[nomecampo].isin(listavalores)]
     return df.values.tolist()
 
 
 def startswith(listaoriginal, nomecampo, listavalores):
+    """Realiza a filtragem dos riscos nas listas
+    Args:
+        listaoriginal: Lista importada do CSV
+        nomecampo: Nome do campo a ser buscado
+        listavalores: Lista de valores a serem buscados
+    Returns:
+        Retorna uma lista com itens da listaoriginal que começam com os itens
+        da listavalores
+    """
     df = pd.DataFrame(listaoriginal[1:], columns=listaoriginal[0])
     result = []
     for valor in listavalores:
@@ -39,6 +57,15 @@ def startswith(listaoriginal, nomecampo, listavalores):
 
 
 def contains(listaoriginal, nomecampo, listavalores):
+    """Realiza a filtragem dos riscos nas listas
+    Args:
+        listaoriginal: Lista importada do CSV
+        nomecampo: Nome do campo a ser buscado
+        listavalores: Lista de valores a serem buscados
+    Returns:
+        Retorna uma lista com itens da listaoriginal que contenham os itens
+        da listavalores
+    """
     df = pd.DataFrame(listaoriginal[1:], columns=listaoriginal[0])
     result = []
     for valor in listavalores:
@@ -161,7 +188,11 @@ class GerenteRisco():
             self.add_risco(parametro)
 
     def cria_padraorisco(self, nomepadraorisco, session):
-        """Cria um novo objeto PadraoRisco"""
+        """Cria um novo objeto PadraoRisco
+        Args:
+            nomepadraorisco: Nome do padrão a ser criado
+            session: Sessão do banco de dados
+        """
         padraorisco = session.query(PadraoRisco).filter(
             PadraoRisco.nome == nomepadraorisco).first()
         if not padraorisco:
@@ -169,7 +200,11 @@ class GerenteRisco():
         self.set_padraorisco(padraorisco)
 
     def add_risco(self, parametrorisco, session=None):
-        """Configura os parametros de risco ativos"""
+        """Configura os parametros de risco ativos
+        Args:
+            parametrorisco: Nome do parâmetro a ser adicionado
+            session: Sessão do banco de dados
+        """
         dict_filtros = defaultdict(list)
         for valor in parametrorisco.valores:
             dict_filtros[valor.tipo_filtro].append(valor.valor.lower())
@@ -180,7 +215,11 @@ class GerenteRisco():
             session.commit()
 
     def remove_risco(self, parametrorisco, session=None):
-        """Configura os parametros de risco ativos"""
+        """Configura os parametros de risco ativos
+        Args:
+            parametrorisco: Nome do parâmetro a ser removido
+            session: Sessão do banco de dados
+        """
         self._riscosativos.pop(parametrorisco.nome_campo, None)
         if session and self._padraorisco:
             self._padraorisco.parametros.remove(parametrorisco)
@@ -188,7 +227,10 @@ class GerenteRisco():
             session.commit()
 
     def clear_risco(self, session=None):
-        """Zera os parametros de risco ativos"""
+        """Zera os parametros de risco ativos
+        Args:
+            session: Sessão do banco de dados
+        """
         self._riscosativos = {}
         if session and self._padraorisco:
             self._padraorisco.parametros.clear()
