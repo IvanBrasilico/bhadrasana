@@ -53,7 +53,6 @@ class TestModel(unittest.TestCase):
         if escala:
             lista = self.gerente.recursive_tree(escala)
             olista = self.gerente.recursive_tree(escala, recursive=False)
-            print(lista)
             with open('tree.html', 'w') as html:
                 for linha in lista:
                     html.write('{}\n'.format(linha))

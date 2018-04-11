@@ -20,11 +20,12 @@ import datetime
 import os
 import shutil
 
+import ajna_commons.flask.login as login
 from flask import (Flask, abort, flash, jsonify, redirect, render_template,
                    request, session, url_for)
 from flask_bootstrap import Bootstrap
 # from flask_cors import CORS
-from flask_login import current_user, login_required, login_user, logout_user
+from flask_login import current_user, login_required
 from flask_nav import Nav
 from flask_nav.elements import Navbar, View
 from flask_session import Session
@@ -35,8 +36,6 @@ from werkzeug.utils import secure_filename
 
 from ajna_commons.flask.conf import (ALLOWED_EXTENSIONS, DATABASE, MONGODB_URI,
                                      SECRET, logo)
-from ajna_commons.flask.login import (DBUser, authenticate, is_safe_url,
-                                      login_manager)
 from ajna_commons.flask.log import logger
 from ajna_commons.utils.sanitiza import (ascii_sanitizar,
                                          sanitizar, unicode_sanitizar)
@@ -54,11 +53,12 @@ engine = mysession.engine
 app = Flask(__name__, static_url_path='/static')
 conn = MongoClient(host=MONGODB_URI)
 db = conn[DATABASE]
-DBUser.dbsession = db
+login.login_manager.init_app(app)
+login.configure(app)
+login.DBUser.dbsession = db
 """ mongo_info = [str(s) for s in conn.address if isinstance(
    s, str) or isinstance(s, int)]
 logger.info('MongoDB connected ' + ':'.join(mongo_info))"""
-login_manager.init_app(app)
 # CORS(app)
 csrf = CSRFProtect(app)
 Bootstrap(app)
@@ -72,40 +72,6 @@ def log_every_request():
     if current_user and current_user.is_authenticated:
         name = current_user.name
     logger.info(request.url + ' - ' + name)
-
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    message = request.args.get('message', '')
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('senha')
-        registered_user = authenticate(username, password)
-        logger.info('User found: ')
-        logger.info(registered_user)
-        if registered_user is not None:
-            logger.info('Logged in..')
-            login_user(registered_user)
-            next = request.args.get('next')
-            if not is_safe_url(next):
-                return abort(400)
-            return redirect(next or url_for('index'))
-        else:
-            logger.error('Login inválido...')
-            message = 'Login inválido!'
-    return render_template('login.html',
-                           message=message,
-                           form=request.form)
-
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    next = request.args.get('next')
-    if not is_safe_url(next):
-        next = None
-    return redirect(next or url_for('index'))
 
 
 def allowed_file(filename):

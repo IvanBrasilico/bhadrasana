@@ -161,6 +161,7 @@ class GerenteRisco():
             self.add_risco(parametro)
 
     def cria_padraorisco(self, nomepadraorisco, session):
+        """Cria um novo objeto PadraoRisco"""
         padraorisco = session.query(PadraoRisco).filter(
             PadraoRisco.nome == nomepadraorisco).first()
         if not padraorisco:
@@ -678,6 +679,19 @@ class GerenteRisco():
     def aplica_juncao_mongo(self, db, visao,
                             parametros_ativos=None,
                             filtrar=False):
+        """Lê as coleções configuradas no mongo. Carrega em
+        DataFrames e faz merge destas.
+
+        Args:
+            db: MongoDB
+            visao: objeto de Banco de Dados que espeficica as configurações
+            (metadados) da base
+            parametros_ativos: subconjunto do parâmetros de risco a serem
+            aplicados
+            filtrar: aplica_risco após merge dos DataFrames
+        Returns:
+            lista contendo os campos filtrados. 1ª linha com nomes de campo
+        """
         # TODO: Usar métodos próprios do MongoDB ao invés de DataFrames para
         # trazer dados já filtrados e melhorar desempenho
         base = visao.base
