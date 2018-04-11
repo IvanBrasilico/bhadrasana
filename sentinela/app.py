@@ -21,7 +21,7 @@ import os
 import shutil
 
 import ajna_commons.flask.login as login
-from flask import (Flask, abort, flash, jsonify, redirect, render_template,
+from flask import (Flask, flash, jsonify, redirect, render_template,
                    request, session, url_for)
 from flask_bootstrap import Bootstrap
 # from flask_cors import CORS
@@ -345,7 +345,7 @@ def edita_risco():
     """Tela para configurar os parâmetros de risco das bases importadas,
     permite a alteração e criação de novos parâmetros e seus dados
     Args:
-        padraoid: ID do padrão de risco criado e/ou escolhido para 
+        padraoid: ID do padrão de risco criado e/ou escolhido para
         realizar a alteração
         riscoid: ID do objeto de risco para aplicar a edição
     """
@@ -540,7 +540,7 @@ def adiciona_valor():
 
 @app.route('/exclui_valor')
 def exclui_valor():
-    """Função que exclui apenas o valor e o tipo_filtro de um parâmetro de 
+    """Função que exclui apenas o valor e o tipo_filtro de um parâmetro de
     risco
     Args:
         padraoid: ID do padrão de risco
@@ -595,11 +595,11 @@ def edita_depara():
 
 @app.route('/adiciona_depara')
 def adiciona_depara():
-    """Função que permite unificar o nome de colunas que possuem o mesmo 
+    """Função que permite unificar o nome de colunas que possuem o mesmo
     conteúdo
 
     Esta função realiza a troca do titulo de uma coluna por outro, permitindo
-    que duas colunas que tragam a mesma informação em bases diferentes sejam 
+    que duas colunas que tragam a mesma informação em bases diferentes sejam
     filtradas por um único parâmetro de risco.
 
     Args:
@@ -623,8 +623,8 @@ def adiciona_depara():
 @app.route('/exclui_depara')
 def exclui_depara():
     """Função que remove a troca de titulo selecionada
-    
-    Esta função permite unificar o nome de colunas que possuem o mesmo 
+
+    Esta função permite unificar o nome de colunas que possuem o mesmo
     conteúdo
 
     Args:
@@ -818,7 +818,7 @@ def adiciona_visao():
 
     Args:
         baseid: ID da Base de Origem do arquivo
-        visao_novo: Nome do objeto de Banco de Dados que espeficica as 
+        visao_novo: Nome do objeto de Banco de Dados que espeficica as
         configurações (metadados) da base
     """
     baseid = request.args.get('baseid')
@@ -840,7 +840,7 @@ def exclui_visao():
     """Função que permite a remoção de um objeto Visão
 
     Args:
-        visaoid: ID do objeto de Banco de Dados que espeficica as 
+        visaoid: ID do objeto de Banco de Dados que espeficica as
         configurações (metadados) da base
     """
     visaoid = request.args.get('visaoid')
@@ -857,7 +857,7 @@ def adiciona_coluna():
     """Função inserir uma coluna ao objeto Visão
 
     Args:
-        visaoid: ID do objeto de Banco de Dados que espeficica as 
+        visaoid: ID do objeto de Banco de Dados que espeficica as
         configurações (metadados) da base
         col_nova: Nome da coluna que será inserida no objeto Visão
     """
@@ -873,13 +873,12 @@ def adiciona_coluna():
 
 @app.route('/exclui_coluna')
 def exclui_coluna():
-     """Função que permite a remoção de uma coluna do objeto Visão
+    """Função que permite a remoção de uma coluna do objeto Visão
 
     Args:
-        visaoid: ID do objeto de Banco de Dados que espeficica as 
+        visaoid: ID do objeto de Banco de Dados que espeficica as
         configurações (metadados) da base
-        colunaid: ID da coluna a ser excluída
-    """
+        colunaid: ID da coluna a ser excluída"""
     visaoid = request.args.get('visaoid')
     colunaid = request.args.get('colunaid')
     dbsession.query(Coluna).filter(
@@ -894,7 +893,7 @@ def adiciona_tabela():
     """Função para inserir uma tabela ao objeto Visão
 
     Args:
-        visaoid: ID do objeto de Banco de Dados que espeficica as 
+        visaoid: ID do objeto de Banco de Dados que espeficica as
         configurações (metadados) da base
         csv: Nome do CSV a ser inserido
         primario:
@@ -919,7 +918,7 @@ def adiciona_tabela():
 def exclui_tabela():
     """Função para remover uma tabela do objeto Visão
     Args:
-        visaoid: ID do objeto de Banco de Dados que espeficica as 
+        visaoid: ID do objeto de Banco de Dados que espeficica as
         configurações (metadados) da base
         tabelaid: ID da tabela a ser excluída
     """
