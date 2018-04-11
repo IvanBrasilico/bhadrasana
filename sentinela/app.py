@@ -82,6 +82,7 @@ def allowed_file(filename):
 
 @app.route('/')
 def index():
+    """View retorna index.html ou login se não autenticado."""
     if current_user.is_authenticated:
         return render_template('index.html')
     else:
@@ -92,11 +93,11 @@ def index():
 @login_required
 def importa_base():
     """Função simplificada para upload do arquivo de uma extração
-        Args
-            baseid: ID da Base de Origem do arquivo
-            data: data inicial do período extraído (se não for passada,
-            assume hoje)
-            file: arquivo csv, sch+txt, ou conjunto deles em formato zip
+    Args:
+        baseid: ID da Base de Origem do arquivo
+        data: data inicial do período extraído (se não for passada,
+        assume hoje)
+        file: arquivo csv, sch+txt, ou conjunto deles em formato zip
     """
     baseid = request.form.get('baseid')
     data = request.form.get('data')
@@ -175,15 +176,15 @@ def arquiva_base_csv(baseorigem, base_csv, to_mongo=True):
 @login_required
 def risco():
     """Função para aplicar parâmetros de risco em arquivo(s) importados
-        Args
-            baseid: ID da Base de Origem do arquivo
-            padraoid: ID do padrão de risco aplicável
-            visaoid: ID do objeto Visao (junção de CSVs e seleção de campos)
-            file: caminho do(s) csv(s) já processados e no diretório
-            acao: 'aplicar' - aplica_risco no diretório file
-                  'arquivar' - adiciona diretório ao BD e apaga dir
-                  'excluir' - apaga dir
-                  'mongo' - busca no banco de dados arquivados
+    Args:
+        baseid: ID da Base de Origem do arquivo
+        padraoid: ID do padrão de risco aplicável
+        visaoid: ID do objeto Visao (junção de CSVs e seleção de campos)
+        file: caminho do(s) csv(s) já processados e no diretório
+        acao: 'aplicar' - aplica_risco no diretório file
+                'arquivar' - adiciona diretório ao BD e apaga dir
+                'excluir' - apaga dir
+                'mongo' - busca no banco de dados arquivado
     """
     path = request.args.get('filename')
     acao = request.args.get('acao')
@@ -318,6 +319,12 @@ def risco():
 @app.route('/valores')
 @login_required
 def valores():
+    """Função que busca os valores dos parâmetros cadastrados
+    Args:
+        parametroid: ID do parâmetro de risco a ser buscado
+    Returns:
+        Lista com os valores e seus respectivos filtros de busca
+    """
     parametro_id = request.args.get('parametroid')
     result = []
     if parametro_id:
@@ -335,6 +342,13 @@ def valores():
 @app.route('/edita_risco', methods=['POST', 'GET'])
 @login_required
 def edita_risco():
+    """Tela para configurar os parâmetros de risco das bases importadas,
+    permite a alteração e criação de novos parâmetros e seus dados
+    Args:
+        padraoid: ID do padrão de risco criado e/ou escolhido para 
+        realizar a alteração
+        riscoid: ID do objeto de risco para aplicar a edição
+    """
     padraoid = request.args.get('padraoid')
     padroes = dbsession.query(PadraoRisco).order_by(PadraoRisco.nome).all()
     bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
@@ -391,6 +405,10 @@ def edita_risco():
 @app.route('/adiciona_padrao/<nome>')
 @login_required
 def adiciona_padrao(nome):
+    """Função que adiciona um novo padrão de riscos
+    Args:
+        nome: Nome do padrão a ser inserido no Banco de Dados
+    """
     logger.debug(nome)
     novo_padrao = PadraoRisco(nome)
     dbsession.add(novo_padrao)
@@ -402,6 +420,12 @@ def adiciona_padrao(nome):
 @app.route('/importa_csv/<padraoid>/<riscoid>', methods=['POST', 'GET'])
 @login_required
 def importa_csv(padraoid, riscoid):
+    """Função que lê um arquivo csv contendo duas colunas(valor e tipo_filtro)
+    e realiza a importação dos dados para um parâmetro de risco selecionado
+    Args:
+        padraoid: ID do padrão de risco
+        riscoid: ID do parâmetro de risco
+    """
     if request.method == 'POST':
         if 'csv' not in request.files:
             flash('No file part')
@@ -432,6 +456,12 @@ def importa_csv(padraoid, riscoid):
 @app.route('/exporta_csv', methods=['POST', 'GET'])
 @login_required
 def exporta_csv():
+    """Função que cria um arquivo CSV contendo duas colunas(valor e tipo_filtro)
+    e realiza a exportação dos dados do parâmetro de risco selecionado
+    Args:
+        padraoid: ID do padrão de risco
+        riscoid: ID do parâmetro de risco
+    """
     padraoid = request.args.get('padraoid')
     riscoid = request.args.get('riscoid')
     gerente = GerenteRisco()
@@ -442,6 +472,12 @@ def exporta_csv():
 
 @app.route('/adiciona_parametro')
 def adiciona_parametro():
+    """Função que adiciona um novo parâmetro de risco
+    Args:
+        padraoid: ID do padrão de risco
+        risco_novo: Nome do novo parâmetro
+        lista: Lista com os nomes dos novos parâmetros
+    """
     padraoid = request.args.get('padraoid')
     risco_novo = request.args.get('risco_novo')
     lista = request.args.get('lista')
@@ -465,6 +501,11 @@ def adiciona_parametro():
 
 @app.route('/exclui_parametro')
 def exclui_parametro():
+    """Função que exclui um parâmetro de risco e seus respectivos valores
+    Args:
+        padraoid: ID do padrão de risco
+        riscoid: Nome do parâmetro a ser excluído
+    """
     padraoid = request.args.get('padraoid')
     riscoid = request.args.get('riscoid')
     dbsession.query(ParametroRisco).filter(
@@ -477,6 +518,12 @@ def exclui_parametro():
 
 @app.route('/adiciona_valor')
 def adiciona_valor():
+    """Função que adiciona um novo valor ao parâmetro de risco selecionado
+    Args:
+        padraoid: ID do padrão de risco
+        novo_valor: Nome do valor a ser inserido no parâmetro
+        tipo_filtro: Filtro que este valor deverá ser buscado nas bases
+    """
     padraoid = request.args.get('padraoid')
     novo_valor = request.args.get('novo_valor')
     tipo_filtro = request.args.get('filtro')
@@ -493,6 +540,13 @@ def adiciona_valor():
 
 @app.route('/exclui_valor')
 def exclui_valor():
+    """Função que exclui apenas o valor e o tipo_filtro de um parâmetro de 
+    risco
+    Args:
+        padraoid: ID do padrão de risco
+        riscoid: ID do parâmetro de risco
+        valorid: ID do valor a ser excluído
+    """
     padraoid = request.args.get('padraoid')
     riscoid = request.args.get('riscoid')
     valorid = request.args.get('valorid')
@@ -506,6 +560,11 @@ def exclui_valor():
 @app.route('/edita_depara')
 @login_required
 def edita_depara():
+    """Tela para configurar os titulos das bases a serem importadas.
+    Args:
+        baseid: ID da Base de Origem do arquivo
+        padraoid: ID do padrão de risco
+    """
     baseid = request.args.get('baseid')
     padraoid = request.args.get('padraoid')
     bases = dbsession.query(BaseOrigem).all()
@@ -536,6 +595,18 @@ def edita_depara():
 
 @app.route('/adiciona_depara')
 def adiciona_depara():
+    """Função que permite unificar o nome de colunas que possuem o mesmo 
+    conteúdo
+
+    Esta função realiza a troca do titulo de uma coluna por outro, permitindo
+    que duas colunas que tragam a mesma informação em bases diferentes sejam 
+    filtradas por um único parâmetro de risco.
+
+    Args:
+        baseid: ID da Base de Origem do arquivo
+        titulo_antigo: Titulo original da base a ser importada
+        titulo_novo: Titulo unificado
+    """
     baseid = request.args.get('baseid')
     titulo_antigo = request.args.get('antigo')
     titulo_novo = request.args.get('novo')
@@ -551,6 +622,15 @@ def adiciona_depara():
 
 @app.route('/exclui_depara')
 def exclui_depara():
+    """Função que remove a troca de titulo selecionada
+    
+    Esta função permite unificar o nome de colunas que possuem o mesmo 
+    conteúdo
+
+    Args:
+        baseid: ID da Base de Origem do arquivo
+        tituloid: ID do titulo a ser excluído
+    """
     baseid = request.args.get('baseid')
     tituloid = request.args.get('tituloid')
     dbsession.query(DePara).filter(
@@ -694,6 +774,13 @@ def arvore_teste():
 @app.route('/juncoes')
 @login_required
 def juncoes():
+    """Tela para cadastramento de junções
+
+    Args:
+        baseid: ID da Base de Origem do arquivo
+        visaoid: ID objeto de Banco de Dados que espeficica as configurações
+        (metadados) da base
+    """
     baseid = request.args.get('baseid')
     visaoid = request.args.get('visaoid')
     bases = dbsession.query(BaseOrigem).all()
@@ -727,6 +814,13 @@ def juncoes():
 
 @app.route('/adiciona_visao')
 def adiciona_visao():
+    """Função que permite a criação de um novo objeto Visão
+
+    Args:
+        baseid: ID da Base de Origem do arquivo
+        visao_novo: Nome do objeto de Banco de Dados que espeficica as 
+        configurações (metadados) da base
+    """
     baseid = request.args.get('baseid')
     visao_novo = request.args.get('visao_novo')
     visao = Visao(visao_novo)
@@ -743,6 +837,12 @@ def adiciona_visao():
 
 @app.route('/exclui_visao')
 def exclui_visao():
+    """Função que permite a remoção de um objeto Visão
+
+    Args:
+        visaoid: ID do objeto de Banco de Dados que espeficica as 
+        configurações (metadados) da base
+    """
     visaoid = request.args.get('visaoid')
     dbsession.query(Visao).filter(
         Visao.id == visaoid).delete()
@@ -754,6 +854,13 @@ def exclui_visao():
 
 @app.route('/adiciona_coluna')
 def adiciona_coluna():
+    """Função inserir uma coluna ao objeto Visão
+
+    Args:
+        visaoid: ID do objeto de Banco de Dados que espeficica as 
+        configurações (metadados) da base
+        col_nova: Nome da coluna que será inserida no objeto Visão
+    """
     visaoid = request.args.get('visaoid')
     col_nova = request.args.get('col_nova')
     coluna = Coluna(col_nova)
@@ -766,6 +873,13 @@ def adiciona_coluna():
 
 @app.route('/exclui_coluna')
 def exclui_coluna():
+     """Função que permite a remoção de uma coluna do objeto Visão
+
+    Args:
+        visaoid: ID do objeto de Banco de Dados que espeficica as 
+        configurações (metadados) da base
+        colunaid: ID da coluna a ser excluída
+    """
     visaoid = request.args.get('visaoid')
     colunaid = request.args.get('colunaid')
     dbsession.query(Coluna).filter(
@@ -777,6 +891,15 @@ def exclui_coluna():
 
 @app.route('/adiciona_tabela')
 def adiciona_tabela():
+    """Função para inserir uma tabela ao objeto Visão
+
+    Args:
+        visaoid: ID do objeto de Banco de Dados que espeficica as 
+        configurações (metadados) da base
+        csv: Nome do CSV a ser inserido
+        primario:
+        estrangeiro:
+    """
     visaoid = request.args.get('visaoid')
     csv = request.args.get('csv')
     primario = request.args.get('primario')
@@ -794,6 +917,12 @@ def adiciona_tabela():
 
 @app.route('/exclui_tabela')
 def exclui_tabela():
+    """Função para remover uma tabela do objeto Visão
+    Args:
+        visaoid: ID do objeto de Banco de Dados que espeficica as 
+        configurações (metadados) da base
+        tabelaid: ID da tabela a ser excluída
+    """
     visaoid = request.args.get('visaoid')
     tabelaid = request.args.get('tabelaid')
     dbsession.query(Tabela).filter(

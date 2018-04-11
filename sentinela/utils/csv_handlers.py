@@ -53,6 +53,7 @@ def muda_titulos_lista(lista, de_para_dict, make_copy=True):
 
 
 def retificar_linhas(lista, cabecalhos):
+    """Retifica as linhas de arquivos com falhas"""
     # RETIFICAR LINHAS!!!!
     # Foram detectados arquivos com falha
     # (TABs a mais, ver notebook ExploraCarga)
