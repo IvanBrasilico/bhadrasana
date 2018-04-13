@@ -1,5 +1,5 @@
 """Módulo responsável pelas funções que aplicam os filtros/parâmetros
-de risco cadastrados nos dados. Utiliza pandas para realizar filtragem
+de risco cadastrados nos dados. Utiliza pandas para realizar filtragem.
 """
 import csv
 import json
@@ -24,14 +24,19 @@ class SemHeaders(Exception):
 
 
 def equality(listaoriginal, nomecampo, listavalores):
-    """Realiza a filtragem dos riscos nas listas
+    """Realiza a filtragem dos riscos nas listas.
+
     Args:
         listaoriginal: Lista importada do CSV
+
         nomecampo: Nome do campo a ser buscado
+
         listavalores: Lista de valores a serem buscados
+
     Returns:
         Retorna uma lista com itens da listaoriginal que são iguais ao da
         listavalores
+
     """
     df = pd.DataFrame(listaoriginal[1:], columns=listaoriginal[0])
     df = df[df[nomecampo].isin(listavalores)]
@@ -39,14 +44,19 @@ def equality(listaoriginal, nomecampo, listavalores):
 
 
 def startswith(listaoriginal, nomecampo, listavalores):
-    """Realiza a filtragem dos riscos nas listas
+    """Realiza a filtragem dos riscos nas listas.
+
     Args:
         listaoriginal: Lista importada do CSV
+
         nomecampo: Nome do campo a ser buscado
+
         listavalores: Lista de valores a serem buscados
+
     Returns:
         Retorna uma lista com itens da listaoriginal que começam com os itens
         da listavalores
+
     """
     df = pd.DataFrame(listaoriginal[1:], columns=listaoriginal[0])
     result = []
@@ -57,14 +67,19 @@ def startswith(listaoriginal, nomecampo, listavalores):
 
 
 def contains(listaoriginal, nomecampo, listavalores):
-    """Realiza a filtragem dos riscos nas listas
+    """Realiza a filtragem dos riscos nas listas.
+
     Args:
         listaoriginal: Lista importada do CSV
+
         nomecampo: Nome do campo a ser buscado
+
         listavalores: Lista de valores a serem buscados
+
     Returns:
         Retorna uma lista com itens da listaoriginal que contenham os itens
         da listavalores
+
     """
     df = pd.DataFrame(listaoriginal[1:], columns=listaoriginal[0])
     result = []
@@ -82,7 +97,7 @@ filter_functions = {
 
 
 class GerenteRisco():
-    """Classe que aplica parâmetros de risco e/ou junção em listas
+    """Classe que aplica parâmetros de risco e/ou junção em listas.
 
     São fornecidos também metodos para facilitar o de/para entre
     o Banco de Dados e arquivos csv de parâmetros, para permitir que
@@ -91,7 +106,7 @@ class GerenteRisco():
     Args:
         pre_processers: dict de funções para pré-processar lista. Função
         DEVE esperar uma lista como primeiro parâmetro
-
+        
         pre_processers_params: se houver, será passado para função com mesmo
         'key' do pre_processer como kargs.
 
@@ -116,22 +131,28 @@ class GerenteRisco():
         self._padraorisco = None
 
     def importa_base(self, csv_folder, baseid, data, filename, remove=False):
-        """Copia base para dest_path, processando se necessário
-        Aceita arquivos .zip contendo arquivos sch
-        e arquivos csv únicos
+        """Copia base para dest_path, processando se necessário.
+
+        Aceita arquivos .zip contendo arquivos sch e arquivos csv únicos.
         No caso de CSV, retorna erro caso títulos não batam com importação
         anterior para a mesma "BASE" (dest_path) para evitar erros do usuário
 
         Args:
             csv_folder: destino do(s) arquivo(s) gerados
+
             base_id: id da base, será usada para identificar uma subpasta
+
             data: data do período inicial da base/extração. Será usada
             para gerar subpasta no formato YYYY/MM/DD
+
             filename: caminho completo do arquivo da base de origem
-             (fonte externa/extração)
+            (fonte externa/extração)
+
             remove: excluir o arquivo temporário após processamento
+
         Returns
-            a tuple or a list of tuples. First items are created csvs
+            A tuple or a list of tuples. First items are created csvs
+
         """
         dest_path = os.path.join(csv_folder, baseid,
                                  data[:4], data[5:7], data[8:10])
@@ -176,9 +197,11 @@ class GerenteRisco():
         return result
 
     def set_padraorisco(self, padraorisco):
-        """Vincula o Gerente a um objeto padraoriscoOriginal
+        """Vincula o Gerente a um objeto padraoriscoOriginal.
+
         Atenção: **Todos** os parâmetros de risco ativos no Gerente serão
         zerados!!!
+
         **Todos** os parâmetros de risco vinculados à padraoriscoOriginal serão
         adicionados aos riscos ativos!!!
         """
@@ -188,9 +211,11 @@ class GerenteRisco():
             self.add_risco(parametro)
 
     def cria_padraorisco(self, nomepadraorisco, session):
-        """Cria um novo objeto PadraoRisco
+        """Cria um novo objeto PadraoRisco.
+
         Args:
             nomepadraorisco: Nome do padrão a ser criado
+
             session: Sessão do banco de dados
         """
         padraorisco = session.query(PadraoRisco).filter(
@@ -200,9 +225,11 @@ class GerenteRisco():
         self.set_padraorisco(padraorisco)
 
     def add_risco(self, parametrorisco, session=None):
-        """Configura os parametros de risco ativos
+        """Configura os parametros de risco ativos.
+
         Args:
             parametrorisco: Nome do parâmetro a ser adicionado
+
             session: Sessão do banco de dados
         """
         dict_filtros = defaultdict(list)
@@ -215,9 +242,11 @@ class GerenteRisco():
             session.commit()
 
     def remove_risco(self, parametrorisco, session=None):
-        """Configura os parametros de risco ativos
+        """Configura os parametros de risco ativos.
+
         Args:
             parametrorisco: Nome do parâmetro a ser removido
+
             session: Sessão do banco de dados
         """
         self._riscosativos.pop(parametrorisco.nome_campo, None)
@@ -227,7 +256,8 @@ class GerenteRisco():
             session.commit()
 
     def clear_risco(self, session=None):
-        """Zera os parametros de risco ativos
+        """Zera os parametros de risco ativos.
+
         Args:
             session: Sessão do banco de dados
         """
@@ -238,9 +268,11 @@ class GerenteRisco():
             session.commit()
 
     def checa_depara(self, base):
-        """Se tiver depara na base, adiciona aos pre_processers
+        """Se tiver depara na base, adiciona aos pre_processers.
+
         Os pre_processers são usados ao recuperar headers, importar,
-        aplicar_risco, entre outras ações"""
+        aplicar_risco, entre outras ações.
+        """
         if base.deparas:
             de_para_dict = {depara.titulo_ant: depara.titulo_novo
                             for depara in base.deparas}
@@ -249,9 +281,11 @@ class GerenteRisco():
                 'de_para_dict': de_para_dict, 'make_copy': False}
 
     def ativa_sanitizacao(self, norm_function=unicode_sanitizar):
-        """Inclui função de sanitização nos pre_processers
+        """Inclui função de sanitização nos pre_processers.
+
         Os pre_processers são usados ao recuperar headers, importar,
-        aplicar_risco, entre outras ações"""
+        aplicar_risco, entre outras ações.
+        """
         self.pre_processers['sanitizar'] = sanitizar_lista
         self.pre_processers_params['sanitizar'] = {
             'norm_function': norm_function}
@@ -312,16 +346,20 @@ class GerenteRisco():
             lista (list): Lista a ser filtrada, primeira linha deve conter os
             nomes dos campos idênticos aos definidos no nome_campo
             do parâmetro de risco cadastrado.
+
             OU
+
             arquivo (str): Arquivo csv de onde carregar a lista a ser filtrada
+
             parametros_ativos: subconjunto do parâmetros de risco a serem
             aplicados
 
         Returns:
-            lista contendo os campos filtrados. 1ª linha com nomes de campo
+            Lista contendo os campos filtrados. 1ª linha com nomes de campo
 
-        Obs: para um arquivo, quando a base for constituída de vários arquivos,
-         utilizar :func:`aplica_juncao`
+        Obs:
+            Para um arquivo, quando a base for constituída de vários arquivos,
+            utilizar :func:`aplica_juncao`
 
         """
         mensagem = 'Arquivo não fornecido!'
@@ -368,7 +406,8 @@ class GerenteRisco():
 
     def parametro_tocsv(self, campo, path=tmpdir, dbsession=None):
         """Salva os valores do parâmetro de risco em um arquivo csv
-        no formato 'valor', 'tipo_filtro'"""
+        no formato 'valor', 'tipo_filtro'.
+        """
         lista = []
         lista.append(('valor', 'tipo_filtro'))
         dict_filtros = self._riscosativos.get(campo)
@@ -397,7 +436,8 @@ class GerenteRisco():
         return filename
 
     def parametros_tocsv(self, path=tmpdir):
-        """Salva os parâmetros adicionados a um gerente em um arquivo csv
+        """Salva os parâmetros adicionados a um gerente em um arquivo csv.
+
         Ver também: :py:func:`parametros_fromcsv`
         """
         for campo in self._riscosativos:
@@ -411,7 +451,7 @@ class GerenteRisco():
         Dados ativo** caso não existam nele ainda. Para isso é preciso
         passar a session como parâmetro, senão cria apenas na memória
         Pode receber uma lista no lugar de um arquivo csv (como implementado
-        em import_named_csv)
+        em import_named_csv).
 
         Ver também:
 
@@ -421,13 +461,16 @@ class GerenteRisco():
         Args:
             campo: nome do campo a ser filtrado e deve ser também
             o nome do arquivo .csv
+
             session: a sessão com o banco de dados
+
             lista: passar uma lista pré-prenchida para usar a função com outros
             tipos de fontes/arquivos. Se passada uma lista, função não
             abrirá arquivo .csv, usará os valores da função
             path: caminho do arquivo .csv
 
-        O arquivo .csv ou a lista DEVEM estar no formato valor, tipo_filtro
+        Obs:
+            O arquivo .csv ou a lista DEVEM estar no formato valor, tipo_filtro
         """
         if not lista:
             with open(os.path.join(path, campo + '.csv'),
@@ -483,7 +526,9 @@ class GerenteRisco():
 
         Args:
             arquivo: Nome e caminho do arquivo .csv
+
             session: sessão ativa com BD
+
             filtro: Tipo de filtro a ser assumido como padrão
 
         """
@@ -507,7 +552,8 @@ class GerenteRisco():
 
     def get_headers_base(self, baseorigemid, path, csvs=False):
         """Busca última base disponível no diretório de CSVs e
-        traz todos os headers"""
+        traz todos os headers
+        """
         lista_csv = []
         cabecalhos = []
         cabecalhos_nao_repetidos = set()
@@ -543,16 +589,21 @@ class GerenteRisco():
         Args:
             visao: objeto de Banco de Dados que espeficica as configurações
             (metadados) da base
+
             path: caminho da base de arquivos csv
+
             filtrar: aplica_risco após merge dos DataFrames
+
             parametros_ativos: subconjunto do parâmetros de risco a serem
             aplicados
 
         Returns:
-            lista contendo os campos filtrados. 1ª linha com nomes de campo
+            Lista contendo os campos filtrados. 1ª linha com nomes de campo.
 
-        Obs: quando a base for constituída de arquivo único,
-         utilizar :func:`aplica_risco`
+        Obs:
+            Quando a base for constituída de arquivo único, utilizar
+            :func:`aplica_risco`
+
         """
         numero_juncoes = len(visao.tabelas)
         dffilho = None
@@ -608,12 +659,19 @@ class GerenteRisco():
     @classmethod
     def csv_to_mongo(cls, db, base, path=None, arquivo=None, unique=[]):
         """Reads a csv file and inserts all contents into a MongoDB collection
-        Creates collection if it not exists
+        Creates collection if it not exists.
+
         Args:
             db: MongoDBClient connection with database setted
+
             base: Base Origem
-            path: caminho do(s) arquivo(s) csv OU
+
+            path: caminho do(s) arquivo(s) csv
+            
+            OU
+
             arquivo: caminho e nome do arquivo csv
+
             unique: lista de campos que terão indice único (e
             não serão reinseridos) - TODO: unique field on mongo archive
         """
@@ -645,16 +703,20 @@ class GerenteRisco():
 
     def load_mongo(self, db, base=None, collection_name=None,
                    parametros_ativos=None):
-        """Recupera da base mongodb em um lista
+        """Recupera da base mongodb em um lista.
+
         Args:
             db: MongoDBClient connection with database setted
+
             base: Base Origem OU
+
             collection_name: nome da coleção do MongoDB
+
             parametros_ativos: subconjunto do parâmetros de risco a serem
             aplicados
 
         Returns:
-            lista contendo os campos filtrados. 1ª linha com nomes de campo
+            Lista contendo os campos filtrados. 1ª linha com nomes de campo
 
         """
         if base is None and collection_name is None:
@@ -731,8 +793,10 @@ class GerenteRisco():
             parametros_ativos: subconjunto do parâmetros de risco a serem
             aplicados
             filtrar: aplica_risco após merge dos DataFrames
+
         Returns:
             lista contendo os campos filtrados. 1ª linha com nomes de campo
+
         """
         # TODO: Usar métodos próprios do MongoDB ao invés de DataFrames para
         # trazer dados já filtrados e melhorar desempenho

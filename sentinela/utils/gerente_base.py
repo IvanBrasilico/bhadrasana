@@ -1,7 +1,7 @@
 """GerenteBase abstrai a necessidade de conhecer a estrutura das bases
 ou utilizar comandos mais avançados. Transforma a estrutura em dicts
-mais fáceis de lidar
-Usa reflection para navegar nos modelos
+mais fáceis de lidar.
+Usa reflection para navegar nos modelos.
 """
 import csv
 import importlib
@@ -23,10 +23,11 @@ class Filtro:
 
 class GerenteBase:
     """Métodos para padronizar a manipulação de bases de dados
-     no modelo do sistema sentinela"""
+     no modelo do sistema sentinela
+     """
 
     def set_path(self, path, test=False):
-        """Lê a estrutura de 'tabelas' de uma pasta de csvs importados"""
+        """Lê a estrutura de 'tabelas' de uma pasta de csvs importados."""
         PATH_BASE = os.path.join(CSV_FOLDER, path)
         if test:
             PATH_BASE = os.path.join(CSV_FOLDER_TEST, path)
@@ -41,7 +42,7 @@ class GerenteBase:
                 self.dict_models[file[:-4]]['campos'] = campos
 
     def set_module(self, model, db=None):
-        """Lê a estrutura de 'tabelas' de um módulo SQLAlchemy"""
+        """Lê a estrutura de 'tabelas' de um módulo SQLAlchemy."""
         self.module_path = 'sentinela.models.' + model
         module = importlib.import_module(self.module_path)
         classes = inspect.getmembers(module, inspect.isclass)
@@ -93,7 +94,7 @@ class GerenteBase:
 
     def get_paiarvore(self, ainstance):
         """Recursivamente retorna o pai da instância de objecto,
-        até chegar ao 'pai de todos/pai da árvore'
+        até chegar ao 'pai de todos/pai da árvore'.
         """
         try:
             if ainstance.pai:
@@ -104,7 +105,8 @@ class GerenteBase:
 
     def recursive_tree(self, ainstance, recursive=True, child=None):
         """
-        Recursivamente percorre "filhos" da instância, montando uma árvore HTML
+        Recursivamente percorre "filhos" da instância montando uma árvore HTML.
+
         Args:
             ainstance: Object that is first Node of Tree
             recursive: If True, just list direct children,

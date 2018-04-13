@@ -1,4 +1,4 @@
-"""Classes para reunir tarefas repetitivas com arquivos csv e planilhas
+"""Classes para reunir tarefas repetitivas com arquivos csv e planilhas.
 
 Padrão do arquivo csv usado é o mais simples possível:
 Nomes de campo na primeira linha
@@ -19,7 +19,7 @@ from sentinela.conf import ENCODE, tmpdir
 
 
 def muda_titulos_csv(csv_file, de_para_dict):
-    """Apenas abre o arquivo e repassa para muda_titulos_lista"""
+    """Apenas abre o arquivo e repassa para muda_titulos_lista."""
     with open(csv_file, 'r', encoding=ENCODE, newline='') as csvfile:
         reader = csv.reader(csvfile)
         result = [linha for linha in reader]
@@ -36,11 +36,14 @@ def muda_titulos_lista(lista, de_para_dict, make_copy=True):
     na lista original (muito mais rápido) modificando a lista original
     e retornando ela mesma. O padrão é copiar a lista e deixar
     intocada a lista original
-        Args:
-         plista: list de lists representando a planilha a ter
-         títulos modificados
-         de_para_dict: dicionário titulo_antigo: titulo_novo
-         copy: Se False, modifica original
+
+    Args:
+        plista: list de lists representando a planilha a ter
+        títulos modificados
+
+        de_para_dict: dicionário titulo_antigo: titulo_novo
+
+        copy: Se False, modifica original
     """
     if make_copy:
         lista = deepcopy(lista)
@@ -53,7 +56,7 @@ def muda_titulos_lista(lista, de_para_dict, make_copy=True):
 
 
 def retificar_linhas(lista, cabecalhos):
-    """Retifica as linhas de arquivos com falhas"""
+    """Retifica as linhas de arquivos com falhas."""
     # RETIFICAR LINHAS!!!!
     # Foram detectados arquivos com falha
     # (TABs a mais, ver notebook ExploraCarga)
@@ -75,7 +78,8 @@ def retificar_linhas(lista, cabecalhos):
 
 def sch_tocsv(sch, txt, dest_path=tmpdir):
     """Pega um arquivo txt, aplica os cabecalhos e a informação de um sch,
-    e o transforma em um csv padrão"""
+    e o transforma em um csv padrão.
+    """
     cabecalhos = []
     for ind in range(len(sch)):
         if not isinstance(sch[ind], str):
@@ -107,9 +111,14 @@ def sch_tocsv(sch, txt, dest_path=tmpdir):
 def sch_processing(path, mask_txt='0.txt', dest_path=tmpdir):
     """Processa lotes de extração que gerem arquivos txt csv e arquivos sch
     (txt contém os dados e sch descreve o schema), transformando-os em arquivos
-    csv estilo "planilha", isto é, primeira linha de cabecalhos
-    path: diretório ou arquivo .zip onde estão os arquivos .sch
-    Obs: não há procura recursiva, apenas no raiz do diretório"""
+    csv estilo "planilha", isto é, primeira linha de cabecalhos.
+
+    Args:
+        path: diretório ou arquivo .zip onde estão os arquivos .sch
+
+    Obs:
+        Não há procura recursiva, apenas no raiz do diretório
+    """
     filenames = []
     if path.find('.zip') == -1:
         for sch in glob.glob(os.path.join(path, '*.sch')):
