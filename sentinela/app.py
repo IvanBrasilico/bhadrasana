@@ -978,6 +978,7 @@ def exclui_tabela():
 
 @nav.navigation()
 def mynavbar():
+    """Menu da aplicação."""
     items = [View('Home', 'index'),
              View('Importar Base', 'importa_base'),
              View('Aplicar Risco', 'risco'),

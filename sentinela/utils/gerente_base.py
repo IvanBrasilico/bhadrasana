@@ -109,8 +109,10 @@ class GerenteBase:
 
         Args:
             ainstance: Object that is first Node of Tree
+
             recursive: If True, just list direct children,
             to expand if neeeded
+
             child: If previously used get_paiarvore, child is the original
             instance. Just to bold it.
         """

@@ -1,4 +1,4 @@
-"""Modelo de dados necessário para app Sentinela"""
+"""Modelo de dados necessário para app Sentinela."""
 import enum
 import os
 
@@ -50,7 +50,7 @@ Base = declarative_base()
 
 
 class SQLDBUser(Base):
-    """Base de Usuários"""
+    """Base de Usuários."""
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     username = Column(String(20), unique=True)
@@ -62,7 +62,7 @@ class SQLDBUser(Base):
 
     @classmethod
     def encript(self, password):
-        """Receives plan text password, returns encripted version"""
+        """Receives plan text password, returns encripted version."""
         # TODO: make a script to add Users, disable next line
         # and test if it works
         return password
@@ -72,7 +72,9 @@ class SQLDBUser(Base):
     def get(cls, session, username, password=None):
         """Test if user exists, and if passed, if password
         is correct
-        returns SQLDBUser or None
+        
+        Returns:
+            SQLDBUser or None
         """
         if password:
             DBUser = session.query(SQLDBUser).filter(
@@ -96,6 +98,7 @@ association_table = Table('basesorigem_padroesrisco', Base.metadata,
 
 class BaseOrigem(Base):
     """Metadado sobre as bases de dados disponíveis/integradas.
+
     Caminho: caminho no disco onde os dados da importação da base
     (normalmente arquivos csv) estão guardados"""
     __tablename__ = 'basesorigem'
@@ -115,6 +118,7 @@ class BaseOrigem(Base):
 
 class PadraoRisco(Base):
     """Metadado sobre as bases de dados disponíveis/integradas.
+
     Caminho: caminho no disco onde os dados da importação da base
     (normalmente arquivos csv) estão guardados"""
     __tablename__ = 'padroesrisco'
@@ -150,7 +154,7 @@ class DePara(Base):
 class ParametroRisco(Base):
     """Nomeia um parâmetro de risco que pode ser aplicado
     como filtro em um Banco de Dados. Um parâmetro tem uma
-    lista de valores que serão o filtro efetivo"""
+    lista de valores que serão o filtro efetivo."""
     __tablename__ = 'parametrosrisco'
     id = Column(Integer, primary_key=True)
     nome_campo = Column(String(20))
@@ -169,8 +173,10 @@ class ParametroRisco(Base):
 
 class ValorParametro(Base):
     """Um valor de parametro a ser aplicado como filtro em uma
-    fonte de dados
+    fonte de dados.
+
     nomecampo = nome do campo da fonte de dados a ser aplicado filtro
+
     tipofiltro = tipo de função de filtragem a ser realizada
     (ver enum TipoFiltro)
     """
