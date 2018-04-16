@@ -1,11 +1,16 @@
 """Classes para reunir tarefas repetitivas com arquivos csv e planilhas.
 
 Padrão do arquivo csv usado é o mais simples possível:
-Nomes de campo na primeira linha
-Valores nas restantes
-Único separador é sempre a vírgula
-Fim de linha significa nova linha
-Para comparações, retira espaços antes e depois do conteúdo das colunas
+
+Nomes de campo na primeira linha;
+
+Valores nas restantes;
+
+Único separador é sempre a vírgula;
+
+Fim de linha significa nova linha;
+
+Para comparações, retira espaços antes e depois do conteúdo das colunas.
 """
 from copy import deepcopy
 import csv
@@ -38,7 +43,7 @@ def muda_titulos_lista(lista, de_para_dict, make_copy=True):
     intocada a lista original
 
     Args:
-        plista: list de lists representando a planilha a ter
+        plista: lista de listas representando a planilha a ter
         títulos modificados
 
         de_para_dict: dicionário titulo_antigo: titulo_novo
@@ -118,6 +123,7 @@ def sch_processing(path, mask_txt='0.txt', dest_path=tmpdir):
 
     Obs:
         Não há procura recursiva, apenas no raiz do diretório
+    
     """
     filenames = []
     if path.find('.zip') == -1:

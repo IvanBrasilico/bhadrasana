@@ -62,7 +62,7 @@ class SQLDBUser(Base):
 
     @classmethod
     def encript(self, password):
-        """Receives plan text password, returns encripted version."""
+        """Recebe uma senha em texto plano, retorna uma versão encriptada."""
         # TODO: make a script to add Users, disable next line
         # and test if it works
         return password
@@ -70,11 +70,10 @@ class SQLDBUser(Base):
 
     @classmethod
     def get(cls, session, username, password=None):
-        """Test if user exists, and if passed, if password
-        is correct
-        
+        """Testa se usuário existe, e se passado, se a senha está correta.
+
         Returns:
-            SQLDBUser or None
+            SQLDBUser ou None
         """
         if password:
             DBUser = session.query(SQLDBUser).filter(
@@ -137,6 +136,8 @@ class PadraoRisco(Base):
 
 
 class DePara(Base):
+    """Renomeia os titulos das colunas ao importar uma base.
+    """
     __tablename__ = 'depara'
     id = Column(Integer, primary_key=True)
     titulo_ant = Column(String(50))

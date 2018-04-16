@@ -1,6 +1,8 @@
 """GerenteBase abstrai a necessidade de conhecer a estrutura das bases
-ou utilizar comandos mais avançados. Transforma a estrutura em dicts
-mais fáceis de lidar.
+ou utilizar comandos mais avançados.
+
+Transforma a estrutura em dicts mais fáceis de lidar.
+
 Usa reflection para navegar nos modelos.
 """
 import csv
@@ -61,6 +63,19 @@ class GerenteBase:
         self.dbsession = adbsession
 
     def filtra(self, base, filters, return_query=False):
+        """Aplica os filtros selecionados na base.
+        
+        Args:
+            base: base a ser filtrada
+
+            filters: parâmetros de filtro selecionados
+
+            return_query: se True retorna a query executada
+
+        Returns:
+            Lista com os resultados da filtragem.
+
+        """
         module = importlib.import_module(self.module_path)
         aclass = getattr(module, base)
         q = self.dbsession.query(aclass)
@@ -108,13 +123,13 @@ class GerenteBase:
         Recursivamente percorre "filhos" da instância montando uma árvore HTML.
 
         Args:
-            ainstance: Object that is first Node of Tree
+            ainstance: objeto que é nó primário da árvore
 
-            recursive: If True, just list direct children,
-            to expand if neeeded
+            recursive: se True, apenas lista filhos diretos,
+            para expandir se necessário
 
-            child: If previously used get_paiarvore, child is the original
-            instance. Just to bold it.
+            child: se anteriormente utilizado get_paiarvore, filho é a instância
+            original. Apenas para destacá-lo.
         """
         result = []
         result.append('<ul class="tree">')

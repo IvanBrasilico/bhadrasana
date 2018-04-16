@@ -67,7 +67,7 @@ nav = Nav()
 
 @app.before_request
 def log_every_request():
-    """Send every request to the log."""
+    """Envia cada requisição ao log."""
     name = 'No user'
     if current_user and current_user.is_authenticated:
         name = current_user.name
@@ -75,7 +75,7 @@ def log_every_request():
 
 
 def allowed_file(filename):
-    """Check allowed extensions."""
+    """Checa extensões permitidas."""
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 

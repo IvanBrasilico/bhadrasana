@@ -101,7 +101,7 @@ class GerenteRisco():
 
     São fornecidos também metodos para facilitar o de/para entre
     o Banco de Dados e arquivos csv de parâmetros, para permitir que
-    Usuário importe e exporte parâmetros de risco.
+    usuário importe e exporte parâmetros de risco.
 
     Args:
         pre_processers: dict de funções para pré-processar lista. Função
@@ -150,8 +150,8 @@ class GerenteRisco():
 
             remove: excluir o arquivo temporário após processamento
 
-        Returns
-            A tuple or a list of tuples. First items are created csvs
+        Returns:
+            Uma tupla ou lista de tuplas. Primeiros itens são CSVs criados
 
         """
         dest_path = os.path.join(csv_folder, baseid,
@@ -347,7 +347,7 @@ class GerenteRisco():
             nomes dos campos idênticos aos definidos no nome_campo
             do parâmetro de risco cadastrado.
 
-            OU
+            **OU**
 
             arquivo (str): Arquivo csv de onde carregar a lista a ser filtrada
 
@@ -467,10 +467,12 @@ class GerenteRisco():
             lista: passar uma lista pré-prenchida para usar a função com outros
             tipos de fontes/arquivos. Se passada uma lista, função não
             abrirá arquivo .csv, usará os valores da função
+
             path: caminho do arquivo .csv
 
         Obs:
             O arquivo .csv ou a lista DEVEM estar no formato valor, tipo_filtro
+        
         """
         if not lista:
             with open(os.path.join(path, campo + '.csv'),
@@ -658,17 +660,17 @@ class GerenteRisco():
 
     @classmethod
     def csv_to_mongo(cls, db, base, path=None, arquivo=None, unique=[]):
-        """Reads a csv file and inserts all contents into a MongoDB collection
-        Creates collection if it not exists.
+        """Lê um arquivo CSV e insere todo seu conteúdo em uma coleção do
+        MongoDB. Cria a coleção se não existir.
 
         Args:
-            db: MongoDBClient connection with database setted
+            db: "MongoDBClient" conexão com o banco de dados selecionado
 
             base: Base Origem
 
             path: caminho do(s) arquivo(s) csv
             
-            OU
+            **OU**
 
             arquivo: caminho e nome do arquivo csv
 
@@ -706,9 +708,11 @@ class GerenteRisco():
         """Recupera da base mongodb em um lista.
 
         Args:
-            db: MongoDBClient connection with database setted
+            db: "MongoDBClient" conexão com o banco de dados selecionado.
 
-            base: Base Origem OU
+            base: Base Origem 
+            
+            **OU**
 
             collection_name: nome da coleção do MongoDB
 
@@ -795,7 +799,7 @@ class GerenteRisco():
             filtrar: aplica_risco após merge dos DataFrames
 
         Returns:
-            lista contendo os campos filtrados. 1ª linha com nomes de campo
+            Lista contendo os campos filtrados. 1ª linha com nomes de campo
 
         """
         # TODO: Usar métodos próprios do MongoDB ao invés de DataFrames para
