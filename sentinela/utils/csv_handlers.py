@@ -1,16 +1,11 @@
 """Classes para reunir tarefas repetitivas com arquivos csv e planilhas.
 
 Padrão do arquivo csv usado é o mais simples possível:
-
-Nomes de campo na primeira linha;
-
-Valores nas restantes;
-
-Único separador é sempre a vírgula;
-
-Fim de linha significa nova linha;
-
-Para comparações, retira espaços antes e depois do conteúdo das colunas.
+- Nomes de campo na primeira linha;
+- Valores nas restantes;
+- Único separador é sempre a vírgula;
+- Fim de linha significa nova linha;
+- Para comparações, retira espaços antes e depois do conteúdo das colunas.
 """
 from copy import deepcopy
 import csv
@@ -37,6 +32,7 @@ def muda_titulos_csv(csv_file, de_para_dict):
 def muda_titulos_lista(lista, de_para_dict, make_copy=True):
     """Recebe um dicionário na forma titulo_old:titulo_new
     e muda a linha de titulo da lista.
+    
     Passar copy=False para listas grandes faz a modificação in-line
     na lista original (muito mais rápido) modificando a lista original
     e retornando ela mesma. O padrão é copiar a lista e deixar
