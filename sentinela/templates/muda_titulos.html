@@ -51,10 +51,10 @@
                 </h4>
                 <form id="frmvalores" onsubmit="" class="form-group">
                     <div class="form-group col-sm-4">
-                        <input id="titulo_ant" class="form-control" type="text">
+                        <input id="titulo_ant" class="form-control" type="text" placeholder="Título antigo">
                     </div>
                     <div class="form-group col-sm-4">
-                        <input id="titulo_novo" class="form-control" type="text">
+                        <input id="titulo_novo" class="form-control" type="text" placeholder="Título novo">
                     </div>
                     <div class="form-group">
                         <button onclick="adicionar()" id="btn_incluir" type="button" class="btn btn-success">Incluir</button>
@@ -105,14 +105,14 @@
         var ant = $("#titulo_ant").val()
         var novo = $("#titulo_novo").val()
         if (ant != '' && novo != '') {
-            window.location.assign('/adiciona_depara?baseid=' + $("#base").val() +
+            window.location.assign('/adiciona_depara?baseid=' + $("#base").val()  + '&padraoid=' + $("#padrao").val() +
                 '&antigo=' + ant + '&novo=' + novo
             )
         }
     }
 
     function remover(tituloid) {
-        window.location.assign('/exclui_depara?baseid=' + $("#base").val() +
+        window.location.assign('/exclui_depara?baseid=' + $("#base").val() + '&padraoid=' + $("#padrao").val() +
             '&tituloid=' + tituloid
         )
     }

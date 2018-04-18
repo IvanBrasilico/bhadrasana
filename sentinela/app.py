@@ -642,8 +642,9 @@ def adiciona_depara():
         titulo_novo: Titulo unificado
     """
     baseid = request.args.get('baseid')
-    titulo_antigo = request.args.get('antigo')
-    titulo_novo = request.args.get('novo')
+    padraoid = request.args.get('padraoid')
+    titulo_antigo = sanitizar(request.args.get('antigo'), norm_function=unicode_sanitizar)
+    titulo_novo = sanitizar(request.args.get('novo'), norm_function=unicode_sanitizar)
     if baseid:
         base = dbsession.query(BaseOrigem).filter(
             BaseOrigem.id == baseid
@@ -651,7 +652,8 @@ def adiciona_depara():
     depara = DePara(titulo_antigo, titulo_novo, base)
     dbsession.add(depara)
     dbsession.commit()
-    return redirect(url_for('edita_depara', baseid=baseid))
+    return redirect(url_for('edita_depara', baseid=baseid,
+                            padraoid=padraoid))
 
 
 @app.route('/exclui_depara')
@@ -667,11 +669,13 @@ def exclui_depara():
         tituloid: ID do titulo a ser excluído
     """
     baseid = request.args.get('baseid')
+    padraoid = request.args.get('padraoid')
     tituloid = request.args.get('tituloid')
     dbsession.query(DePara).filter(
         DePara.id == tituloid).delete()
     dbsession.commit()
-    return redirect(url_for('edita_depara', baseid=baseid))
+    return redirect(url_for('edita_depara', baseid=baseid,
+                            padraoid=padraoid))
 
 
 @app.route('/navega_bases')
