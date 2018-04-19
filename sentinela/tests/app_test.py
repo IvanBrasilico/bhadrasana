@@ -26,7 +26,7 @@ class FlaskTestCase(unittest.TestCase):
             app.app.testing = True
             app.app.config['WTF_CSRF_ENABLED'] = False
             self.app = app.app.test_client()
-            app.DBUser.dbsession = None  # Bypass authentication
+            app.login.DBUser.dbsession = None  # Bypass authentication
         rv = self.login('ajna', 'ajna')
         assert rv is not None
 

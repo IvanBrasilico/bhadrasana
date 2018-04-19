@@ -186,7 +186,7 @@ def risco():
         padraoid: ID do padrão de risco aplicável
 
         visaoid: ID do objeto Visao (junção de CSVs e seleção de campos)
- 
+
         file: caminho do(s) csv(s) já processados e no diretório
 
         acao:
@@ -356,7 +356,7 @@ def valores():
 def edita_risco():
     """Tela para configurar os parâmetros de risco das bases importadas,
     permite a alteração e criação de novos parâmetros e seus dados.
-    
+
     Args:
         padraoid: ID do padrão de risco criado e/ou escolhido para
         realizar a alteração
@@ -643,8 +643,10 @@ def adiciona_depara():
     """
     baseid = request.args.get('baseid')
     padraoid = request.args.get('padraoid')
-    titulo_antigo = sanitizar(request.args.get('antigo'), norm_function=unicode_sanitizar)
-    titulo_novo = sanitizar(request.args.get('novo'), norm_function=unicode_sanitizar)
+    titulo_antigo = sanitizar(request.args.get('antigo'),
+                              norm_function=unicode_sanitizar)
+    titulo_novo = sanitizar(request.args.get('novo'),
+                            norm_function=unicode_sanitizar)
     if baseid:
         base = dbsession.query(BaseOrigem).filter(
             BaseOrigem.id == baseid

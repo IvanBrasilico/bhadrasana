@@ -32,7 +32,7 @@ def muda_titulos_csv(csv_file, de_para_dict):
 def muda_titulos_lista(lista, de_para_dict, make_copy=True):
     """Recebe um dicionário na forma titulo_old:titulo_new
     e muda a linha de titulo da lista.
-    
+
     Passar copy=False para listas grandes faz a modificação in-line
     na lista original (muito mais rápido) modificando a lista original
     e retornando ela mesma. O padrão é copiar a lista e deixar
@@ -119,7 +119,7 @@ def sch_processing(path, mask_txt='0.txt', dest_path=tmpdir):
 
     Obs:
         Não há procura recursiva, apenas no raiz do diretório
-    
+
     """
     filenames = []
     if path.find('.zip') == -1:

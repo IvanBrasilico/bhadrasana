@@ -64,7 +64,7 @@ class GerenteBase:
 
     def filtra(self, base, filters, return_query=False):
         """Aplica os filtros selecionados na base.
-        
+
         Args:
             base: base a ser filtrada
 
@@ -128,8 +128,8 @@ class GerenteBase:
             recursive: se True, apenas lista filhos diretos,
             para expandir se necessário
 
-            child: se anteriormente utilizado get_paiarvore, filho é a instância
-            original. Apenas para destacá-lo.
+            child: se anteriormente utilizado get_paiarvore, filho é a
+            instância original. Apenas para destacá-lo.
         """
         result = []
         result.append('<ul class="tree">')

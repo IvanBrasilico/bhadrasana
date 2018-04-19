@@ -106,7 +106,7 @@ class GerenteRisco():
     Args:
         pre_processers: dict de funções para pré-processar lista. Função
         DEVE esperar uma lista como primeiro parâmetro
-        
+
         pre_processers_params: se houver, será passado para função com mesmo
         'key' do pre_processer como kargs.
 
@@ -472,7 +472,7 @@ class GerenteRisco():
 
         Obs:
             O arquivo .csv ou a lista DEVEM estar no formato valor, tipo_filtro
-        
+
         """
         if not lista:
             with open(os.path.join(path, campo + '.csv'),
@@ -669,7 +669,7 @@ class GerenteRisco():
             base: Base Origem
 
             path: caminho do(s) arquivo(s) csv
-            
+
             **OU**
 
             arquivo: caminho e nome do arquivo csv
@@ -710,8 +710,8 @@ class GerenteRisco():
         Args:
             db: "MongoDBClient" conexão com o banco de dados selecionado.
 
-            base: Base Origem 
-            
+            base: Base Origem
+
             **OU**
 
             collection_name: nome da coleção do MongoDB
