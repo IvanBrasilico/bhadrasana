@@ -1,0 +1,1 @@
+celery --app=sentinela.workers.tasks worker -B --loglevel=info

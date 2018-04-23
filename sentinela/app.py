@@ -45,6 +45,7 @@ from sentinela.models.models import (Base, BaseOrigem, Coluna, DePara,
                                      Tabela, ValorParametro, Visao)
 from sentinela.utils.gerente_base import Filtro, GerenteBase
 from sentinela.utils.gerente_risco import GerenteRisco, SemHeaders, tmpdir
+from sentinela.workers.tasks import importar_base
 
 mysession = MySession(Base)
 dbsession = mysession.session
@@ -129,11 +130,11 @@ def importa_base():
                         gerente = GerenteRisco()
                         tempfile_name = os.path.join(tmpdir, filename)
                         file.save(tempfile_name)
-                        lista_arquivos = gerente.importa_base(CSV_FOLDER,
-                                                              baseid,
-                                                              data,
-                                                              tempfile_name,
-                                                              remove=True)
+                        lista_arquivos = importar_base(CSV_FOLDER,
+                                                       baseid,
+                                                       data,
+                                                       tempfile_name,
+                                                       remove=True)
                         # Sanitizar base já na importação para evitar
                         # processamento repetido depois
                         gerente.ativa_sanitizacao(ascii_sanitizar)
