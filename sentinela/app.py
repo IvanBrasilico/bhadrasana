@@ -37,8 +37,7 @@ from werkzeug.utils import secure_filename
 from ajna_commons.flask.conf import (ALLOWED_EXTENSIONS, DATABASE, MONGODB_URI,
                                      SECRET, logo)
 from ajna_commons.flask.log import logger
-from ajna_commons.utils.sanitiza import (ascii_sanitizar,
-                                         sanitizar, unicode_sanitizar)
+from ajna_commons.utils.sanitiza import (sanitizar, unicode_sanitizar)
 from sentinela.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER
 from sentinela.models.models import (Base, BaseOrigem, Coluna, DePara,
                                      MySession, PadraoRisco, ParametroRisco,
@@ -93,7 +92,12 @@ def index():
 @app.route('/importa_base', methods=['GET', 'POST'])
 @login_required
 def importa_base():
-    """Função simplificada para upload do arquivo de uma extração.
+    """Função para upload do arquivo de uma extração ou outra fonte externa.
+
+    Utiliza o :class: `sentinela.utils.gerenterisco.GerenteRisco`.
+    Suporte por ora para csv com títulos e zip com sch (padrão Carga)
+    Necessita um Servidor Celery para repassar responsabilidade.
+    Ver também :func: `sentinela.workers.tasks.importar_base`
 
     Args:
         baseid: ID da Base de Origem do arquivo
@@ -127,27 +131,36 @@ def importa_base():
                         if not data:
                             data = datetime.date.today().strftime('%Y-%m-%d')
                         logger.debug(data)
-                        gerente = GerenteRisco()
                         tempfile_name = os.path.join(tmpdir, filename)
                         file.save(tempfile_name)
-                        lista_arquivos = importar_base(CSV_FOLDER,
-                                                       baseid,
-                                                       data,
-                                                       tempfile_name,
-                                                       remove=True)
-                        # Sanitizar base já na importação para evitar
-                        # processamento repetido depois
-                        gerente.ativa_sanitizacao(ascii_sanitizar)
-                        gerente.checa_depara(abase)  # Aplicar na importação???
-                        logger.debug(lista_arquivos)
-                        gerente.pre_processa_arquivos(lista_arquivos)
-                        return redirect(url_for('risco', baseid=baseid))
+                        # Passa responsabilidade de processamento da base
+                        # para o processo Celery
+                        task_id = importar_base(csv_folder=CSV_FOLDER,
+                                                abase=abase,
+                                                data=data,
+                                                filename=tempfile_name,
+                                                remove=True)
+                        return redirect(url_for('risco',
+                                                baseid=baseid,
+                                                task_id=task_id))
                     except Exception as err:
                         logger.error(err, exc_info=True)
                         flash(err)
     bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
     return render_template('importa_base.html', bases=bases,
                            baseid=baseid, data=data)
+
+
+@app.route('/api/importa_progress/<taskid>')
+@login_required
+def importa_progress(taskid):
+    """Retorna um json do progresso da celery task."""
+    task = importar_base.AsyncResult(taskid)
+    response = {'state': task.state}
+    if task.info:
+        response['current'] = task.info.get('current', ''),
+        response['status'] = task.info.get('status', '')
+    return jsonify(response)
 
 
 @app.route('/adiciona_base/<nome>')
