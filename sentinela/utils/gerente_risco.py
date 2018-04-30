@@ -786,7 +786,26 @@ class GerenteRisco():
 
     def aplica_juncao_mongo(self, db, visao,
                             parametros_ativos=None,
-                            filtrar=False):
+                            filtrar=False,
+                            pandas=True):
+        """Apenas um proxy para compatibilidade reversa.
+
+        Proxy para compatibilidade e escolha.
+        Repassa todos os parâmetros para o método utilizando
+        pandas se param pandas=True ou aggregate se False.
+        """
+        if pandas:
+            return aplica_juncao_mongo_pandas(self, db, visao,
+                                       parametros_ativos
+                                       filtrar)
+        return aplica_juncao_mongo_aggregate(self, db, visao,
+                                       parametros_ativos
+                                       filtrar)
+        
+
+    def aplica_juncao_mongo_pandas(self, db, visao,
+                                   parametros_ativos=None,
+                                   filtrar=False):
         """Lê as coleções configuradas no mongo. Carrega em
         DataFrames e faz merge destas.
 
@@ -797,6 +816,76 @@ class GerenteRisco():
             parametros_ativos: subconjunto do parâmetros de risco a serem
             aplicados
             filtrar: aplica_risco após merge dos DataFrames
+
+        Returns:
+            Lista contendo os campos filtrados. 1ª linha com nomes de campo
+
+        """
+        # TODO: Usar métodos próprios do MongoDB ao invés de DataFrames para
+        # trazer dados já filtrados e melhorar desempenho
+        base = visao.base
+        numero_juncoes = len(visao.tabelas)
+        dffilho = None
+        if numero_juncoes > 1:   # Caso apenas uma tabela esteja na visão,
+            tabela = visao.tabelas[numero_juncoes - 1]  # não há junção
+            filhoname = base.nome + '.' + tabela.csv_file
+            print(filhoname)
+            lista = self.load_mongo(db, collection_name=filhoname)
+            dffilho = pd.DataFrame(lista[1:], columns=lista[0])
+            if hasattr(tabela, 'type'):
+                how = tabela.type
+            else:
+                how = 'inner'
+        # A primeira precisa ser "pulada", sempre é a junção 2 tabelas
+        # de cada vez. Se numero_juncoes for >2, entrará aqui fazendo
+        # a junção em cadeia desde o último até o primeiro filho
+        for r in range(numero_juncoes - 2, 0, -1):
+            tabela = visao.tabelas[r]
+            paifilhoname = base.nome + '.' + tabela.csv_file
+            if hasattr(tabela, 'type'):
+                how = tabela.type
+            else:
+                how = 'inner'
+            lista = self.load_mongo(db, collection_name=paifilhoname)
+            dfpaifilho = pd.DataFrame(lista[1:], columns=lista[0])
+            # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
+            dffilho = dfpaifilho.merge(dffilho, how=how,
+                                       left_on=tabela.primario.lower(),
+                                       right_on=tabela.estrangeiro.lower())
+        painame = base.nome + '.' + visao.tabelas[0].csv_file
+        lista = self.load_mongo(db, collection_name=painame)
+        dfpai = pd.DataFrame(lista[1:], columns=lista[0])
+        if dffilho:
+            dfpai = dfpai.merge(dffilho, how=how,
+                                left_on=tabela.primario.lower(),
+                                right_on=tabela.estrangeiro.lower())
+        if visao.colunas:
+            colunas = [coluna.nome.lower() for coluna in visao.colunas]
+            result_df = dfpai[colunas]
+            result_list = [colunas]
+        else:
+            result_df = dfpai
+            result_list = [result_df.columns.tolist()]
+        result_list.extend(result_df.values.tolist())
+        if filtrar:
+            return self.aplica_risco(result_list,
+                                     parametros_ativos=parametros_ativos)
+        return result_list
+
+
+
+    def aplica_juncao_mongo_aggregate(self, db, visao,
+                                   parametros_ativos=None,
+                                   filtrar=False):
+        """Lê as coleções configuradas no mongo através de aggregates.
+
+        Args:
+            db: MongoDB
+            visao: objeto de Banco de Dados que espeficica as configurações
+            (metadados) da base
+            parametros_ativos: subconjunto do parâmetros de risco a serem
+            aplicados
+            filtrar: aplica_risco na consulta
 
         Returns:
             Lista contendo os campos filtrados. 1ª linha com nomes de campo
