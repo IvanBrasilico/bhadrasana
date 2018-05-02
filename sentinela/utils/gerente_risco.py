@@ -919,7 +919,11 @@ class GerenteRisco():
         painame = visao.tabelas[0].csv
         collection = db[base.nome + '.' + painame]
         if visao.colunas:
-            colunas = {coluna.nome.lower(): 1 for coluna in visao.colunas}
+            colunas = {'_id': 0}
+            for coluna in visao.colunas:
+                colunas[coluna.nome] = 1
+                for tabela in visao.tabelas:
+                    colunas[tabela.csv + '.' + coluna.nome] = 1
             pipeline.append({'$project': colunas})
         if filtrar:
             filtro = []
@@ -936,9 +940,35 @@ class GerenteRisco():
                         #filter_function = filter_functions.get(tipo_filtro)
                         for valor in lista_filtros:
                             filtro.append({campo: valor})
+                            for tabela in visao.tabelas:
+                                filtro.append({tabela.csv + '.'
+                                               + campo: valor})
             if filtro:
                 print(filtro)
                 pipeline.append({'$match': {'$or': filtro}})
         print('PIPELINE', pipeline)
-        result = collection.aggregate(pipeline)
-        return list(result)
+        mongo_list = list(collection.aggregate(pipeline))
+        print(mongo_list)
+        if mongo_list and len(mongo_list) > 0:
+            first_line = mongo_list[0]
+            result = []
+            header = []
+            for key, value in first_line.items():
+                # print('VALUE', key, value, type(value))
+                if isinstance(value, dict):
+                    for sub_key in value.keys():
+                        header.append(key + '.' +sub_key)
+                else:
+                    header.append(key)
+            result.append(header)
+            for linha in mongo_list:
+                linha_lista = []
+                for campo in header:
+                    hieraquia = campo.split('.')
+                    valor = linha
+                    for nivel in hieraquia:
+                        valor = valor.get(nivel)
+                    linha_lista.append(valor)
+                result.append(linha_lista)
+            return result
+        return None
