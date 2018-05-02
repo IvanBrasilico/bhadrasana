@@ -1,5 +1,6 @@
 """Módulo responsável pelas funções que aplicam os filtros/parâmetros
 de risco cadastrados nos dados. Utiliza pandas para realizar filtragem.
+
 """
 import csv
 import json
@@ -94,6 +95,10 @@ filter_functions = {
     Filtro.comeca_com: startswith,
     Filtro.contem: contains
 }
+
+# TODO: Estudar refatoração: dividir em classes, utilizar herança
+# GerenteRisco->GerenteRiscoCSV
+# GerenteRisco->GerenteRiscoMongo
 
 
 class GerenteRisco():
@@ -704,7 +709,7 @@ class GerenteRisco():
                     pass
 
     def load_mongo(self, db, base=None, collection_name=None,
-                   parametros_ativos=None):
+                   parametros_ativos=None, limit=0, skip=0):
         """Recupera da base mongodb em um lista.
 
         Args:
@@ -743,9 +748,7 @@ class GerenteRisco():
         if listadefiltros:
             filtro = {'$or': listadefiltros}
         logger.debug(filtro)
-        print(filtro)
         if collection_name:
-            print(collection_name)
             if collection_name.find('.csv') != -1:
                 collection_name = collection_name[:-4]
             list_collections = [collection_name]
@@ -754,7 +757,8 @@ class GerenteRisco():
                                 db.collection_names() if base.nome in name]
         result = OrderedDict()
         for collection_name in list_collections:
-            mongo_list = db[collection_name].find(filtro)
+            mongo_list = db[collection_name].find(
+                filtro).limit(limit).skip(skip)
             if mongo_list.count() == 0:
                 filtro = {}
                 mongo_list = db[collection_name].find(filtro)
@@ -772,22 +776,25 @@ class GerenteRisco():
                         result[key] = []
                     result[key].append(value)
                 # result.append(valores)
-        logger.debug('Result ')
-        logger.debug(result)
+        # logger.debug('Result ')
+        # logger.debug(result)
         headers = [key for key in result.keys()]
         comprimento = len(result[headers[0]])
         lista = [headers]
         for i in range(comprimento - 1):
             linha = []
             for key in headers:
-                linha.append(result[key][i])
+                try:
+                    linha.append(result[key][i])
+                except IndexError:
+                    continue
             lista.append(linha)
         return lista
 
     def aplica_juncao_mongo(self, db, visao,
                             parametros_ativos=None,
                             filtrar=False,
-                            pandas=True):
+                            pandas=False):
         """Apenas um proxy para compatibilidade reversa.
 
         Proxy para compatibilidade e escolha.
@@ -795,13 +802,12 @@ class GerenteRisco():
         pandas se param pandas=True ou aggregate se False.
         """
         if pandas:
-            return aplica_juncao_mongo_pandas(self, db, visao,
-                                       parametros_ativos
-                                       filtrar)
-        return aplica_juncao_mongo_aggregate(self, db, visao,
-                                       parametros_ativos
-                                       filtrar)
-        
+            return self.aplica_juncao_mongo_pandas(db, visao,
+                                                   parametros_ativos,
+                                                   filtrar)
+        return self.aplica_juncao_mongo_aggregate(db, visao,
+                                                  parametros_ativos,
+                                                  filtrar)
 
     def aplica_juncao_mongo_pandas(self, db, visao,
                                    parametros_ativos=None,
@@ -855,7 +861,7 @@ class GerenteRisco():
         painame = base.nome + '.' + visao.tabelas[0].csv_file
         lista = self.load_mongo(db, collection_name=painame)
         dfpai = pd.DataFrame(lista[1:], columns=lista[0])
-        if dffilho:
+        if dffilho is not None:
             dfpai = dfpai.merge(dffilho, how=how,
                                 left_on=tabela.primario.lower(),
                                 right_on=tabela.estrangeiro.lower())
@@ -872,11 +878,9 @@ class GerenteRisco():
                                      parametros_ativos=parametros_ativos)
         return result_list
 
-
-
     def aplica_juncao_mongo_aggregate(self, db, visao,
-                                   parametros_ativos=None,
-                                   filtrar=False):
+                                      parametros_ativos=None,
+                                      filtrar=False):
         """Lê as coleções configuradas no mongo através de aggregates.
 
         Args:
@@ -891,53 +895,50 @@ class GerenteRisco():
             Lista contendo os campos filtrados. 1ª linha com nomes de campo
 
         """
-        # TODO: Usar métodos próprios do MongoDB ao invés de DataFrames para
-        # trazer dados já filtrados e melhorar desempenho
         base = visao.base
         numero_juncoes = len(visao.tabelas)
-        dffilho = None
-        if numero_juncoes > 1:   # Caso apenas uma tabela esteja na visão,
-            tabela = visao.tabelas[numero_juncoes - 1]  # não há junção
-            filhoname = base.nome + '.' + tabela.csv_file
-            print(filhoname)
-            lista = self.load_mongo(db, collection_name=filhoname)
-            dffilho = pd.DataFrame(lista[1:], columns=lista[0])
-            if hasattr(tabela, 'type'):
-                how = tabela.type
-            else:
-                how = 'inner'
-        # A primeira precisa ser "pulada", sempre é a junção 2 tabelas
-        # de cada vez. Se numero_juncoes for >2, entrará aqui fazendo
-        # a junção em cadeia desde o último até o primeiro filho
-        for r in range(numero_juncoes - 2, 0, -1):
+        collection = None
+        pipeline = []
+        for r in range(1, numero_juncoes):
             tabela = visao.tabelas[r]
-            paifilhoname = base.nome + '.' + tabela.csv_file
+            paifilhoname = base.nome + '.' + tabela.csv
             if hasattr(tabela, 'type'):
                 how = tabela.type
             else:
                 how = 'inner'
-            lista = self.load_mongo(db, collection_name=paifilhoname)
-            dfpaifilho = pd.DataFrame(lista[1:], columns=lista[0])
-            # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
-            dffilho = dfpaifilho.merge(dffilho, how=how,
-                                       left_on=tabela.primario.lower(),
-                                       right_on=tabela.estrangeiro.lower())
-        painame = base.nome + '.' + visao.tabelas[0].csv_file
-        lista = self.load_mongo(db, collection_name=painame)
-        dfpai = pd.DataFrame(lista[1:], columns=lista[0])
-        if dffilho:
-            dfpai = dfpai.merge(dffilho, how=how,
-                                left_on=tabela.primario.lower(),
-                                right_on=tabela.estrangeiro.lower())
+            pipeline.append({
+                '$lookup':
+                {'from': paifilhoname,
+                 'localField': tabela.primario.lower(),
+                 'foreignField': tabela.estrangeiro.lower(),
+                 'as': tabela.csv
+                 }})
+            pipeline.append(
+                {'$unwind': {'path': '$' + tabela.csv}}
+            )
+        painame = visao.tabelas[0].csv
+        collection = db[base.nome + '.' + painame]
         if visao.colunas:
-            colunas = [coluna.nome.lower() for coluna in visao.colunas]
-            result_df = dfpai[colunas]
-            result_list = [colunas]
-        else:
-            result_df = dfpai
-            result_list = [result_df.columns.tolist()]
-        result_list.extend(result_df.values.tolist())
+            colunas = {coluna.nome.lower(): 1 for coluna in visao.colunas}
+            pipeline.append({'$project': colunas})
         if filtrar:
-            return self.aplica_risco(result_list,
-                                     parametros_ativos=parametros_ativos)
-        return result_list
+            filtro = []
+            if parametros_ativos:
+                riscos = set([parametro.lower()
+                              for parametro in parametros_ativos])
+            else:
+                riscos = set([key.lower() for key
+                              in self._riscosativos.keys()])
+                for campo in riscos:
+                    dict_filtros = self._riscosativos.get(campo)
+                    for tipo_filtro, lista_filtros in dict_filtros.items():
+                        print(tipo_filtro, lista_filtros)
+                        #filter_function = filter_functions.get(tipo_filtro)
+                        for valor in lista_filtros:
+                            filtro.append({campo: valor})
+            if filtro:
+                print(filtro)
+                pipeline.append({'$match': {'$or': filtro}})
+        print('PIPELINE', pipeline)
+        result = collection.aggregate(pipeline)
+        return list(result)

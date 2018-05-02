@@ -14,7 +14,7 @@ padrao = mysession.query(PadraoRisco).filter(PadraoRisco.id == 1).first()
 gerente.set_padraorisco(padrao)
 df = gerente.aplica_juncao_mongo(db, visao,
                                  parametros_ativos=['cpfcnpjconsignatario'],
-                                 filtrar=True)
+                                 filtrar=True, pandas=False)
 print(df)
 
 
