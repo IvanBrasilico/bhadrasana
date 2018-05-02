@@ -359,7 +359,7 @@ class FlaskTestCase(unittest.TestCase):
 
     def test_arquivar(self):
         if self.http_server is not None:
-            rv = self.app.get('/importa_csv/4/26',
+            rv = self.app.get('/aplica_risco?baseid=5&acao=arquivar',
                               params=dict(csrf_token=self.csrf_token))
         else:
             rv = self.app.get(
@@ -375,12 +375,12 @@ class FlaskTestCase(unittest.TestCase):
                               padraoid=4&riscoid=' + str(param),
                               params=dict(csrf_token=self.csrf_token))
         else:
-            rv = self.app.get('/exclui_parametro?\
-                              padraoid=4&riscoid=' + str(param))
+            rv = self.app.get('/exclui_parametro?padraoid=4&\
+                              &riscoid=' + str(param))
         data = self.data(rv)
         for i in lista:
-            rv = self.app.get('/exclui_parametro?\
-                              padraoid=4&riscoid=' + str(i))
+            rv = self.app.get('/exclui_parametro?padraoid=4&\
+                              &riscoid=' + str(i))
             data = self.data(rv)
         print(data)
         assert b'Redirecting...' in data

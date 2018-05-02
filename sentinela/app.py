@@ -665,9 +665,9 @@ def adiciona_depara():
         base = dbsession.query(BaseOrigem).filter(
             BaseOrigem.id == baseid
         ).first()
-    depara = DePara(titulo_antigo, titulo_novo, base)
-    dbsession.add(depara)
-    dbsession.commit()
+        depara = DePara(titulo_antigo, titulo_novo, base)
+        dbsession.add(depara)
+        dbsession.commit()
     return redirect(url_for('edita_depara', baseid=baseid,
                             padraoid=padraoid))
 
