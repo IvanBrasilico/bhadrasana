@@ -902,10 +902,6 @@ class GerenteRisco():
         for r in range(1, numero_juncoes):
             tabela = visao.tabelas[r]
             paifilhoname = base.nome + '.' + tabela.csv
-            if hasattr(tabela, 'type'):
-                how = tabela.type
-            else:
-                how = 'inner'
             pipeline.append({
                 '$lookup':
                 {'from': paifilhoname,
@@ -937,12 +933,13 @@ class GerenteRisco():
                     dict_filtros = self._riscosativos.get(campo)
                     for tipo_filtro, lista_filtros in dict_filtros.items():
                         print(tipo_filtro, lista_filtros)
-                        #filter_function = filter_functions.get(tipo_filtro)
+                        # filter_function = filter_functions.get(tipo_filtro)
                         for valor in lista_filtros:
                             filtro.append({campo: valor})
                             for tabela in visao.tabelas:
-                                filtro.append({tabela.csv + '.'
-                                               + campo: valor})
+                                filtro.append(
+                                    {tabela.csv + '.' + campo: valor}
+                                )
             if filtro:
                 print(filtro)
                 pipeline.append({'$match': {'$or': filtro}})
@@ -957,7 +954,7 @@ class GerenteRisco():
                 # print('VALUE', key, value, type(value))
                 if isinstance(value, dict):
                     for sub_key in value.keys():
-                        header.append(key + '.' +sub_key)
+                        header.append(key + '.' + sub_key)
                 else:
                     header.append(key)
             result.append(header)

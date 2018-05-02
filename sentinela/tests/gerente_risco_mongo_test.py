@@ -7,9 +7,7 @@ Chamar python virasana/tests/integracao_test.py criará o Banco de Dados
 SEM apagar tudo no final. Para inspeção visual do BD criado para testes.
 
 """
-import os
 import unittest
-from datetime import datetime, timedelta
 
 # import pprint
 from pymongo import MongoClient
@@ -81,7 +79,9 @@ class TestCase(unittest.TestCase):
         containers_conhecimento_ncms = type('Visao', (object, ),
                                             {'nome': 'ncms_conhecimento',
                                              'base': carga,
-                                             'tabelas': [containers, conhecimentos, ncms],
+                                             'tabelas': [containers,
+                                                         conhecimentos,
+                                                         ncms],
                                              'colunas': []
                                              })
         coluna1 = type('Visao', (object, ),
@@ -112,17 +112,17 @@ class TestCase(unittest.TestCase):
                       'valor': 'cheio'
                       })
         risco_cheio = type('ParametroRisco', (object, ),
-                     {'nome_campo': 'container',
-                      'valores': [cheio]}
-                     )
+                           {'nome_campo': 'container',
+                            'valores': [cheio]}
+                           )
         ncm = type('ValorParametro', (object, ),
-                     {'tipo_filtro': Filtro.igual,
-                      'valor': '3'
-                      })
+                   {'tipo_filtro': Filtro.igual,
+                    'valor': '3'
+                    })
         risco_ncm = type('ParametroRisco', (object, ),
-                     {'nome_campo': 'ncm',
-                      'valores': [ncm]}
-                     )
+                         {'nome_campo': 'ncm',
+                          'valores': [ncm]}
+                         )
         gerente.add_risco(risco_cheio)
         gerente.add_risco(risco_ncm)
         lista = gerente.aplica_juncao_mongo(self.db,
