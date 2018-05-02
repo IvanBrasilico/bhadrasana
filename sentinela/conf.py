@@ -5,7 +5,7 @@ from ajna_commons.conf import ENCODE
 
 ENCODE = ENCODE
 
-CSV_DOWNLOAD = 'sentinela/CSV/'
+CSV_DOWNLOAD = os.path.join(os.path.abspath('sentinela'), 'CSV')
 APP_PATH = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(APP_PATH, 'files')
 CSV_FOLDER = os.path.join(APP_PATH, 'CSV')
