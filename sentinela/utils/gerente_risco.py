@@ -992,8 +992,8 @@ class GerenteRisco():
             if filtro:
                 print('FILTRO', filtro)
                 pipeline.append({'$match': {'$or': filtro}})
-        pipeline.append({"$limit": skip + limit})
-        pipeline.append({"$skip": skip})
+        pipeline.append({'$limit': skip + limit})
+        pipeline.append({'$skip': skip})
         print('PIPELINE', pipeline)
         mongo_list = list(collection.aggregate(pipeline))
         print(mongo_list)
