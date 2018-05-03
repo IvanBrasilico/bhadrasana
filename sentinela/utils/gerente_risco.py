@@ -954,12 +954,15 @@ class GerenteRisco():
             )
         painame = visao.tabelas[0].csv
         collection = db[base.nome + '.' + painame]
+        tabelas = [tabela.csv for tabela in visao.tabelas]
         if visao.colunas:
             colunas = {'_id': 0}
             for coluna in visao.colunas:
-                colunas[coluna.nome] = 1
-                for tabela in visao.tabelas:
-                    colunas[tabela.csv + '.' + coluna.nome] = 1
+                print(coluna.nome, tabelas)
+                if coluna.nome not in tabelas:
+                    colunas[coluna.nome.lower()] = 1
+                for tabela in tabelas[1:]:
+                    colunas[tabela + '.' + coluna.nome.lower()] = 1
             pipeline.append({'$project': colunas})
         if filtrar:
             filtro = []
@@ -1009,3 +1012,28 @@ class GerenteRisco():
                 result.append(linha_lista)
             return result
         return None
+"""
+db.getCollection('CARGA.Conhecimento').aggregate(
+    [{'$lookup': {'from': 'CARGA.NCM',
+                 'localField': 'conhecimento',
+                 'foreignField': 'conhecimento',
+                 'as': 'NCM'}},
+    {'$unwind': {'path': '$NCM'}},
+    {'$project':
+     {'_id': 0, 'Conhecimento': 1,
+      'Conhecimento.Conhecimento': 1,
+      'NCM.Conhecimento': 1,
+      'NCM': 1,
+      'Conhecimento.NCM': 1,
+      'NCM.NCM': 1,
+      'CPFCNPJConsignatario': 1,
+      'Conhecimento.CPFCNPJConsignatario': 1,
+      'NCM.CPFCNPJConsignatario': 1,
+      'DescricaoMercadoria': 1,
+      'Conhecimento.DescricaoMercadoria': 1,
+      'NCM.DescricaoMercadoria': 1,
+      'IdentificacaoEmbarcador': 1,
+      'Conhecimento.IdentificacaoEmbarcador': 1,
+      'NCM.IdentificacaoEmbarcador': 1}}
+      ]
+"""

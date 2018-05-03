@@ -280,6 +280,7 @@ def risco():
                 if avisao is None:
                     flash('Visão não encontrada!')
                 else:
+                    print('PADRÃO', padrao)
                     lista_risco = gerente.aplica_juncao_mongo(
                         db, avisao, filtrar=padrao is not None,
                         parametros_ativos=parametros_ativos)
