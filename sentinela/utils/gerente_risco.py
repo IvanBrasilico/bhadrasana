@@ -829,7 +829,9 @@ class GerenteRisco():
     def aplica_juncao_mongo(self, db, visao,
                             parametros_ativos=None,
                             filtrar=False,
-                            pandas=False):
+                            pandas=False,
+                            limit=100,
+                            skip=0):
         """Apenas um proxy para compatibilidade reversa.
 
         Proxy para compatibilidade e escolha.
@@ -842,7 +844,9 @@ class GerenteRisco():
                                                    filtrar)
         return self.aplica_juncao_mongo_aggregate(db, visao,
                                                   parametros_ativos,
-                                                  filtrar)
+                                                  filtrar,
+                                                  limit,
+                                                  skip)
 
     def aplica_juncao_mongo_pandas(self, db, visao,
                                    parametros_ativos=None,
@@ -914,7 +918,9 @@ class GerenteRisco():
 
     def aplica_juncao_mongo_aggregate(self, db, visao,
                                       parametros_ativos=None,
-                                      filtrar=False):
+                                      filtrar=False,
+                                      limit=100,
+                                      skip=0):
         """Lê as coleções configuradas no mongo através de aggregates.
 
         Monta um pipeline MongoDB.
@@ -984,8 +990,10 @@ class GerenteRisco():
                                     {tabela.csv + '.' + campo: valor}
                                 )
             if filtro:
-                print(filtro)
+                print('FILTRO', filtro)
                 pipeline.append({'$match': {'$or': filtro}})
+        pipeline.append({"$limit": skip + limit})
+        pipeline.append({"$skip": skip})
         print('PIPELINE', pipeline)
         mongo_list = list(collection.aggregate(pipeline))
         print(mongo_list)
@@ -1012,6 +1020,8 @@ class GerenteRisco():
                 result.append(linha_lista)
             return result
         return None
+
+
 """
 db.getCollection('CARGA.Conhecimento').aggregate(
     [{'$lookup': {'from': 'CARGA.NCM',
