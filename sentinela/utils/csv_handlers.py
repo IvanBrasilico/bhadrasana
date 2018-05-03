@@ -7,11 +7,11 @@ Padrão do arquivo csv usado é o mais simples possível:
 - Fim de linha significa nova linha;
 - Para comparações, retira espaços antes e depois do conteúdo das colunas.
 """
-from copy import deepcopy
 import csv
 import glob
 import io
 import os
+from copy import deepcopy
 from zipfile import ZipFile
 
 from ajna_commons.utils.sanitiza import ascii_sanitizar, sanitizar
@@ -30,7 +30,9 @@ def muda_titulos_csv(csv_file, de_para_dict):
 
 
 def muda_titulos_lista(lista, de_para_dict, make_copy=True):
-    """Recebe um dicionário na forma titulo_old:titulo_new
+    """Muda titulos.
+
+    Recebe um dicionário na forma titulo_old:titulo_new
     e muda a linha de titulo da lista.
 
     Passar copy=False para listas grandes faz a modificação in-line
@@ -78,7 +80,9 @@ def retificar_linhas(lista, cabecalhos):
 
 
 def sch_tocsv(sch, txt, dest_path=tmpdir):
-    """Pega um arquivo txt, aplica os cabecalhos e a informação de um sch,
+    """Processa padrão sch (CARGA).
+
+    Pega um arquivo txt, aplica os cabecalhos e a informação de um sch,
     e o transforma em um csv padrão.
     """
     cabecalhos = []
@@ -110,7 +114,9 @@ def sch_tocsv(sch, txt, dest_path=tmpdir):
 
 
 def sch_processing(path, mask_txt='0.txt', dest_path=tmpdir):
-    """Processa lotes de extração que gerem arquivos txt csv e arquivos sch
+    """Processa arquivos sch (CARGA).
+
+    Processa lotes de extração que gerem arquivos txt csv e arquivos sch
     (txt contém os dados e sch descreve o schema), transformando-os em arquivos
     csv estilo "planilha", isto é, primeira linha de cabecalhos.
 

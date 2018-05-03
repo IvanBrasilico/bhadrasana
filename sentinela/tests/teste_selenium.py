@@ -1,10 +1,11 @@
 import os
 import threading
 import unittest
-from selenium import webdriver
-# from selenium.webdriver.common.keys import Keys
 
 import sentinela.app as app
+from selenium import webdriver
+
+# from selenium.webdriver.common.keys import Keys
 
 
 class SeleniumTestCase(unittest.TestCase):

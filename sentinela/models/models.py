@@ -2,26 +2,34 @@
 import enum
 import os
 
-from sqlalchemy import (Column, Enum, ForeignKey, Integer, Table,
-                        String, create_engine)
+from sqlalchemy import (Column, Enum, ForeignKey, Integer, String, Table,
+                        create_engine)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, scoped_session, sessionmaker
 from werkzeug.security import generate_password_hash
 
 
 class Filtro(enum.Enum):
-    """Enumerado para escolha do tipo de filtro a ser
-    aplicado no parâmetro de risco"""
+    """Enumerado.
+
+    Para escolha do tipo de filtro a ser
+    aplicado no parâmetro de risco
+    """
+
     igual = 1
     comeca_com = 2
     contem = 3
 
 
 class MySession():
-    """Para definir a sessão com o BD na aplicação. Para os
-    testes, passando o parâmetro test=True, um BD na memória"""
+    """Sessão com BD.
+
+    Para definir a sessão com o BD na aplicação. Para os
+    testes, passando o parâmetro test=True, um BD na memória
+    """
 
     def __init__(self, base, test=False):
+        """Inicializa."""
         if test:
             path = ':memory:'
         else:
@@ -39,10 +47,12 @@ class MySession():
 
     @property
     def session(self):
+        """Session."""
         return self._session
 
     @property
     def engine(self):
+        """Engine."""
         return self._engine
 
 
@@ -51,21 +61,20 @@ Base = declarative_base()
 
 class SQLDBUser(Base):
     """Base de Usuários."""
+
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     username = Column(String(20), unique=True)
     _password = Column(String(200))
 
     def __init__(self, username, password):
+        """Inicializa."""
         self.username = username
         self._password = self.encript(password)
 
     @classmethod
     def encript(self, password):
         """Recebe uma senha em texto plano, retorna uma versão encriptada."""
-        # TODO: make a script to add Users, disable next line
-        # and test if it works
-        return password
         return generate_password_hash(password)
 
     @classmethod
@@ -74,6 +83,7 @@ class SQLDBUser(Base):
 
         Returns:
             SQLDBUser ou None
+
         """
         if password:
             DBUser = session.query(SQLDBUser).filter(
@@ -99,7 +109,9 @@ class BaseOrigem(Base):
     """Metadado sobre as bases de dados disponíveis/integradas.
 
     Caminho: caminho no disco onde os dados da importação da base
-    (normalmente arquivos csv) estão guardados"""
+    (normalmente arquivos csv) estão guardados
+    """
+
     __tablename__ = 'basesorigem'
     id = Column(Integer, primary_key=True)
     nome = Column(String(20), unique=True)
@@ -111,6 +123,7 @@ class BaseOrigem(Base):
         back_populates='bases')
 
     def __init__(self, nome, caminho=None):
+        """Inicializa."""
         self.nome = nome
         self.caminho = caminho
 
@@ -119,7 +132,9 @@ class PadraoRisco(Base):
     """Metadado sobre as bases de dados disponíveis/integradas.
 
     Caminho: caminho no disco onde os dados da importação da base
-    (normalmente arquivos csv) estão guardados"""
+    (normalmente arquivos csv) estão guardados
+    """
+
     __tablename__ = 'padroesrisco'
     id = Column(Integer, primary_key=True)
     nome = Column(String(20), unique=True)
@@ -130,14 +145,15 @@ class PadraoRisco(Base):
         back_populates='padroes')
 
     def __init__(self, nome, base=None):
+        """Inicializa."""
         self.nome = nome
         if base:
             self.base_id = base.id
 
 
 class DePara(Base):
-    """Renomeia os titulos das colunas ao importar uma base.
-    """
+    """Renomeia os titulos das colunas ao importar uma base."""
+
     __tablename__ = 'depara'
     id = Column(Integer, primary_key=True)
     titulo_ant = Column(String(50))
@@ -147,15 +163,20 @@ class DePara(Base):
         'BaseOrigem', back_populates='deparas')
 
     def __init__(self, titulo_ant, titulo_novo, base):
+        """Inicializa."""
         self.titulo_ant = titulo_ant
         self.titulo_novo = titulo_novo
         self.base_id = base.id
 
 
 class ParametroRisco(Base):
-    """Nomeia um parâmetro de risco que pode ser aplicado
+    """Paramêtro de Risco.
+
+    Nomeia um parâmetro de risco que pode ser aplicado
     como filtro em um Banco de Dados. Um parâmetro tem uma
-    lista de valores que serão o filtro efetivo."""
+    lista de valores que serão o filtro efetivo.
+    """
+
     __tablename__ = 'parametrosrisco'
     id = Column(Integer, primary_key=True)
     nome_campo = Column(String(20))
@@ -166,6 +187,7 @@ class ParametroRisco(Base):
     padraorisco_id = Column(Integer, ForeignKey('padroesrisco.id'))
 
     def __init__(self, nome, descricao='', padraorisco=None):
+        """Inicializa."""
         self.nome_campo = nome
         self.descricao = descricao
         if padraorisco:
@@ -173,14 +195,16 @@ class ParametroRisco(Base):
 
 
 class ValorParametro(Base):
-    """Um valor de parametro a ser aplicado como filtro em uma
-    fonte de dados.
+    """Um valor de parametro.
+
+    A ser aplicado como filtro em uma fonte de dados.
 
     nomecampo = nome do campo da fonte de dados a ser aplicado filtro
 
     tipofiltro = tipo de função de filtragem a ser realizada
     (ver enum TipoFiltro)
     """
+
     __tablename__ = 'valoresparametro'
     id = Column(Integer, primary_key=True)
     valor = Column(String(50), unique=True)
@@ -190,16 +214,20 @@ class ValorParametro(Base):
         'ParametroRisco', back_populates='valores')
 
     def __init__(self, nome, tipo):
+        """Inicializa."""
         self.valor = nome
         self.tipo_filtro = tipo
 
 
 class Visao(Base):
-    """Metadado sobre os csvs capturados. Para mapear relações entre os
+    """Metadado sobre os csvs capturados.
+
+    Para mapear relações entre os
     csvs capturados e permitir junção automática se necessário.
     Utilizado por "GerenteRisco.aplica_juncao()"
     Ver :py:func:`gerente_risco.aplica_juncao`
     """
+
     __tablename__ = 'visoes'
     id = Column(Integer, primary_key=True)
     nome = Column(String(50), unique=True)
@@ -210,15 +238,17 @@ class Visao(Base):
         'BaseOrigem', back_populates='visoes')
 
     def __init__(self, csv):
+        """Inicializa."""
         self.csv = csv
 
 
 class Coluna(Base):
-    """Metadado sobre os csvs capturados. Define os campos que
-    serão exibidos na junção.
-    Utilizado por "GerenteRisco.aplica_juncao()"
+    """Metadado sobre os csvs capturados.
+
+    Define os campos que serão exibidos na junção.
     Ver :py:func:`gerente_risco.aplica_juncao`
     """
+
     __tablename__ = 'colunas'
     id = Column(Integer, primary_key=True)
     nome = Column(String(50))
@@ -227,15 +257,19 @@ class Coluna(Base):
         'Visao', back_populates='colunas')
 
     def __init__(self, csv):
+        """Inicializa."""
         self.csv = csv
 
 
 class Tabela(Base):
-    """Metadado sobre os csvs capturados. Para mapear relações entre os
+    """Metadado sobre os csvs capturados.
+
+    Para mapear relações entre os
     csvs capturados e permitir junção automática se necessário.
     Utilizado por "GerenteRisco.aplica_juncao()"
     Ver :py:func:`gerente_risco.aplica_juncao`
     """
+
     __tablename__ = 'tabelas'
     id = Column(Integer, primary_key=True)
     csv = Column(String(20))
@@ -250,6 +284,7 @@ class Tabela(Base):
         'Visao', back_populates='tabelas')
 
     def __init__(self, csv, primario, estrangeiro, pai_id, visao_id):
+        """Inicializa."""
         self.csv = csv
         self.primario = primario
         self.estrangeiro = estrangeiro
@@ -258,6 +293,7 @@ class Tabela(Base):
 
     @property
     def csv_file(self):
+        """Acesso ao campo csv. Inclui extensão."""
         if self.csv.find('.csv') == -1:
             return self.csv + '.csv'
         return self.csv

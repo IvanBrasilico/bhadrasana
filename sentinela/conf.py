@@ -1,6 +1,8 @@
+"""Configurações específicas do Bhadrasana."""
 import os
 import pickle
 import tempfile
+
 from ajna_commons.conf import ENCODE
 
 ENCODE = ENCODE

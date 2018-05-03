@@ -1,11 +1,12 @@
 """Testes para o módulo gerente_risco"""
 import csv
 import datetime
-import mongomock
 import os
 import shutil
 import tempfile
 import unittest
+
+import mongomock
 
 # from pymongo import MongoClient
 from sentinela.conf import APP_PATH

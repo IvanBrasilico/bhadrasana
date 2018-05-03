@@ -1,7 +1,8 @@
-# -*- coding: utf-8 -*-
 """
-Módulo Sentinela - AJNA
-=======================
+Bhadrasana.
+
+Módulo Bhadrasana - AJNA
+========================
 
 Interface do Usuário - WEB
 --------------------------
@@ -20,9 +21,8 @@ import datetime
 import os
 import shutil
 
-import ajna_commons.flask.login as login
-from flask import (Flask, flash, jsonify, redirect, render_template,
-                   request, session, url_for)
+from flask import (Flask, flash, jsonify, redirect, render_template, request,
+                   session, url_for)
 from flask_bootstrap import Bootstrap
 # from flask_cors import CORS
 from flask_login import current_user, login_required
@@ -34,10 +34,11 @@ from flask_wtf.csrf import CSRFProtect
 from pymongo import MongoClient
 from werkzeug.utils import secure_filename
 
+import ajna_commons.flask.login as login
 from ajna_commons.flask.conf import (ALLOWED_EXTENSIONS, DATABASE, MONGODB_URI,
                                      SECRET, logo)
 from ajna_commons.flask.log import logger
-from ajna_commons.utils.sanitiza import (sanitizar, unicode_sanitizar)
+from ajna_commons.utils.sanitiza import sanitizar, unicode_sanitizar
 from sentinela.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER
 from sentinela.models.models import (Base, BaseOrigem, Coluna, DePara,
                                      MySession, PadraoRisco, ParametroRisco,
@@ -139,7 +140,7 @@ def importa_base():
                                                 abase=abase,
                                                 data=data,
                                                 filename=tempfile_name,
-                                                remove=True)
+                                                remove=True).delay()
                         return redirect(url_for('risco',
                                                 baseid=baseid,
                                                 task_id=task_id))
@@ -368,7 +369,9 @@ def valores():
 @app.route('/edita_risco', methods=['POST', 'GET'])
 @login_required
 def edita_risco():
-    """Tela para configurar os parâmetros de risco das bases importadas,
+    """Editar Padrões e Valores de Risco.
+
+    Tela para configurar os parâmetros de risco das bases importadas,
     permite a alteração e criação de novos parâmetros e seus dados.
 
     Args:
@@ -449,7 +452,9 @@ def adiciona_padrao(nome):
 @app.route('/importa_csv/<padraoid>/<riscoid>', methods=['POST', 'GET'])
 @login_required
 def importa_csv(padraoid, riscoid):
-    """Função que lê um arquivo csv contendo duas colunas(valor e tipo_filtro)
+    """Importar arquivo.
+
+    Função que lê um arquivo csv contendo duas colunas(valor e tipo_filtro)
     e realiza a importação dos dados para um parâmetro de risco selecionado.
 
     Args:
@@ -487,7 +492,9 @@ def importa_csv(padraoid, riscoid):
 @app.route('/exporta_csv', methods=['POST', 'GET'])
 @login_required
 def exporta_csv():
-    """Função que cria um arquivo CSV contendo duas colunas(valor e tipo_filtro)
+    """Grava em arquivo parâmetros ativos.
+
+    Função que cria um arquivo CSV contendo duas colunas(valor e tipo_filtro)
     e realiza a exportação dos dados do parâmetro de risco selecionado.
 
     Args:
@@ -581,7 +588,9 @@ def adiciona_valor():
 
 @app.route('/exclui_valor')
 def exclui_valor():
-    """Função que exclui apenas o valor e o tipo_filtro de um parâmetro de
+    """Ecluir uma instância de ValorParametro.
+
+    Função que exclui apenas o valor e o tipo_filtro de um parâmetro de
     risco.
 
     Args:
@@ -641,7 +650,9 @@ def edita_depara():
 
 @app.route('/adiciona_depara')
 def adiciona_depara():
-    """Função que permite unificar o nome de colunas que possuem o mesmo
+    """De_para - troca títulos.
+
+    Função que permite unificar o nome de colunas que possuem o mesmo
     conteúdo.
 
     Esta função realiza a troca do titulo de uma coluna por outro, permitindo
@@ -697,6 +708,7 @@ def exclui_depara():
 @app.route('/navega_bases')
 @login_required
 def navega_bases():
+    """Navega Bases. Deprecated."""
     selected_module = request.args.get('selected_module')
     selected_model = request.args.get('selected_model')
     selected_field = request.args.get('selected_field')
@@ -722,6 +734,7 @@ def navega_bases():
 
 @app.route('/adiciona_filtro')
 def adiciona_filtro():
+    """Incluir Filtro. Deprecated."""
     selected_module = request.args.get('selected_module')
     selected_model = request.args.get('selected_model')
     selected_field = request.args.get('selected_field')
@@ -740,6 +753,7 @@ def adiciona_filtro():
 
 @app.route('/exclui_filtro')
 def exclui_filtro():
+    """Excluir Filtro. Deprecated."""
     selected_module = request.args.get('selected_module')
     selected_model = request.args.get('selected_model')
     selected_field = request.args.get('selected_field')
@@ -757,6 +771,7 @@ def exclui_filtro():
 
 @app.route('/consulta_bases_executar')
 def consulta_bases_executar():
+    """Deprecated."""
     selected_module = request.args.get('selected_module')
     selected_model = request.args.get('selected_model')
     selected_field = request.args.get('selected_field')
@@ -785,6 +800,7 @@ def consulta_bases_executar():
 
 @app.route('/arvore')
 def arvore():
+    """Àrvore GerenteBase. Deprecated."""
     gerente = GerenteBase()
     selected_module = request.args.get('selected_module')
     selected_model = request.args.get('selected_model')
@@ -810,6 +826,7 @@ def arvore():
 
 @app.route('/arvore_teste')
 def arvore_teste():
+    """Deprecated."""
     gerente = GerenteBase()
     gerente.set_module('carga', db='cargatest.db')
     filters = []

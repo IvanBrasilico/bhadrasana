@@ -1,4 +1,4 @@
-"""Modelo de dados necessário para app Sentinela"""
+"""Modelo de dados necessário para app Sentinela."""
 import os
 from collections import OrderedDict
 
@@ -11,10 +11,14 @@ Base = declarative_base()
 
 
 class MySession():
-    """Para definir a sessão com o BD na aplicação. Para os
-    testes, passando o parâmetro test=True, um BD na memória"""
+    """Sessão.
+
+    Para definir a sessão com o BD na aplicação. Para os
+    testes, passando o parâmetro test=True, um BD na memória
+    """
 
     def __init__(self, base=Base, test=False, nomebase='carga.db'):
+        """Abre conexão."""
         if test:
             path = ':memory:'
         else:
@@ -32,15 +36,18 @@ class MySession():
 
     @property
     def session(self):
+        """Sessão."""
         return self._session
 
     @property
     def engine(self):
+        """Engine."""
         return self._engine
 
 
 class Escala(Base):
-    """Cópia dados sobre escala das extrações"""
+    """Cópia dados sobre escala das extrações."""
+
     __tablename__ = 'escalas'
     id = Column(Integer, primary_key=True)
     Escala = Column(String(11), unique=True)
@@ -53,23 +60,27 @@ class Escala(Base):
 
     @property
     def to_dict(self):
+        """Retorna dict de campos selecionados."""
         return OrderedDict({'Escala': self.Escala,
                             'CNPJAgenciaNavegacao': self.CNPJAgenciaNavegacao,
                             'CodigoIMO': self.CodigoIMO})
 
     @property
     def to_list(self):
+        """Retorna list de campos selecionados."""
         return [self.Escala,
                 self.CNPJAgenciaNavegacao,
                 self.CodigoIMO]
 
     @property
     def filhos(self):
+        """Retorna list de classes filhas."""
         return [self.atracacoes, self.manifestos]
 
 
 class AtracDesatracEscala(Base):
-    """Cópia dados sobre escala das extrações"""
+    """Cópia dados sobre escala das extrações."""
+
     __tablename__ = 'atracacoes'
     id = Column(Integer, primary_key=True)
     Escala = Column(String(11), ForeignKey('escalas.Escala'))
@@ -82,6 +93,7 @@ class AtracDesatracEscala(Base):
 
     @property
     def to_dict(self):
+        """Retorna dict de campos selecionados."""
         return OrderedDict({'Escala': self.Escala,
                             'atracacao': self.atracacao,
                             'desatracacao': self.desatracacao,
@@ -90,6 +102,7 @@ class AtracDesatracEscala(Base):
 
     @property
     def to_list(self):
+        """Retorna list de campos selecionados."""
         return [self.Escala,
                 self.atracacao,
                 self.desatracacao,
@@ -98,15 +111,18 @@ class AtracDesatracEscala(Base):
 
     @property
     def pai(self):
+        """Retorna classe pai."""
         return self.aescala
 
     @property
     def filhos(self):
+        """Retorna list de classes filhas."""
         return None
 
 
 class EscalaManifesto(Base):
-    """Cópia dados sobre manifesto das extrações"""
+    """Cópia dados sobre manifesto das extrações."""
+
     __tablename__ = 'escalamanifesto'
     id = Column(Integer, primary_key=True)
     Manifesto = Column(String(13), ForeignKey('manifestos.Manifesto'))
@@ -118,25 +134,30 @@ class EscalaManifesto(Base):
 
     @property
     def to_dict(self):
+        """Retorna dict de campos selecionados."""
         return OrderedDict({'Manifesto': self.Manifesto,
                             'Escala': self.Escala})
 
     @property
     def to_list(self):
+        """Retorna list de campos selecionados."""
         return [self.Manifesto,
                 self.Escala]
 
     @property
     def pai(self):
+        """Retorna classe pai."""
         return self.aescala
 
     @property
     def filhos(self):
+        """Retorna list de classes filhas."""
         return [self.omanifesto]
 
 
 class Manifesto(Base):
-    """Cópia dados sobre manifesto das extrações"""
+    """Cópia dados sobre manifesto das extrações."""
+
     __tablename__ = 'manifestos'
     id = Column(Integer, primary_key=True)
     Manifesto = Column(String(13), unique=True)
@@ -149,23 +170,28 @@ class Manifesto(Base):
 
     @property
     def to_dict(self):
+        """Retorna dict de campos selecionados."""
         return OrderedDict({'Manifesto': self.Manifesto})
 
     @property
     def to_list(self):
+        """Retorna list de campos selecionados."""
         return [self.Manifesto]
 
     @property
     def filhos(self):
+        """Retorna list de classes filhas."""
         return [self.vazios]
 
     @property
     def pai(self):
+        """Retorna classe pai."""
         return self.escalas[0]
 
 
 class ManifestoConhecimento(Base):
-    """Cópia dados sobre manifesto e conhecimentos das extrações"""
+    """Cópia dados sobre manifesto e conhecimentos das extrações."""
+
     __tablename__ = 'manifesto_conhecimento'
     id = Column(Integer, primary_key=True)
     Manifesto = Column(String(13), ForeignKey('manifestos.Manifesto'))
@@ -181,6 +207,7 @@ class ManifestoConhecimento(Base):
 
     @property
     def to_dict(self):
+        """Retorna dict de campos selecionados."""
         return OrderedDict({'Manifesto': self.Manifesto,
                             'Conhecimento': self.Conhecimento,
                             'CodigoTerminalCarregamento':
@@ -194,6 +221,7 @@ class ManifestoConhecimento(Base):
 
     @property
     def to_list(self):
+        """Retorna list de campos selecionados."""
         return [self.Manifesto,
                 self.Conhecimento,
                 self.CodigoTerminalCarregamento,
@@ -203,7 +231,8 @@ class ManifestoConhecimento(Base):
 
 
 class Conhecimento(Base):
-    """Cópia dados sobre conhecimentos das extrações"""
+    """Cópia dados sobre conhecimentos das extrações."""
+
     __tablename__ = 'conhecimentos'
     id = Column(Integer, primary_key=True)
     Conhecimento = Column(String(15), unique=True)
@@ -241,6 +270,7 @@ class Conhecimento(Base):
 
     @property
     def to_dict(self):
+        """Retorna dict de campos selecionados."""
         return OrderedDict({'Conhecimento': self.Conhecimento,
                             'DataEmissao': self.DataEmissao,
                             'Tipo': self.Tipo,
@@ -257,6 +287,7 @@ class Conhecimento(Base):
 
     @property
     def to_list(self):
+        """Retorna list de campos selecionados."""
         return [self.Conhecimento,
                 self.DataEmissao,
                 self.Tipo,
@@ -271,7 +302,8 @@ class Conhecimento(Base):
 
 
 class Container(Base):
-    """Cópia dados sobre containeres das extrações"""
+    """Cópia dados sobre containeres das extrações."""
+
     __tablename__ = 'containers'
     id = Column(Integer, primary_key=True)
     Conhecimento = Column(String(15), ForeignKey('conhecimentos.Conhecimento'))
@@ -294,6 +326,7 @@ class Container(Base):
 
     @property
     def to_dict(self):
+        """Retorna dict de campos selecionados."""
         return OrderedDict({'Conhecimento': self.Conhecimento,
                             'Item': self.Item,
                             'Container': self.Container,
@@ -307,6 +340,7 @@ class Container(Base):
 
     @property
     def to_list(self):
+        """Retorna list de campos selecionados."""
         return [self.Conhecimento,
                 self.Item,
                 self.Container,
@@ -321,7 +355,8 @@ class Container(Base):
 
 
 class CargaSolta(Base):
-    """Cópia dados sobre containeres das extrações"""
+    """Cópia dados sobre containeres das extrações."""
+
     __tablename__ = 'cargasolta'
     id = Column(Integer, primary_key=True)
     Conhecimento = Column(String(15), ForeignKey('conhecimentos.Conhecimento'))
@@ -339,6 +374,7 @@ class CargaSolta(Base):
 
     @property
     def to_dict(self):
+        """Retorna dict de campos selecionados."""
         return OrderedDict({'Conhecimento': self.Conhecimento,
                             'Item': self.Item,
                             'TipoEmbalagem': self.TipoEmbalagem,
@@ -350,6 +386,7 @@ class CargaSolta(Base):
 
     @property
     def to_list(self):
+        """Retorna list de campos selecionados."""
         return [self.Conhecimento,
                 self.Item,
                 self.TipoEmbalagem,
@@ -362,7 +399,8 @@ class CargaSolta(Base):
 
 
 class Granel(Base):
-    """Cópia dados sobre containeres das extrações"""
+    """Cópia dados sobre containeres das extrações."""
+
     __tablename__ = 'granel'
     id = Column(Integer, primary_key=True)
     Conhecimento = Column(String(15), ForeignKey('conhecimentos.Conhecimento'))
@@ -378,6 +416,7 @@ class Granel(Base):
 
     @property
     def to_dict(self):
+        """Retorna dict de campos selecionados."""
         return OrderedDict({'Conhecimento': self.Conhecimento,
                             'Item': self.Item,
                             'Tipo': self.Tipo,
@@ -387,6 +426,7 @@ class Granel(Base):
 
     @property
     def to_list(self):
+        """Retorna list de campos selecionados."""
         return [self.Conhecimento,
                 self.Item,
                 self.Tipo,
@@ -397,7 +437,8 @@ class Granel(Base):
 
 
 class NCM(Base):
-    """Cópia dados sobre containeres das extrações"""
+    """Cópia dados sobre containeres das extrações."""
+
     __tablename__ = 'ncm'
     id = Column(Integer, primary_key=True)
     Conhecimento = Column(String(15), ForeignKey('conhecimentos.Conhecimento'))
@@ -406,12 +447,14 @@ class NCM(Base):
 
     @property
     def to_dict(self):
+        """Retorna dict de campos selecionados."""
         return OrderedDict({'Conhecimento': self.Conhecimento,
                             'Item': self.Item,
                             'NCM': self.NCM})
 
     @property
     def to_list(self):
+        """Retorna list de campos selecionados."""
         return [self.Conhecimento,
                 self.Item,
                 self.NCM
@@ -419,7 +462,8 @@ class NCM(Base):
 
 
 class Veiculo(Base):
-    """Cópia dados sobre containeres das extrações"""
+    """Cópia dados sobre containeres das extrações."""
+
     __tablename__ = 'veiculo'
     id = Column(Integer, primary_key=True)
     Conhecimento = Column(String(15), ForeignKey('conhecimentos.Conhecimento'))
@@ -433,6 +477,7 @@ class Veiculo(Base):
 
     @property
     def to_dict(self):
+        """Retorna dict de campos selecionados."""
         return OrderedDict({'Conhecimento': self.Conhecimento,
                             'Item': self.Item,
                             'Chassi': self.Chassi,
@@ -442,6 +487,7 @@ class Veiculo(Base):
 
     @property
     def to_list(self):
+        """Retorna list de campos selecionados."""
         return [self.Conhecimento,
                 self.Item,
                 self.Chassi,
@@ -452,7 +498,8 @@ class Veiculo(Base):
 
 
 class ContainerVazio(Base):
-    """Cópia dados sobre containeres das extrações"""
+    """Cópia dados sobre containeres das extrações."""
+
     __tablename__ = 'containervazio'
     id = Column(Integer, primary_key=True)
     Manifesto = Column(String(13), ForeignKey('manifestos.Manifesto'))
@@ -465,6 +512,7 @@ class ContainerVazio(Base):
 
     @property
     def to_dict(self):
+        """Retorna dict de campos selecionados."""
         return OrderedDict([('Manifesto', self.Manifesto),
                             ('Container', self.Container),
                             ('NomeTipo', self.NomeTipo),
@@ -473,6 +521,7 @@ class ContainerVazio(Base):
 
     @property
     def to_list(self):
+        """Retorna list de campos selecionados."""
         return [self.Manifesto,
                 self.Container,
                 self.NomeTipo,
@@ -481,10 +530,12 @@ class ContainerVazio(Base):
 
     @property
     def pai(self):
+        """Retorna classe pai."""
         return self.omanifesto
 
 
 def recursive_view(session, numero_escala):
+    """Percorre uma escala para visualizar filhos."""
     escala = session.query(Escala).filter(
         Escala.Escala == numero_escala
     ).first()

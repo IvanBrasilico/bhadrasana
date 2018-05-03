@@ -7,7 +7,7 @@ import os
 import tempfile
 import unittest
 
-from sentinela.models.models import (Base, BaseOrigem, DePara, MySession)
+from sentinela.models.models import Base, BaseOrigem, DePara, MySession
 from sentinela.utils.csv_handlers import muda_titulos_csv, muda_titulos_lista
 from sentinela.utils.gerente_risco import GerenteRisco
 

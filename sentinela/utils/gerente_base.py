@@ -1,4 +1,6 @@
-"""GerenteBase abstrai a necessidade de conhecer a estrutura das bases
+"""Inspeciona uma Base SQL Alchemy.
+
+GerenteBase abstrai a necessidade de conhecer a estrutura das bases
 ou utilizar comandos mais avançados.
 
 Transforma a estrutura em dicts mais fáceis de lidar.
@@ -17,16 +19,21 @@ PATH_MODULOS = os.path.join(APP_PATH, 'models')
 
 
 class Filtro:
+    """Estrutura de filtro."""
+
     def __init__(self, field, tipo, valor):
+        """inicializa."""
         self.field = field
         self.tipo = tipo
         self.valor = valor
 
 
 class GerenteBase:
-    """Métodos para padronizar a manipulação de bases de dados
-     no modelo do sistema sentinela
-     """
+    """Inspecionar e tratar models SQLAlchemy.
+
+    Métodos para padronizar a manipulação de bases de dados
+    no modelo do sistema sentinela
+    """
 
     def set_path(self, path, test=False):
         """Lê a estrutura de 'tabelas' de uma pasta de csvs importados."""
@@ -60,6 +67,7 @@ class GerenteBase:
             self.dbsession = SessionClass().session
 
     def set_session(self, adbsession):
+        """Recebe conexão."""
         self.dbsession = adbsession
 
     def filtra(self, base, filters, return_query=False):
@@ -97,18 +105,22 @@ class GerenteBase:
 
     @property
     def list_models(self):
+        """Retorna lista de modelos ativos."""
         if self.dict_models is None:
             return None
         return self.dict_models.keys()
 
     @property
     def list_modulos(self):
+        """Retorna módulos de modelo no caminho configurado."""
         lista = [filename[:-3] for filename in os.listdir(PATH_MODULOS)
                  if filename.find('.py') != -1]
         return sorted(lista)
 
     def get_paiarvore(self, ainstance):
-        """Recursivamente retorna o pai da instância de objecto,
+        """Navega estrutura SQLAlchemy.
+
+        Recursivamente retorna o pai da instância de objecto,
         até chegar ao 'pai de todos/pai da árvore'.
         """
         try:
@@ -119,8 +131,9 @@ class GerenteBase:
         return ainstance
 
     def recursive_tree(self, ainstance, recursive=True, child=None):
-        """
-        Recursivamente percorre "filhos" da instância montando uma árvore HTML.
+        """Recursivamente percorre "filhos" da instância.
+
+        Retorna uma árvore HTML.
 
         Args:
             ainstance: objeto que é nó primário da árvore

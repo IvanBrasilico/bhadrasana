@@ -1,5 +1,11 @@
-"""Módulo responsável pelas funções que aplicam os filtros/parâmetros
-de risco cadastrados nos dados. Utiliza pandas para realizar filtragem.
+"""Métodos e classes para aplicação de risco (filtros e junções).
+
+Módulo responsável pelas funções que aplicam os filtros/parâmetros
+de risco cadastrados nos dados.
+
+Utiliza pandas para realizar filtragem de arquivos csv.
+Utiliza MongoDB para arquivar diversos arquivos em base única
+e Mongo agreggation framework para consultas.
 
 """
 import csv
@@ -12,8 +18,8 @@ import pandas as pd
 import pymongo
 
 from ajna_commons.flask.log import logger
-from ajna_commons.utils.sanitiza import sanitizar, sanitizar_lista, \
-    unicode_sanitizar
+from ajna_commons.utils.sanitiza import (sanitizar, sanitizar_lista,
+                                         unicode_sanitizar)
 from sentinela.conf import ENCODE, tmpdir
 from sentinela.models.models import (Filtro, PadraoRisco, ParametroRisco,
                                      ValorParametro)
@@ -21,6 +27,8 @@ from sentinela.utils.csv_handlers import muda_titulos_lista, sch_processing
 
 
 class SemHeaders(Exception):
+    """Exceção personalizada."""
+
     pass
 
 
@@ -130,6 +138,7 @@ class GerenteRisco():
     """
 
     def __init__(self):
+        """Somente inicializa properties."""
         self.pre_processers = {}
         self.pre_processers_params = {}
         self._riscosativos = {}
@@ -296,12 +305,14 @@ class GerenteRisco():
             'norm_function': norm_function}
 
     def load_csv(self, arquivo):
+        """Carrega arquivo csv em lista."""
         with open(arquivo, 'r', encoding=ENCODE, newline='') as arq:
             reader = csv.reader(arq)
             lista = [linha for linha in reader]
         return lista
 
     def save_csv(self, lista, arquivo):
+        """Salva lista em arquivo csv. Exclui se existir."""
         try:
             os.remove(arquivo)  # Remove resultado antigo se houver
         except IOError:
@@ -311,8 +322,11 @@ class GerenteRisco():
             writer.writerows(lista)
 
     def strip_lines(self, lista):
-        # Precaução: retirar espaços mortos de todo item
-        # da lista para evitar erros de comparação
+        """Retira espaços adicionais entre palavras.
+
+        Precaução: retirar espaços mortos de todo item
+        da lista para evitar erros de comparação
+        """
         for ind, linha in enumerate(lista):
             linha_striped = []
             for item in linha:
@@ -323,12 +337,18 @@ class GerenteRisco():
         return lista
 
     def pre_processa(self, lista):
+        """Aplica funções de processamento de texto na lista."""
         for key in self.pre_processers:
             lista = self.pre_processers[key](lista,
                                              **self.pre_processers_params[key])
         return lista
 
     def pre_processa_arquivos(self, lista_arquivos):
+        """Carrega uma lista de arquivos e pré processa texto.
+
+        Carrega a lista de arquivos aplica as funções de pré processamento
+        ativas. Salva novamente no mesmo arquivo.
+        """
         print(lista_arquivos)
         if len(lista_arquivos) > 0:
             if (isinstance(lista_arquivos[0], list) or
@@ -341,7 +361,9 @@ class GerenteRisco():
             self.save_csv(lista, filename)
 
     def aplica_risco(self, lista=None, arquivo=None, parametros_ativos=None):
-        """Compara a linha de título da lista recebida com a lista de nomes
+        """Método de filtragem de lista ou dados de arquivo.
+
+        Compara a linha de título da lista recebida com a lista de nomes
         de campo que possuem parâmetros de risco ativos. Após, chama para cada
         campo encontrado a função de filtragem. Somente um dos parâmetros
         precisa ser passado. Caso na lista do pipeline estejam cadastradas
@@ -410,7 +432,9 @@ class GerenteRisco():
         return result
 
     def parametro_tocsv(self, campo, path=tmpdir, dbsession=None):
-        """Salva os valores do parâmetro de risco em um arquivo csv
+        """Salva parametro em arquivo.
+
+        Salva os valores do parâmetro de risco em um arquivo csv
         no formato 'valor', 'tipo_filtro'.
         """
         lista = []
@@ -450,7 +474,8 @@ class GerenteRisco():
 
     def parametros_fromcsv(self, campo, session=None, padraorisco=None,
                            lista=None, path=tmpdir):
-        """
+        """Carrega parâmetros de risco de um aquivo ou de uma lista.
+
         Abre um arquivo csv, recupera parâmetros configurados nele,
         adiciona à configuração do gerente e **também adiciona ao Banco de
         Dados ativo** caso não existam nele ainda. Para isso é preciso
@@ -472,6 +497,8 @@ class GerenteRisco():
             lista: passar uma lista pré-prenchida para usar a função com outros
             tipos de fontes/arquivos. Se passada uma lista, função não
             abrirá arquivo .csv, usará os valores da função
+
+            *OU*
 
             path: caminho do arquivo .csv
 
@@ -526,7 +553,9 @@ class GerenteRisco():
 
     def import_named_csv(self, arquivo, session=None, padraorisco=None,
                          filtro=Filtro.igual, tolist=False):
-        """Abre um arquivo csv, cada coluna sendo um filtro.
+        """Importa vários parâmetros nomeados de um arquivo único.
+
+        Abre um arquivo csv, cada coluna sendo um filtro.
         A primeira linha contém o campo a ser filtrado e as linhas
         seguintes os valores do filtro. Cria filtros na memória, e no
         Banco de Dados caso session seja informada.
@@ -558,7 +587,9 @@ class GerenteRisco():
             return cabecalho
 
     def get_headers_base(self, baseorigemid, path, csvs=False):
-        """Busca última base disponível no diretório de CSVs e
+        """Retorna lista de headers.
+
+        Busca última base disponível no diretório de CSVs e
         traz todos os headers
         """
         lista_csv = []
@@ -590,7 +621,9 @@ class GerenteRisco():
 
     def aplica_juncao(self, visao, path=tmpdir, filtrar=False,
                       parametros_ativos=None):
-        """Lê, um a um, os csvs configurados em visao.tabelas. Carrega em
+        """Faz junção de arquivos diversos.
+
+        Lê, um a um, os csvs configurados em visao.tabelas. Carrega em
         DataFrames e faz merge destes.
 
         Args:
@@ -665,7 +698,9 @@ class GerenteRisco():
 
     @classmethod
     def csv_to_mongo(cls, db, base, path=None, arquivo=None, unique=[]):
-        """Lê um arquivo CSV e insere todo seu conteúdo em uma coleção do
+        """Insere conteúdo do arquivo csv em coleção MongoDB.
+
+        Lê um arquivo CSV e insere todo seu conteúdo em uma coleção do
         MongoDB. Cria a coleção se não existir.
 
         Args:
@@ -812,8 +847,9 @@ class GerenteRisco():
     def aplica_juncao_mongo_pandas(self, db, visao,
                                    parametros_ativos=None,
                                    filtrar=False):
-        """Lê as coleções configuradas no mongo. Carrega em
-        DataFrames e faz merge destas.
+        """Lê as coleções configuradas no mongo.
+
+        Lê as coleções, carrega em DataFrames e faz merge destes.
 
         Args:
             db: MongoDB
@@ -827,8 +863,6 @@ class GerenteRisco():
             Lista contendo os campos filtrados. 1ª linha com nomes de campo
 
         """
-        # TODO: Usar métodos próprios do MongoDB ao invés de DataFrames para
-        # trazer dados já filtrados e melhorar desempenho
         base = visao.base
         numero_juncoes = len(visao.tabelas)
         dffilho = None
@@ -883,6 +917,12 @@ class GerenteRisco():
                                       filtrar=False):
         """Lê as coleções configuradas no mongo através de aggregates.
 
+        Monta um pipeline MongoDB.
+        Utiliza configurações da visao para montar um aggregate entre coleções
+        MongoDB. Caso configurado, utiliza as colunas programadas para fazer
+        'projection', isto é, trazer somente estas do Banco. Também aplica
+        'match', filtrando os resultados.
+
         Args:
             db: MongoDB
             visao: objeto de Banco de Dados que espeficica as configurações
@@ -892,7 +932,7 @@ class GerenteRisco():
             filtrar: aplica_risco na consulta
 
         Returns:
-            Lista contendo os campos filtrados. 1ª linha com nomes de campo
+            Lista contendo os campos filtrados. 1ª linha com nomes de campo.
 
         """
         base = visao.base
