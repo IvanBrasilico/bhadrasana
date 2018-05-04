@@ -497,16 +497,6 @@ class FlaskTestCase(unittest.TestCase):
         print(data)
         # assert False
 
-    def test_arquivar(self):
-        if self.http_server is not None:
-            rv = self.app.get('/aplica_risco?baseid=5&acao=arquivar',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get(
-                '/aplica_risco?baseid=5&acao=arquivar')
-        data = self.data(rv)
-        print(data)
-
     def test_navegabases(self):
         if self.http_server is not None:
             rv = self.app.get('/navega_bases?selected_module=carga&\
