@@ -86,7 +86,7 @@ class FlaskTestCase(unittest.TestCase):
     def _paramid(self, nome):
         parametro = app.dbsession.query(app.ParametroRisco).filter(
             app.ParametroRisco.nome_campo == nome).first()
-        return parametro.id
+        return str(parametro.id)
 
     def _valorid(self, nome):
         valor = app.dbsession.query(app.ValorParametro).filter(
@@ -123,17 +123,12 @@ class FlaskTestCase(unittest.TestCase):
             app.PadraoRisco.nome == 'padraoteste').delete()
         app.dbsession.commit()
 
-    # adiciona base
-    def test_adicionabase(self):
-        if self.http_server is not None:
-            rv = self.app.get('/adiciona_base/baseteste',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/adiciona_base/baseteste')
-        data = self.data(rv)
-        assert b'Redirecting...' in data
-        self._excluibase()
+    def _excluiparametros(self):
+        app.dbsession.query(app.ParametroRisco).filter(
+            app.ParametroRisco.nome_campo == 'z').delete()
+        app.dbsession.commit()
 
+    # GET
     def test_1_home(self):
         if self.http_server is not None:
             rv = self.app.get('/',
@@ -143,7 +138,8 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'AJNA' in data
 
-    def test_11_editadepara(self):
+    # GET
+    def test_1_1_editadepara(self):
         if self.http_server is not None:
             rv = self.app.get('/edita_depara?baseid=4',
                               params=dict(csrf_token=self.csrf_token))
@@ -153,7 +149,7 @@ class FlaskTestCase(unittest.TestCase):
         print(data)
         assert b'AJNA' in data
 
-    def test_12_adicionadepara(self):
+    def test_1_2_adicionadepara(self):
         if self.http_server is not None:
             rv = self.app.get(
                 '/adiciona_depara?baseid=4&\
@@ -168,6 +164,7 @@ class FlaskTestCase(unittest.TestCase):
         print(data)
         assert b'Redirecting...' in data
 
+    # GET
     def test_2_importabase(self):
         if self.http_server is not None:
             rv = self.app.get('/importa_base',
@@ -177,7 +174,8 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'AJNA' in data
 
-    def test_3_upload(self):
+    # Erro por causa do Celery
+    def test_2_1_upload(self):
         file = {
             'file':
                 (BytesIO(b'iguaria, esporte\n temaki, corrida'),
@@ -188,21 +186,20 @@ class FlaskTestCase(unittest.TestCase):
         rv = self._post('/importa_base', data=file, follow_redirects=True
                         )
         data = self.data(rv)
-        print(data)
         assert b'clicar em submeter!' not in data
         # assert b'Escolha Base' in data
 
-    def test_adicionapadraorisco(self):
+    def test_3_adicionapadraorisco(self):
         if self.http_server is not None:
             rv = self.app.get('/adiciona_padrao/padraoteste',
                               params=dict(csrf_token=self.csrf_token))
         else:
             rv = self.app.get('/adiciona_padrao/padraoteste')
         data = self.data(rv)
-        print(data)
         self._excluipadrao()
         assert b'Redirecting...' in data
 
+    # GET
     def test_4_risco(self):
         if self.http_server is not None:
             rv = self.app.get('/risco?baseid=4',
@@ -212,69 +209,71 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Lista de Riscos' in data
 
-    def test_41_editarisco(self):
-        if self.http_server is not None:
-            rv = self.app.get('/edita_risco?padraoid=4&riscoid=26',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/edita_risco?padraoid=4&riscoid=26')
-        data = self.data(rv)
-        assert b'AJNA' in data
-
-    def test_42_adicionaparametro(self):
+    def test_4_1_adicionaparametro(self):
         if self.http_server is not None:
             rv = self.app.get('/adiciona_parametro?padraoid=4&\
                               &risco_novo=comida',
                               params=dict(csrf_token=self.csrf_token))
         else:
             rv = self.app.get(
-                '/adiciona_parametro?padraoid=4&risco_novo=comida&\
-                &lista=lista, teste')
+                '/adiciona_parametro?padraoid=4&risco_novo=comida')
         data = self.data(rv)
         assert b'Redirecting...' in data
 
-    def test_43_adicionavalor(self):
-        parametro = self._paramid('comida')
+    def test_4_2_editarisco(self):
+        param_id = self._paramid('comida')
         if self.http_server is not None:
-            rv = self.app.get('/adiciona_valor?padraoid=4&riscoid=' + str(parametro) + '&\
+            rv = self.app.get('/edita_risco?padraoid=4&riscoid=' +
+                              param_id,
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/edita_risco?padraoid=4&riscoid=' +
+                              param_id)
+        data = self.data(rv)
+        assert b'AJNA' in data
+
+    def test_4_3_adicionavalor(self):
+        param_id = self._paramid('comida')
+        if self.http_server is not None:
+            rv = self.app.get('/adiciona_valor?padraoid=4&riscoid=' + param_id + '&\
                               &novo_valor=temaki&filtro=igual',
                               params=dict(csrf_token=self.csrf_token))
         else:
             rv = self.app.get(
-                '/adiciona_valor?padraoid=4&riscoid=' + str(parametro) +
+                '/adiciona_valor?padraoid=4&riscoid=' + param_id +
                 '&novo_valor=temaki&filtro=igual')
         data = self.data(rv)
         assert b'Redirecting...' in data
 
-    def test_44_valores(self):
-        parametro = self._paramid('comida')
+    def test_4_4_valores(self):
+        param_id = self._paramid('comida')
         if self.http_server is not None:
-            rv = self.app.get('/valores?parametroid=' + str(parametro),
+            rv = self.app.get('/valores?parametroid=' + param_id,
                               params=dict(csrf_token=self.csrf_token))
         else:
-            rv = self.app.get('/valores?parametroid=' + str(parametro))
+            rv = self.app.get('/valores?parametroid=' + param_id)
         data = self.data(rv)
         assert b'temaki' in data
 
     # importa csv
     def test_5_importacsv(self):
-        parametro = self._paramid('comida')
+        param_id = self._paramid('comida')
         file = {
             'csv': (BytesIO(
                 b'valor, tipo_filtro\nhot roll, igual\nchurros, igual'
             ), 'alimento.csv')
         }
         if self.http_server is not None:
-            rv = self.app.get('/importa_csv/4/' + str(parametro),
+            rv = self.app.get('/importa_csv/4/' + param_id,
                               params=dict(csrf_token=self.csrf_token))
         else:
             rv = self._post(
-                '/importa_csv/4/' + str(parametro),
+                '/importa_csv/4/' + param_id,
                 data=file, follow_redirects=False)
         data = self.data(rv)
         assert b'Redirecting..' in data
 
-    def test_51_exportacsv(self):
+    def test_5_1_exportacsv(self):
         parametro = self._paramid('comida')
         if self.http_server is not None:
             rv = self.app.get('/exporta_csv?padraoid=4&riscoid=' +
@@ -296,9 +295,9 @@ class FlaskTestCase(unittest.TestCase):
             rv = self.app.get('/aplica_risco?&filename=2018/01/01&acao=aplicar&baseid=4&padraoid=4&visaoid=0&\
                                &parametros_ativos=comida')
         data = self.data(rv)
-        print(data)
         assert b'Lista de Riscos da Base None' not in data
 
+    # Excluir
     def test_7_exclui_risco(self):
         if self.http_server is not None:
             rv = self.app.get('/aplica_risco?&baseid=4&\
@@ -308,8 +307,149 @@ class FlaskTestCase(unittest.TestCase):
             rv = self.app.get(
                 '/aplica_risco?&baseid=4&filename=2018/01/01&acao=excluir')
         data = self.data(rv)
-        print(data)
         assert b'Redirecting...' in data
+
+    def test_7_1_excluivalor(self):
+        valor_id = self._valorid('temaki')
+        param_id = self._paramid('comida')
+        if self.http_server is not None:
+            rv = self.app.get('/exclui_valor?padraoid=4&\
+                              &riscoid=' + param_id + '&valorid=' +
+                              str(valor_id),
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/exclui_valor?padraoid=4&\
+                              &riscoid=' + param_id + '&valorid=' +
+                              str(valor_id))
+        data = self.data(rv)
+        assert b'Redirecting...' in data
+
+    def test_7_2_excluidepara(self):
+        depara = self._deparaid('iguaria')
+        if self.http_server is not None:
+            rv = self.app.get('/exclui_depara?baseid=4&\
+                              &tituloid=' + str(depara),
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/exclui_depara?baseid=4&\
+                              &tituloid=' + str(depara))
+        data = self.data(rv)
+        assert b'Redirecting...' in data
+
+    def test_8_excluiparametro(self):
+        param_id = self._paramid('comida')
+        if self.http_server is not None:
+            rv = self.app.get('/exclui_parametro?\
+                              &padraoid=4&riscoid=' + param_id,
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/exclui_parametro?padraoid=4&riscoid=' +
+                              param_id)
+        data = self.data(rv)
+        assert b'Redirecting...' in data
+
+    """def test_b_excluiparametros(self):
+        self._excluiparametros()"""
+
+    def test_9_juncoes(self):
+        if self.http_server is not None:
+            rv = self.app.get('/juncoes?baseid=1&visaoid=1',
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/juncoes?baseid=1&visaoid=1')
+        data = self.data(rv)
+        assert b'AJNA' in data
+
+    def test_9_1_adicionavisao(self):
+        if self.http_server is not None:
+            rv = self.app.get('/adiciona_visao?visao_novo=visaotest',
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/adiciona_visao?visao_novo=visaotest')
+        data = self.data(rv)
+        assert b'Redirecting...' in data
+
+    def test_9_2_adicionacoluna(self):
+        visaoid = self._visaoid('visaotest')
+        if self.http_server is not None:
+            rv = self.app.get('/adiciona_coluna?visaoid=' + str(visaoid) +
+                              '&col_nova=colunatest',
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/adiciona_coluna?visaoid=' + str(visaoid) +
+                              '&col_nova=colunatest')
+        data = self.data(rv)
+        assert b'Redirecting...' in data
+
+    def test_9_3_adicionatabela(self):
+        visaoid = self._visaoid('visaotest')
+        if self.http_server is not None:
+            rv = self.app.get('/adiciona_tabela?visaoid=' + str(visaoid) +
+                              '&csv=c&primario=p&estrangeiro=e&\
+                              &pai_id=1&descricao=d',
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/adiciona_tabela?visaoid=' + str(visaoid) +
+                              '&csv=c&primario=p&estrangeiro=e&\
+                              &pai_id=1&descricao=d')
+        data = self.data(rv)
+        assert b'Redirecting...' in data
+
+    def test_9_4_excluicoluna(self):
+        visaoid = self._visaoid('visaotest')
+        colunaid = self._colunaid('colunatest')
+        if self.http_server is not None:
+            rv = self.app.get('/exclui_coluna?visaoid=' + str(visaoid) + '&\
+                              &colunaid=' + str(colunaid),
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/exclui_coluna?visaoid=' + str(visaoid) + '&\
+                              &colunaid=' + str(colunaid))
+        data = self.data(rv)
+        assert b'Redirecting...' in data
+
+    def test_9_5_excluitabela(self):
+        visaoid = self._visaoid('visaotest')
+        tabelaid = self._tabelaid('c')
+        if self.http_server is not None:
+            rv = self.app.get('/exclui_tabela?visaoid=' + str(visaoid) +
+                              '&tabelaid=' + str(tabelaid),
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/exclui_tabela?visaoid=' + str(visaoid) +
+                              '&tabelaid=' + str(tabelaid))
+        data = self.data(rv)
+        assert b'Redirecting...' in data
+
+    def test_9_6_excluivisao(self):
+        visaoid = self._visaoid('visaotest')
+        if self.http_server is not None:
+            rv = self.app.get('/exclui_visao?visaoid=' + str(visaoid),
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/exclui_visao?visaoid=' + str(visaoid))
+        data = self.data(rv)
+        assert b'Redirecting...' in data
+
+    def test_a_adicionabase(self):
+        if self.http_server is not None:
+            rv = self.app.get('/adiciona_base/baseteste',
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get('/adiciona_base/baseteste')
+        data = self.data(rv)
+        assert b'Redirecting...' in data
+        self._excluibase()
+
+    def test_arquivar(self):
+        if self.http_server is not None:
+            rv = self.app.get('/aplica_risco?baseid=5&acao=arquivar',
+                              params=dict(csrf_token=self.csrf_token))
+        else:
+            rv = self.app.get(
+                '/aplica_risco?baseid=5&acao=arquivar')
+        data = self.data(rv)
+        print(data)
 
     # testes dos erros
     def test_importacsv(self):
@@ -367,49 +507,6 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         print(data)
 
-    def test_excluiparametro(self):
-        param = self._paramid('comida')
-        lista = [self._paramid('lista'), self._paramid('teste')]
-        if self.http_server is not None:
-            rv = self.app.get('/exclui_parametro?\
-                              padraoid=4&riscoid=' + str(param),
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/exclui_parametro?padraoid=4&\
-                              &riscoid=' + str(param))
-        data = self.data(rv)
-        for i in lista:
-            rv = self.app.get('/exclui_parametro?padraoid=4&\
-                              &riscoid=' + str(i))
-            data = self.data(rv)
-        print(data)
-        assert b'Redirecting...' in data
-
-    def test_b_excluivalor(self):
-        valor = self._valorid('temaki')
-        if self.http_server is not None:
-            rv = self.app.get('/exclui_valor?padraoid=4&\
-                              &riscoid=26&valorid=' + str(valor),
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/exclui_valor?padraoid=4&\
-                              &riscoid=26&valorid=' + str(valor))
-        data = self.data(rv)
-        assert b'Redirecting...' in data
-
-    def test_c_excluidepara(self):
-        depara = self._deparaid('iguaria')
-        if self.http_server is not None:
-            rv = self.app.get('/exclui_depara?baseid=3&\
-                              &tituloid=' + str(depara),
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/exclui_depara?baseid=4&\
-                              &tituloid=' + str(depara))
-        data = self.data(rv)
-        print(data)
-        assert b'Redirecting...' in data
-
     def test_navegabases(self):
         if self.http_server is not None:
             rv = self.app.get('/navega_bases?selected_module=carga&\
@@ -458,87 +555,6 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         print(data)
         assert b'Escala' in data
-
-    def test_d_juncoes(self):
-        if self.http_server is not None:
-            rv = self.app.get('/juncoes?baseid=1&visaoid=1',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/juncoes?baseid=1&visaoid=1')
-        data = self.data(rv)
-        assert b'AJNA' in data
-
-    def test_e_adicionavisao(self):
-        if self.http_server is not None:
-            rv = self.app.get('/adiciona_visao?visao_novo=visaotest',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/adiciona_visao?visao_novo=visaotest')
-        data = self.data(rv)
-        print(data)
-        assert b'Redirecting...' in data
-
-    def test_f_adicionacoluna(self):
-        visaoid = self._visaoid('visaotest')
-        if self.http_server is not None:
-            rv = self.app.get('/adiciona_coluna?visaoid=' + str(visaoid) +
-                              '&col_nova=colunatest',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/adiciona_coluna?visaoid=' + str(visaoid) +
-                              '&col_nova=colunatest')
-        data = self.data(rv)
-        assert b'Redirecting...' in data
-
-    def test_g_adicionatabela(self):
-        visaoid = self._visaoid('visaotest')
-        if self.http_server is not None:
-            rv = self.app.get('/adiciona_tabela?visaoid=' + str(visaoid) +
-                              '&csv=c&primario=p&estrangeiro=e&\
-                              &pai_id=1&descricao=d',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/adiciona_tabela?visaoid=' + str(visaoid) +
-                              '&csv=c&primario=p&estrangeiro=e&\
-                              &pai_id=1&descricao=d')
-        data = self.data(rv)
-        assert b'Redirecting...' in data
-
-    def test_h_excluicoluna(self):
-        visaoid = self._visaoid('visaotest')
-        colunaid = self._colunaid('colunatest')
-        if self.http_server is not None:
-            rv = self.app.get('/exclui_coluna?visaoid=' + str(visaoid) + '&\
-                              &colunaid=' + str(colunaid),
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/exclui_coluna?visaoid=' + str(visaoid) + '&\
-                              &colunaid=' + str(colunaid))
-        data = self.data(rv)
-        assert b'Redirecting...' in data
-
-    def test_i_excluitabela(self):
-        visaoid = self._visaoid('visaotest')
-        tabelaid = self._tabelaid('c')
-        if self.http_server is not None:
-            rv = self.app.get('/exclui_tabela?visaoid=' + str(visaoid) +
-                              '&tabelaid=' + str(tabelaid),
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/exclui_tabela?visaoid=' + str(visaoid) +
-                              '&tabelaid=' + str(tabelaid))
-        data = self.data(rv)
-        assert b'Redirecting...' in data
-
-    def test_j_excluivisao(self):
-        visaoid = self._visaoid('visaotest')
-        if self.http_server is not None:
-            rv = self.app.get('/exclui_visao?visaoid=' + str(visaoid),
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/exclui_visao?visaoid=' + str(visaoid))
-        data = self.data(rv)
-        assert b'Redirecting...' in data
 
     def test_arvore(self):
         if self.http_server is not None:
