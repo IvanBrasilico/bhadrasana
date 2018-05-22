@@ -5,19 +5,28 @@ Todas as tarefas que demandem tempo/carga de CPU ou I/O devem ser colocadas
 preferencialmente no processo Celery, sendo executadas de forma assíncrona/
 background.
 """
+import os
+import shutil
 from celery import Celery, states
+from pymongo import MongoClient
 
 from ajna_commons.flask.conf import BACKEND, BROKER
+from ajna_commons.flask.conf import DATABASE, MONGODB_URI
 from ajna_commons.flask.log import logger
 from ajna_commons.utils.sanitiza import ascii_sanitizar
 from sentinela.utils.gerente_risco import GerenteRisco
+from sentinela.models.models import (Base, BaseOrigem, MySession)
 
 celery = Celery(__name__, broker=BROKER,
                 backend=BACKEND)
 
+mysession = MySession(Base)
+dbsession = mysession.session
+engine = mysession.engine
+
 
 @celery.task(bind=True)
-def importar_base(self, csv_folder, abase, data, filename, remove=False):
+def importar_base(self, csv_folder, baseid, data, filename, remove=False):
     """Função para upload do arquivo de uma extração ou outra fonte externa.
 
     Utiliza o :class: `sentinela.utils.gerenterisco.GerenteRisco`.
@@ -36,12 +45,18 @@ def importar_base(self, csv_folder, abase, data, filename, remove=False):
 
         remove: exclui arquivo original no final do processamento
     """
+    basefilename = os.path.basename(filename)
     self.update_state(state=states.STARTED,
-                      meta={'status': 'Iniciando'})
+                      meta={'status': 'Processando arquivo ' + basefilename})
     gerente = GerenteRisco()
     try:
+        abase = dbsession.query(BaseOrigem).filter(
+            BaseOrigem.id == baseid).first()
+        self.update_state(state=states.PENDING,
+                          meta={'status': 'Processando arquivo ' +
+                                basefilename + ' na base ' + abase.nome})
         lista_arquivos = gerente.importa_base(
-            csv_folder, abase.id, data, filename, remove)
+            csv_folder, baseid, data, filename, remove)
         # Sanitizar base já na importação para evitar
         # processamento repetido depois
         gerente.ativa_sanitizacao(ascii_sanitizar)
@@ -50,5 +65,28 @@ def importar_base(self, csv_folder, abase, data, filename, remove=False):
     except Exception as err:
         logger.error(err, exc_info=True)
         self.update_state(state=states.FAILURE)
-        return {'status': str(err)}
+        return {'state': states.FAILURE, 'status': str(err)}
     return {'status': 'Base importada com sucesso'}
+
+
+@celery.task(bind=True)
+def arquiva_base_csv(self, baseid, base_csv):
+    """Copia CSVs para MongoDB e apaga do disco."""
+    # Aviso: Esta função rmtree só deve ser utilizada com caminhos seguros,
+    # de preferência gerados pela própria aplicação
+    self.update_state(state=states.STARTED,
+                      meta={'status': 'Aguarde. Arquivando base ' + base_csv})
+    try:
+        abase = dbsession.query(BaseOrigem).filter(
+            BaseOrigem.id == baseid).first()
+        self.update_state(state=states.PENDING,
+                          meta={'status': 'Aguarde... arquivando base ' +
+                                base_csv + ' na base MongoDB ' + abase.nome})
+        conn = MongoClient(host=MONGODB_URI)
+        db = conn[DATABASE]
+        GerenteRisco.csv_to_mongo(db, abase, base_csv)
+        shutil.rmtree(base_csv)
+        return {'status': 'Base arquivada com sucesso'}
+    except Exception as err:
+        logger.error(err, exc_info=True)
+        self.update_state(state=states.FAILURE, meta={'status': str(err)})

@@ -45,7 +45,7 @@ from sentinela.models.models import (Base, BaseOrigem, Coluna, DePara,
                                      Tabela, ValorParametro, Visao)
 from sentinela.utils.gerente_base import Filtro, GerenteBase
 from sentinela.utils.gerente_risco import GerenteRisco, SemHeaders, tmpdir
-from sentinela.workers.tasks import importar_base
+from sentinela.workers.tasks import arquiva_base_csv, importar_base
 
 mysession = MySession(Base)
 dbsession = mysession.session
@@ -132,18 +132,21 @@ def importa_base():
                         if not data:
                             data = datetime.date.today().strftime('%Y-%m-%d')
                         logger.debug(data)
+                        logger.debug(current_user.name)
                         tempfile_name = os.path.join(tmpdir, filename)
                         file.save(tempfile_name)
                         # Passa responsabilidade de processamento da base
                         # para o processo Celery
-                        task_id = importar_base(csv_folder=CSV_FOLDER,
-                                                abase=abase,
-                                                data=data,
-                                                filename=tempfile_name,
-                                                remove=True).delay()
+                        user_folder = os.path.join(CSV_FOLDER,
+                                                   current_user.name)
+                        task = importar_base.apply_async((user_folder,
+                                                          abase.id,
+                                                          data,
+                                                          tempfile_name,
+                                                          True))
                         return redirect(url_for('risco',
                                                 baseid=baseid,
-                                                task_id=task_id))
+                                                task=task.id))
                     except Exception as err:
                         logger.error(err, exc_info=True)
                         flash(err)
@@ -152,9 +155,9 @@ def importa_base():
                            baseid=baseid, data=data)
 
 
-@app.route('/api/importa_progress/<taskid>')
+@app.route('/api/task_progress/<taskid>')
 @login_required
-def importa_progress(taskid):
+def task_progress(taskid):
     """Retorna um json do progresso da celery task."""
     task = importar_base.AsyncResult(taskid)
     response = {'state': task.state}
@@ -174,19 +177,6 @@ def adiciona_base(nome):
     dbsession.commit()
     baseid = nova_base.id
     return redirect(url_for('importa_base', baseid=baseid))
-
-
-def arquiva_base_csv(baseorigem, base_csv, to_mongo=True):
-    """Apaga CSVs do disco.
-
-    Copia para MongoDB antes por padrão.
-    """
-    # Aviso: Esta função rmtree só deve ser utilizada com caminhos seguros,
-    # de preferência gerados pela própria aplicação
-    logger.debug(base_csv)
-    if to_mongo:
-        GerenteRisco.csv_to_mongo(db, baseorigem, base_csv)
-    shutil.rmtree(base_csv)
 
 
 @app.route('/risco', methods=['POST', 'GET'])
@@ -210,12 +200,18 @@ def risco():
             'excluir' - apaga dir
             'mongo' - busca no banco de dados arquivado
     """
+    user_folder = os.path.join(CSV_FOLDER, current_user.name)
+    total_linhas = 0
     path = request.args.get('filename')
     acao = request.args.get('acao')
     baseid = request.args.get('baseid', '0')
     padraoid = request.args.get('padraoid', '0')
     visaoid = request.args.get('visaoid', '0')
     parametros_ativos = request.args.get('parametros_ativos')
+    tasks = []
+    task = request.args.get('task')
+    if task:
+        tasks.append(task)
     if parametros_ativos:
         parametros_ativos = parametros_ativos.split(',')
     bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
@@ -230,15 +226,20 @@ def risco():
             visoes = []
     parametros = []
     if path:
-        base_csv = os.path.join(CSV_FOLDER, baseid, path)
+        base_csv = os.path.join(user_folder, baseid, path)
     if acao == 'arquivar' or acao == 'excluir':
         try:
             if abase and base_csv:
-                arquiva_base_csv(abase, base_csv, to_mongo=acao == 'arquivar')
-                if acao == 'arquivar':
-                    flash('Base arquivada!')
-                else:
+                if acao == 'excluir':
+                    shutil.rmtree(base_csv)
                     flash('Base excluída!')
+                else:
+                    # As três linhas antes de chamar a task são para remover
+                    # a linha da tela
+                    basedir = os.path.basename(base_csv)
+                    temp_base_csv = os.path.join(tmpdir, basedir)
+                    os.rename(base_csv, temp_base_csv)
+                    task = arquiva_base_csv.apply_async((abase.id, temp_base_csv))
             else:
                 flash('Informe Base Original e arquivo!')
         except Exception as err:
@@ -247,12 +248,12 @@ def risco():
                   'Detalhes no log da aplicação.')
             flash(type(err))
             flash(err)
-        return redirect(url_for('risco', baseid=baseid))
+        return redirect(url_for('risco', baseid=baseid, task=task))
     lista_arquivos = []
     try:
-        for ano in os.listdir(os.path.join(CSV_FOLDER, baseid)):
-            for mes in os.listdir(os.path.join(CSV_FOLDER, baseid, ano)):
-                for dia in os.listdir(os.path.join(CSV_FOLDER,
+        for ano in os.listdir(os.path.join(user_folder, baseid)):
+            for mes in os.listdir(os.path.join(user_folder, baseid, ano)):
+                for dia in os.listdir(os.path.join(user_folder,
                                                    baseid, ano, mes)):
                     lista_arquivos.append(ano + '/' + mes + '/' + dia)
     except FileNotFoundError:
@@ -320,12 +321,14 @@ def risco():
               'Detalhes no log da aplicação.')
         flash(type(err))
         flash(err)
-
-    if lista_risco:  # Salvar resultado
+    # Salvar resultado um arquivo para donwload
+    # Limita resultados em 100 linhas na tela
+    if lista_risco:
         static_path = app.config.get('STATIC_FOLDER', 'static')
         csv_salvo = os.path.join(APP_PATH, static_path, 'baixar.csv')
         gerente.save_csv(lista_risco, csv_salvo)
-
+        total_linhas = len(lista_risco) - 1
+        lista_risco = lista_risco[:100]
     return render_template('aplica_risco.html',
                            lista_arquivos=lista_arquivos,
                            bases=bases,
@@ -338,7 +341,9 @@ def risco():
                            parametros_ativos=parametros_ativos,
                            filename=path,
                            csv_salvo=os.path.basename(csv_salvo),
-                           lista_risco=lista_risco)
+                           lista_risco=lista_risco,
+                           total_linhas=total_linhas,
+                           tasks=tasks)
 
 
 @app.route('/valores')

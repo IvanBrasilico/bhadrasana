@@ -21,8 +21,8 @@ from ajna_commons.flask.log import logger
 from ajna_commons.utils.sanitiza import (sanitizar, sanitizar_lista,
                                          unicode_sanitizar)
 from sentinela.conf import ENCODE, tmpdir
-from sentinela.models.models import (Filtro, PadraoRisco, ParametroRisco,
-                                     ValorParametro)
+from sentinela.models.models import (BaseOrigem, Filtro, PadraoRisco,
+                                     ParametroRisco, ValorParametro)
 from sentinela.utils.csv_handlers import muda_titulos_lista, sch_processing
 
 
@@ -144,7 +144,8 @@ class GerenteRisco():
         self._riscosativos = {}
         self._padraorisco = None
 
-    def importa_base(self, csv_folder, baseid, data, filename, remove=False):
+    def importa_base(self, csv_folder: str, baseid: int, data,
+                     filename: str, remove=False):
         """Copia base para dest_path, processando se necessário.
 
         Aceita arquivos .zip contendo arquivos sch e arquivos csv únicos.
@@ -168,7 +169,7 @@ class GerenteRisco():
             Uma tupla ou lista de tuplas. Primeiros itens são CSVs criados
 
         """
-        dest_path = os.path.join(csv_folder, baseid,
+        dest_path = os.path.join(csv_folder, str(baseid),
                                  data[:4], data[5:7], data[8:10])
         if os.path.exists(dest_path):
             raise FileExistsError(
@@ -281,7 +282,7 @@ class GerenteRisco():
             session.merge(self._padraorisco)
             session.commit()
 
-    def checa_depara(self, base):
+    def checa_depara(self, base: BaseOrigem):
         """Se tiver depara na base, adiciona aos pre_processers.
 
         Os pre_processers são usados ao recuperar headers, importar,
@@ -349,12 +350,12 @@ class GerenteRisco():
         Carrega a lista de arquivos aplica as funções de pré processamento
         ativas. Salva novamente no mesmo arquivo.
         """
-        print(lista_arquivos)
+        # print(lista_arquivos)
         if len(lista_arquivos) > 0:
             if (isinstance(lista_arquivos[0], list) or
                     isinstance(lista_arquivos[0], tuple)):
                 alista = [linha[0] for linha in lista_arquivos]
-        print(alista)
+        # print(alista)
         for filename in alista:
             lista = self.load_csv(filename)
             lista = self.pre_processa(lista)
@@ -690,7 +691,7 @@ class GerenteRisco():
             result_df = dfpai
             result_list = [result_df.columns.tolist()]
         result_list.extend(result_df.values.tolist())
-        print(result_list)
+        # print(result_list)
         if filtrar:
             return self.aplica_risco(result_list,
                                      parametros_ativos=parametros_ativos)
@@ -996,7 +997,7 @@ class GerenteRisco():
         pipeline.append({'$skip': skip})
         print('PIPELINE', pipeline)
         mongo_list = list(collection.aggregate(pipeline))
-        print(mongo_list)
+        # print(mongo_list)
         if mongo_list and len(mongo_list) > 0:
             first_line = mongo_list[0]
             result = []

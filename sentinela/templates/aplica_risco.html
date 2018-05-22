@@ -40,6 +40,9 @@
                             <button class="btn btn-default btn-info" onclick="aplica_risco('{{filename}}', 'aplicar')">Aplicar</button>
                         </td>
                         <td align="center">
+                            <button class="btn btn-default btn-info" onclick="aplica_risco('{{filename}}', 'apgendar')">Agendar</button>
+                        </td>
+                        <td align="center">
                             <button id="arquivar" class="btn btn-warning" onclick="confirmacao('{{filename}}', 'arquivar')">Arquivar</button>
                         </td>
                         <td align="center">
@@ -104,7 +107,7 @@
     </div>
     <div id="list" class="row">
         <div class="table-responsive col-sm-12">
-            <h4>Lista de Riscos da Base {{filename}}</h4>
+            <h4>Lista de Riscos da Base {{filename}} - total de {{total_linhas}} linhas - exibindo as 100 primeiras, baixe a planilha para ver as restantes ou aplique mais filtros</h4>
             {% if csv_salvo %}
             <big>
                 <a href="/static/{{csv_salvo}}">
