@@ -22,7 +22,7 @@ from ajna_commons.utils.sanitiza import (sanitizar, sanitizar_lista,
                                          unicode_sanitizar)
 from sentinela.conf import ENCODE, tmpdir
 from sentinela.models.models import (BaseOrigem, Filtro, PadraoRisco,
-                                     ParametroRisco, ValorParametro)
+                                     ParametroRisco, ValorParametro, Visao)
 from sentinela.utils.csv_handlers import muda_titulos_lista, sch_processing
 
 
@@ -222,8 +222,9 @@ class GerenteRisco():
         """
         self._padraorisco = padraorisco
         self._riscosativos = {}
-        for parametro in self._padraorisco.parametros:
-            self.add_risco(parametro)
+        if self._padraorisco:
+            for parametro in self._padraorisco.parametros:
+                self.add_risco(parametro)
 
     def cria_padraorisco(self, nomepadraorisco, session):
         """Cria um novo objeto PadraoRisco.
@@ -1021,6 +1022,34 @@ class GerenteRisco():
                 result.append(linha_lista)
             return result
         return None
+
+    def aplica_risco_por_parametros(self, dbsession,
+                                    base_csv: str,
+                                    padraoid=0,
+                                    visaoid=0,
+                                    parametros_ativos: list=None):
+        padrao = dbsession.query(PadraoRisco).filter(
+            PadraoRisco.id == padraoid
+        ).first()
+        self.set_padraorisco(padrao)
+        if visaoid == '0':
+            dir_content = os.listdir(base_csv)
+            arquivo = os.path.join(base_csv, dir_content[0])
+            lista_risco = self.load_csv(arquivo)
+            if padrao is None:
+                return lista_risco
+            return self.aplica_risco(
+                lista_risco,
+                parametros_ativos=parametros_ativos
+            )
+        else:
+            avisao = dbsession.query(Visao).filter(
+                Visao.id == visaoid).one()
+            return self.aplica_juncao(
+                avisao, path=base_csv,
+                filtrar=padrao is not None,
+                parametros_ativos=parametros_ativos
+            )
 
 
 """

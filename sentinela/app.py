@@ -45,7 +45,8 @@ from sentinela.models.models import (Base, BaseOrigem, Coluna, DePara,
                                      Tabela, ValorParametro, Visao)
 from sentinela.utils.gerente_base import Filtro, GerenteBase
 from sentinela.utils.gerente_risco import GerenteRisco, SemHeaders, tmpdir
-from sentinela.workers.tasks import arquiva_base_csv, importar_base
+from sentinela.workers.tasks import (arquiva_base_csv, aplicar_risco,
+                                     importar_base)
 
 mysession = MySession(Base)
 dbsession = mysession.session
@@ -201,6 +202,8 @@ def risco():
             'mongo' - busca no banco de dados arquivado
     """
     user_folder = os.path.join(CSV_FOLDER, current_user.name)
+    static_path = os.path.join(APP_PATH,
+                               app.config.get('STATIC_FOLDER', 'static'))
     total_linhas = 0
     path = request.args.get('filename')
     acao = request.args.get('acao')
@@ -239,7 +242,8 @@ def risco():
                     basedir = os.path.basename(base_csv)
                     temp_base_csv = os.path.join(tmpdir, basedir)
                     os.rename(base_csv, temp_base_csv)
-                    task = arquiva_base_csv.apply_async((abase.id, temp_base_csv))
+                    task = arquiva_base_csv.apply_async(
+                        (abase.id, temp_base_csv))
             else:
                 flash('Informe Base Original e arquivo!')
         except Exception as err:
@@ -268,6 +272,10 @@ def risco():
     lista_risco = []
     csv_salvo = ''
     try:
+        if visaoid != '0':
+            print(visaoid)
+            avisao = dbsession.query(Visao).filter(
+                Visao.id == visaoid).one()
         if acao == 'mongo':
             if padrao:
                 gerente.set_padraorisco(padrao)
@@ -276,45 +284,20 @@ def risco():
                     db, base=abase,
                     parametros_ativos=parametros_ativos)
             else:
-                avisao = dbsession.query(Visao).filter(
-                    Visao.id == visaoid).first()
-                if avisao is None:
-                    flash('Visão não encontrada!')
-                else:
-                    print('PADRÃO', padrao)
-                    lista_risco = gerente.aplica_juncao_mongo(
-                        db, avisao, filtrar=padrao is not None,
-                        parametros_ativos=parametros_ativos)
+                lista_risco = gerente.aplica_juncao_mongo(
+                    db, avisao, filtrar=padrao is not None,
+                    parametros_ativos=parametros_ativos)
         else:
-            if padrao:
-                gerente.set_padraorisco(padrao)
-            if path:
-                if visaoid == '0':
-                    dir_content = os.listdir(base_csv)
-                    arquivo = ''
-                    if len(dir_content) == 1:
-                        arquivo = os.path.join(base_csv, dir_content[0])
-                        # Aplicar somente na importação???
-                        # gerente.checa_depara(abase)
-                        lista_risco = gerente.load_csv(arquivo)
-                        if padrao:
-                            lista_risco = gerente.aplica_risco(
-                                lista_risco,
-                                parametros_ativos=parametros_ativos)
-                else:
-                    avisao = dbsession.query(Visao).filter(
-                        Visao.id == visaoid).first()
-                    if avisao is None:
-                        flash('Visão não encontrada!')
-                    else:
-                        logger.debug(
-                            ' '.join(['Aplicando junção*** ', str(avisao),
-                                      path, ','.join(parametros_ativos)]))
-                        lista_risco = gerente.aplica_juncao(
-                            avisao, path=base_csv,
-                            filtrar=padrao is not None,
-                            parametros_ativos=parametros_ativos
-                        )
+            if acao == 'aplicar':
+                lista_risco = gerente.aplica_risco_por_parametros(
+                    dbsession, base_csv, padraoid, visaoid, parametros_ativos
+                )
+            elif acao == 'agendar':
+                task = aplicar_risco.apply_async((
+                    base_csv, padraoid, visaoid, parametros_ativos, static_path
+                ))
+                tasks.append(task.id)
+
     except Exception as err:
         logger.error(err, exc_info=True)
         flash('Erro ao aplicar risco! ' +
@@ -324,8 +307,7 @@ def risco():
     # Salvar resultado um arquivo para donwload
     # Limita resultados em 100 linhas na tela
     if lista_risco:
-        static_path = app.config.get('STATIC_FOLDER', 'static')
-        csv_salvo = os.path.join(APP_PATH, static_path, 'baixar.csv')
+        csv_salvo = os.path.join(static_path, 'baixar.csv')
         gerente.save_csv(lista_risco, csv_salvo)
         total_linhas = len(lista_risco) - 1
         lista_risco = lista_risco[:100]

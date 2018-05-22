@@ -5,6 +5,7 @@ Todas as tarefas que demandem tempo/carga de CPU ou I/O devem ser colocadas
 preferencialmente no processo Celery, sendo executadas de forma assíncrona/
 background.
 """
+from datetime import datetime
 import os
 import shutil
 from celery import Celery, states
@@ -47,14 +48,16 @@ def importar_base(self, csv_folder, baseid, data, filename, remove=False):
     """
     basefilename = os.path.basename(filename)
     self.update_state(state=states.STARTED,
-                      meta={'status': 'Processando arquivo ' + basefilename})
+                      meta={'status': 'Processando arquivo ' + basefilename +
+                            '. Aguarde!!!'})
     gerente = GerenteRisco()
     try:
         abase = dbsession.query(BaseOrigem).filter(
             BaseOrigem.id == baseid).first()
         self.update_state(state=states.PENDING,
                           meta={'status': 'Processando arquivo ' +
-                                basefilename + ' na base ' + abase.nome})
+                                basefilename + ' na base ' + abase.nome +
+                                '. Aguarde!!!'})
         lista_arquivos = gerente.importa_base(
             csv_folder, baseid, data, filename, remove)
         # Sanitizar base já na importação para evitar
@@ -62,11 +65,11 @@ def importar_base(self, csv_folder, baseid, data, filename, remove=False):
         gerente.ativa_sanitizacao(ascii_sanitizar)
         gerente.checa_depara(abase)  # Aplicar na importação???
         gerente.pre_processa_arquivos(lista_arquivos)
+        return {'status': 'Base importada com sucesso'}
     except Exception as err:
         logger.error(err, exc_info=True)
-        self.update_state(state=states.FAILURE)
-        return {'state': states.FAILURE, 'status': str(err)}
-    return {'status': 'Base importada com sucesso'}
+        self.update_state(state=states.FAILURE,
+                          meta={'status': str(err)})
 
 
 @celery.task(bind=True)
@@ -87,6 +90,30 @@ def arquiva_base_csv(self, baseid, base_csv):
         GerenteRisco.csv_to_mongo(db, abase, base_csv)
         shutil.rmtree(base_csv)
         return {'status': 'Base arquivada com sucesso'}
+    except Exception as err:
+        logger.error(err, exc_info=True)
+        self.update_state(state=states.FAILURE, meta={'status': str(err)})
+
+
+@celery.task(bind=True)
+def aplicar_risco(self, base_csv, padraoid, visaoid,
+                  parametros_ativos, dest_path):
+    """Chama função de aplicação de risco e grava resultado em arquivo."""
+    self.update_state(state=states.STARTED,
+                      meta={'status': 'Aguarde. Aplicando risco na base ' +
+                            base_csv})
+    gerente = GerenteRisco()
+    try:
+        self.update_state(state=states.PENDING, meta={
+            'status': 'Aguarde... aplicando risco na base ' +
+            base_csv})
+        lista_risco = gerente.aplica_risco_por_parametros(dbsession, base_csv,
+                                                          padraoid, visaoid,
+                                                          parametros_ativos)
+        if lista_risco:
+            csv_salvo = os.path.join(dest_path, datetime.today().strftime('%Y-%m-%d %H:%M:%S') + '.csv')
+            gerente.save_csv(lista_risco, csv_salvo)
+        return {'status': 'Planilha criada com sucesso'}
     except Exception as err:
         logger.error(err, exc_info=True)
         self.update_state(state=states.FAILURE, meta={'status': str(err)})
