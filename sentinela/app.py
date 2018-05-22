@@ -1023,7 +1023,8 @@ def mynavbar():
              View('Editar Riscos', 'edita_risco'),
              View('Editar Titulos', 'edita_depara'),
              View('Editar Visão', 'juncoes'),
-             View('Navega Bases', 'navega_bases')]
+             # View('Navega Bases', 'navega_bases')
+             ]
     if current_user.is_authenticated:
         items.append(View('Sair', 'logout'))
     return Navbar(logo, *items)
