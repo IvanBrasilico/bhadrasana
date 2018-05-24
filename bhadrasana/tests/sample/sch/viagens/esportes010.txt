@@ -1,0 +1,10 @@
+Esporte
+1	golfe
+2	basejump
+3	criquete
+4	baralho
+5	surf
+6	escalada
+7	caminhada
+8	Trilha
+9	zoológico

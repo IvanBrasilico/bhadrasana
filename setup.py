@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name='AJNA_MOD-bhadrasana',
+    name='AJNA-bhadrasana',
     description='Visao computacional e Aprendizado de Maquina na Vigilancia Aduaneira',
     version='0.0.1',
     url='https://github.com/IvanBrasilico/bhadrasana',
