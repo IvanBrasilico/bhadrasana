@@ -12,8 +12,8 @@ import unittest
 # import pprint
 from pymongo import MongoClient
 
-from sentinela.models.models import Filtro
-from sentinela.utils.gerente_risco import GerenteRisco
+from bhadrasana.models.models import Filtro
+from bhadrasana.utils.gerente_risco import GerenteRisco
 
 
 class TestCase(unittest.TestCase):

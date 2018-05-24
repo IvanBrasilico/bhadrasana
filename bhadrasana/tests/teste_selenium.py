@@ -2,7 +2,7 @@ import os
 import threading
 import unittest
 
-import sentinela.app as app
+import bhadrasana.app as app
 from selenium import webdriver
 
 # from selenium.webdriver.common.keys import Keys

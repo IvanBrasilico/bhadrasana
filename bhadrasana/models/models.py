@@ -1,4 +1,4 @@
-"""Modelo de dados necessário para app Sentinela."""
+"""Modelo de dados necessário para app bhadrasana."""
 import enum
 import os
 
@@ -34,7 +34,7 @@ class MySession():
             path = ':memory:'
         else:
             path = os.path.join(os.path.dirname(
-                os.path.abspath(__file__)), 'sentinela.db')
+                os.path.abspath(__file__)), 'bhadrasana.db')
             if os.name != 'nt':
                 path = '/' + path
         self._engine = create_engine('sqlite:///' + path, convert_unicode=True)

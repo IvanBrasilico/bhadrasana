@@ -1,1 +1,1 @@
-celery --app=sentinela.workers.tasks worker -B --loglevel=info
+celery --app=bhadrasana.workers.tasks worker -B --loglevel=info

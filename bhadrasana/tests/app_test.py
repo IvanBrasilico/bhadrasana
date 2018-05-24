@@ -7,7 +7,7 @@ import os
 import unittest
 from io import BytesIO
 
-import sentinela.app as app
+import bhadrasana.app as app
 
 
 class FlaskTestCase(unittest.TestCase):

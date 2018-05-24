@@ -1,4 +1,4 @@
-"""Modelo de dados necessário para app Sentinela."""
+"""Modelo de dados necessário para app bhadrasana."""
 import os
 from collections import OrderedDict
 

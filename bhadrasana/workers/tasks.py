@@ -15,8 +15,8 @@ from ajna_commons.flask.conf import BACKEND, BROKER
 from ajna_commons.flask.conf import DATABASE, MONGODB_URI
 from ajna_commons.flask.log import logger
 from ajna_commons.utils.sanitiza import ascii_sanitizar
-from sentinela.utils.gerente_risco import GerenteRisco
-from sentinela.models.models import (Base, BaseOrigem, MySession)
+from bhadrasana.utils.gerente_risco import GerenteRisco
+from bhadrasana.models.models import (Base, BaseOrigem, MySession)
 
 celery = Celery(__name__, broker=BROKER,
                 backend=BACKEND)
@@ -30,9 +30,9 @@ engine = mysession.engine
 def importar_base(self, csv_folder, baseid, data, filename, remove=False):
     """Função para upload do arquivo de uma extração ou outra fonte externa.
 
-    Utiliza o :class: `sentinela.utils.gerenterisco.GerenteRisco`.
+    Utiliza o :class: `bhadrasana.utils.gerenterisco.GerenteRisco`.
     Suporte por ora para csv com títulos e zip com sch (padrão Carga)
-    Ver também :func: `sentinela.app.importa_base`
+    Ver também :func: `bhadrasana.app.importa_base`
 
     Args:
         csv_folder: caminho onde será salvo o resultado

@@ -1,1 +1,1 @@
-web: gunicorn wsgi_sentinela:app
+web: gunicorn wsgi_bhadrasana:app

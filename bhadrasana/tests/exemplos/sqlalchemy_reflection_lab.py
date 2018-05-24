@@ -1,6 +1,6 @@
 from sqlalchemy import inspect
 
-from sentinela.models.carga import Base, Escala, MySession
+from bhadrasana.models.carga import Base, Escala, MySession
 
 mapper = inspect(Escala)
 

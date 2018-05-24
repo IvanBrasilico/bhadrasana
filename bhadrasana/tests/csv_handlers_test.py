@@ -8,13 +8,13 @@ from zipfile import ZipFile
 
 from ajna_commons.utils.sanitiza import (ascii_sanitizar, sanitizar,
                                          sanitizar_lista, unicode_sanitizar)
-from sentinela.utils.csv_handlers import (ENCODE, muda_titulos_csv,
+from bhadrasana.utils.csv_handlers import (ENCODE, muda_titulos_csv,
                                           muda_titulos_lista, retificar_linhas,
                                           sch_processing)
 
 tmpdir = tempfile.mkdtemp()
 
-SAMPLES_DIR = os.path.join('sentinela', 'tests', 'sample')
+SAMPLES_DIR = os.path.join('bhadrasana', 'tests', 'sample')
 
 CSV_TITLES_TEST = os.path.join(SAMPLES_DIR, 'csv_title_example.csv')
 SCH_FILE_TEST = os.path.join(SAMPLES_DIR, 'sch', '1')

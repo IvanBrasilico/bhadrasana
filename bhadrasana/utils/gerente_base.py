@@ -13,7 +13,7 @@ import inspect
 import os
 from collections import defaultdict
 
-from sentinela.conf import APP_PATH, CSV_FOLDER, CSV_FOLDER_TEST
+from bhadrasana.conf import APP_PATH, CSV_FOLDER, CSV_FOLDER_TEST
 
 PATH_MODULOS = os.path.join(APP_PATH, 'models')
 
@@ -32,7 +32,7 @@ class GerenteBase:
     """Inspecionar e tratar models SQLAlchemy.
 
     Métodos para padronizar a manipulação de bases de dados
-    no modelo do sistema sentinela
+    no modelo do sistema bhadrasana
     """
 
     def set_path(self, path, test=False):
@@ -52,12 +52,12 @@ class GerenteBase:
 
     def set_module(self, model, db=None):
         """Lê a estrutura de 'tabelas' de um módulo SQLAlchemy."""
-        self.module_path = 'sentinela.models.' + model
+        self.module_path = 'bhadrasana.models.' + model
         module = importlib.import_module(self.module_path)
         classes = inspect.getmembers(module, inspect.isclass)
         self.dict_models = defaultdict(dict)
         for i, classe in classes:
-            if classe.__module__.find('sentinela.models') != -1:
+            if classe.__module__.find('bhadrasana.models') != -1:
                 campos = [i for i in classe.__dict__.keys() if i[:1] != '_']
                 self.dict_models[classe.__name__]['campos'] = sorted(campos)
         SessionClass = getattr(module, 'MySession')

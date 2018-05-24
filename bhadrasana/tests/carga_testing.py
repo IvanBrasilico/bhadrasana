@@ -5,9 +5,9 @@ import unittest
 
 import pandas as pd
 
-from sentinela.models.carga import Base, Escala, MySession
+from bhadrasana.models.carga import Base, Escala, MySession
 
-CARGA_BASE = 'sentinela/tests/CSV/1/2017/0329/'
+CARGA_BASE = 'bhadrasana/tests/CSV/1/2017/0329/'
 
 
 class TestModel(unittest.TestCase):
@@ -47,7 +47,7 @@ class TestModel(unittest.TestCase):
     def carga_import(self):
         dataframes = self.open_csvs(CARGA_BASE)
         for csvf, df in dataframes.items():
-            my_module = importlib.import_module('sentinela.models.carga')
+            my_module = importlib.import_module('bhadrasana.models.carga')
             try:
                 MyClass = getattr(my_module, csvf[:-4])
                 for i, row in df.iterrows():

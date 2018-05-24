@@ -5,13 +5,13 @@ import os
 import tempfile
 import unittest
 
-from sentinela.models.models import (Base, BaseOrigem, DePara, MySession,
+from bhadrasana.models.models import (Base, BaseOrigem, DePara, MySession,
                                      PadraoRisco)
-from sentinela.utils.csv_handlers import muda_titulos_csv, muda_titulos_lista
-from sentinela.utils.gerente_risco import GerenteRisco
+from bhadrasana.utils.csv_handlers import muda_titulos_csv, muda_titulos_lista
+from bhadrasana.utils.gerente_risco import GerenteRisco
 
-CSV_NAMEDRISCO_TEST = 'sentinela/tests/BTP_named_risco.csv'
-CSV_TITLES_TEST = 'sentinela/tests/BTP.csv'
+CSV_NAMEDRISCO_TEST = 'bhadrasana/tests/BTP_named_risco.csv'
+CSV_TITLES_TEST = 'bhadrasana/tests/BTP.csv'
 
 
 class TestModel(unittest.TestCase):

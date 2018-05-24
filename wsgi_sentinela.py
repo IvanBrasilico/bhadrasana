@@ -1,6 +1,6 @@
 import logging
 
-from sentinela.app import app
+from bhadrasana.app import app
 from ajna_commons.flask.log import error_handler, sentry_handler
 
 if __name__ == '__main__':

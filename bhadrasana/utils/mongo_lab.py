@@ -1,8 +1,8 @@
 """Arquivo temporário para testes exploratórios com novos métodos MongoDB."""
 from pymongo import MongoClient
 
-from sentinela.models.models import Base, MySession, PadraoRisco, Visao
-from sentinela.utils.gerente_risco import GerenteRisco
+from bhadrasana.models.models import Base, MySession, PadraoRisco, Visao
+from bhadrasana.utils.gerente_risco import GerenteRisco
 
 gerente = GerenteRisco()
 mysession = MySession(Base, test=False).session

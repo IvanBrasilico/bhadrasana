@@ -39,14 +39,14 @@ from ajna_commons.flask.conf import (ALLOWED_EXTENSIONS, DATABASE, MONGODB_URI,
                                      SECRET, logo)
 from ajna_commons.flask.log import logger
 from ajna_commons.utils.sanitiza import sanitizar, unicode_sanitizar
-from sentinela.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER
-from sentinela.models.models import (Base, BaseOrigem, Coluna, DePara,
-                                     MySession, PadraoRisco, ParametroRisco,
-                                     Tabela, ValorParametro, Visao)
-from sentinela.utils.gerente_base import Filtro, GerenteBase
-from sentinela.utils.gerente_risco import GerenteRisco, SemHeaders, tmpdir
-from sentinela.workers.tasks import (arquiva_base_csv, aplicar_risco,
-                                     importar_base)
+from bhadrasana.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER
+from bhadrasana.models.models import (Base, BaseOrigem, Coluna, DePara,
+                                      MySession, PadraoRisco, ParametroRisco,
+                                      Tabela, ValorParametro, Visao)
+from bhadrasana.utils.gerente_base import Filtro, GerenteBase
+from bhadrasana.utils.gerente_risco import GerenteRisco, SemHeaders, tmpdir
+from bhadrasana.workers.tasks import (arquiva_base_csv, aplicar_risco,
+                                      importar_base)
 
 mysession = MySession(Base)
 dbsession = mysession.session
@@ -96,10 +96,10 @@ def index():
 def importa_base():
     """Função para upload do arquivo de uma extração ou outra fonte externa.
 
-    Utiliza o :class: `sentinela.utils.gerenterisco.GerenteRisco`.
+    Utiliza o :class: `bhadrasana.utils.gerenterisco.GerenteRisco`.
     Suporte por ora para csv com títulos e zip com sch (padrão Carga)
     Necessita um Servidor Celery para repassar responsabilidade.
-    Ver também :func: `sentinela.workers.tasks.importar_base`
+    Ver também :func: `bhadrasana.workers.tasks.importar_base`
 
     Args:
         baseid: ID da Base de Origem do arquivo

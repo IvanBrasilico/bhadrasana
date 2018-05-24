@@ -9,14 +9,14 @@ import unittest
 import mongomock
 
 # from pymongo import MongoClient
-from sentinela.conf import APP_PATH
-from sentinela.models.models import Filtro
-from sentinela.utils.gerente_risco import GerenteRisco
+from bhadrasana.conf import APP_PATH
+from bhadrasana.models.models import Filtro
+from bhadrasana.utils.gerente_risco import GerenteRisco
 
-CSV_RISCO_TEST = 'sentinela/tests/sample/csv_risco_example.csv'
-CSV_NAMEDRISCO_TEST = 'sentinela/tests/sample/csv_namedrisco_example.csv'
+CSV_RISCO_TEST = 'bhadrasana/tests/sample/csv_risco_example.csv'
+CSV_NAMEDRISCO_TEST = 'bhadrasana/tests/sample/csv_namedrisco_example.csv'
 CSV_FOLDER_TEST = 'tests/CSV'
-CSV_FOLDER_DEST = 'sentinela/tests/DEST'
+CSV_FOLDER_DEST = 'bhadrasana/tests/DEST'
 
 CSV_ALIMENTOS = os.path.join(
     APP_PATH, CSV_FOLDER_TEST, 'alimentoseesportes.csv')
@@ -31,7 +31,7 @@ ZIP = os.path.join(
 # viagem: id
 # alimento: viagem, alimento
 # esporte: viagem, esporte
-SAMPLES_DIR = os.path.join('sentinela', 'tests', 'sample')
+SAMPLES_DIR = os.path.join('bhadrasana', 'tests', 'sample')
 SCH_VIAGENS = os.path.join(SAMPLES_DIR, 'viagens')
 
 
@@ -253,7 +253,7 @@ class TestGerenteRisco(unittest.TestCase):
                                 'tabelas': [livro, capitulos, sub_capitulos],
                                 'colunas': [nome]
                                 })
-        path = 'sentinela/tests/juncoes'
+        path = 'bhadrasana/tests/juncoes'
         result = gerente.aplica_juncao(autores_livro, path=path)
         print(result)
         assert len(result) == 4

@@ -6,15 +6,15 @@ import os
 import tempfile
 import unittest
 
-from sentinela.models.models import (Base, Filtro, MySession, PadraoRisco,
+from bhadrasana.models.models import (Base, Filtro, MySession, PadraoRisco,
                                      ParametroRisco, ValorParametro)
-from sentinela.utils.csv_handlers import sch_processing
-from sentinela.utils.gerente_risco import GerenteRisco
+from bhadrasana.utils.csv_handlers import sch_processing
+from bhadrasana.utils.gerente_risco import GerenteRisco
 
 # Configurar nesta linha uma base do Sistema Carga E
 CARGA_ZIP_TEST = '/home/ivan/Downloads/P.zip'
 # Comentar a linha abaixo para testar com uma base real
-CARGA_ZIP_TEST = 'sentinela/tests/CSV/tests.zip'
+CARGA_ZIP_TEST = 'bhadrasana/tests/CSV/tests.zip'
 
 
 def carrega_carga(session):

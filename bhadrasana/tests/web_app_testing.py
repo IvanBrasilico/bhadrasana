@@ -1,12 +1,12 @@
 """Configuration for functional WebTest
 https://docs.pylonsproject.org/projects/webtest/en/latest/testapp.html
-Usage: python sentinela/web_app_testing.py
+Usage: python bhadrasana/web_app_testing.py
 Needs a running server to test
 """
 import os
 import unittest
 
-from sentinela.tests.app_test import FlaskTestCase
+from bhadrasana.tests.app_test import FlaskTestCase
 
 os.environ['HTTP_SERVER'] = 'http://localhost:5000'
 

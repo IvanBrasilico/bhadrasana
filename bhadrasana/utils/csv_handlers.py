@@ -15,7 +15,7 @@ from copy import deepcopy
 from zipfile import ZipFile
 
 from ajna_commons.utils.sanitiza import ascii_sanitizar, sanitizar
-from sentinela.conf import ENCODE, tmpdir
+from bhadrasana.conf import ENCODE, tmpdir
 
 
 def muda_titulos_csv(csv_file, de_para_dict):

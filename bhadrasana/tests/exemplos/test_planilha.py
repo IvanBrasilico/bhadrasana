@@ -7,11 +7,11 @@ import os
 import tempfile
 import unittest
 
-from sentinela.models.models import Base, BaseOrigem, DePara, MySession
-from sentinela.utils.csv_handlers import muda_titulos_csv, muda_titulos_lista
-from sentinela.utils.gerente_risco import GerenteRisco
+from bhadrasana.models.models import Base, BaseOrigem, DePara, MySession
+from bhadrasana.utils.csv_handlers import muda_titulos_csv, muda_titulos_lista
+from bhadrasana.utils.gerente_risco import GerenteRisco
 
-CSV_TEST_FOLDER = 'sentinela/tests/CSV'
+CSV_TEST_FOLDER = 'bhadrasana/tests/CSV'
 # As planilhas de teste, propositalmente, contém espaços a mais entre as
 # palavras e espaços fora de lugar, para testar estratégias de normalização
 CSV_TEST_1 = os.path.join(CSV_TEST_FOLDER, 'alimentoseesportes.csv')
@@ -24,7 +24,7 @@ CSV_ALIMENTOSPERIGOSOS = os.path.join(
     CSV_TEST_FOLDER, 'alimentosperigosos.csv')
 CSV_ESPORTESPERIGOSOS = os.path.join(CSV_TEST_FOLDER, 'esportesperigosos.csv')
 # Somente teste de trocas de títulos (field_names)
-CSV_TITLES_TEST = 'sentinela/tests/BTP.csv'
+CSV_TITLES_TEST = 'bhadrasana/tests/BTP.csv'
 
 
 class TestModel(unittest.TestCase):

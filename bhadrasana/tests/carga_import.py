@@ -5,8 +5,8 @@ import os
 
 import pandas as pd
 
-from sentinela.app import CSV_FOLDER
-from sentinela.models.carga import Base, MySession
+from bhadrasana.app import CSV_FOLDER
+from bhadrasana.models.carga import Base, MySession
 
 CARGA_BASE = os.path.join(CSV_FOLDER, '1/2017/1221/')
 
@@ -34,7 +34,7 @@ for r in range(len(files)):
 
 dataframes = dfs
 for csvf, df in dataframes.items():
-    my_module = importlib.import_module('sentinela.models.carga')
+    my_module = importlib.import_module('bhadrasana.models.carga')
     print('Iniciando import de ', csvf[:-4])
     try:
         MyClass = getattr(my_module, csvf[:-4])

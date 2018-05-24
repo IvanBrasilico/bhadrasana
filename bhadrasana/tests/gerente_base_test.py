@@ -6,10 +6,10 @@ a base carga.
 """
 import unittest
 
-from sentinela.models.carga import Base, Escala, MySession
-from sentinela.utils.gerente_base import Filtro, GerenteBase
+from bhadrasana.models.carga import Base, Escala, MySession
+from bhadrasana.utils.gerente_base import Filtro, GerenteBase
 
-CSV_FOLDER_TEST = 'sentinela/tests/CSV'
+CSV_FOLDER_TEST = 'bhadrasana/tests/CSV'
 
 
 class TestModel(unittest.TestCase):

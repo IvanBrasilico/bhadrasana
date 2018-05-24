@@ -20,10 +20,10 @@ import pymongo
 from ajna_commons.flask.log import logger
 from ajna_commons.utils.sanitiza import (sanitizar, sanitizar_lista,
                                          unicode_sanitizar)
-from sentinela.conf import ENCODE, tmpdir
-from sentinela.models.models import (BaseOrigem, Filtro, PadraoRisco,
+from bhadrasana.conf import ENCODE, tmpdir
+from bhadrasana.models.models import (BaseOrigem, Filtro, PadraoRisco,
                                      ParametroRisco, ValorParametro, Visao)
-from sentinela.utils.csv_handlers import muda_titulos_lista, sch_processing
+from bhadrasana.utils.csv_handlers import muda_titulos_lista, sch_processing
 
 
 class SemHeaders(Exception):
