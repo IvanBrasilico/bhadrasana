@@ -22,7 +22,7 @@ from ajna_commons.utils.sanitiza import (sanitizar, sanitizar_lista,
                                          unicode_sanitizar)
 from bhadrasana.conf import ENCODE, tmpdir
 from bhadrasana.models.models import (BaseOrigem, Filtro, PadraoRisco,
-                                     ParametroRisco, ValorParametro, Visao)
+                                      ParametroRisco, ValorParametro, Visao)
 from bhadrasana.utils.csv_handlers import muda_titulos_lista, sch_processing
 
 

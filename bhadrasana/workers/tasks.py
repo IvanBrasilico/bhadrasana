@@ -111,7 +111,9 @@ def aplicar_risco(self, base_csv, padraoid, visaoid,
                                                           padraoid, visaoid,
                                                           parametros_ativos)
         if lista_risco:
-            csv_salvo = os.path.join(dest_path, datetime.today().strftime('%Y-%m-%d %H:%M:%S') + '.csv')
+            csv_salvo = os.path.join(dest_path,
+                                     datetime.today().strftime
+                                     ('%Y-%m-%d %H:%M:%S') + '.csv')
             gerente.save_csv(lista_risco, csv_salvo)
         return {'status': 'Planilha criada com sucesso'}
     except Exception as err:

@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 from bhadrasana.models.models import (Base, BaseOrigem, DePara, MySession,
-                                     PadraoRisco)
+                                      PadraoRisco)
 from bhadrasana.utils.csv_handlers import muda_titulos_csv, muda_titulos_lista
 from bhadrasana.utils.gerente_risco import GerenteRisco
 

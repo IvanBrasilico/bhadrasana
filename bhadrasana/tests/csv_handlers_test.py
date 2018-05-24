@@ -9,8 +9,9 @@ from zipfile import ZipFile
 from ajna_commons.utils.sanitiza import (ascii_sanitizar, sanitizar,
                                          sanitizar_lista, unicode_sanitizar)
 from bhadrasana.utils.csv_handlers import (ENCODE, muda_titulos_csv,
-                                          muda_titulos_lista, retificar_linhas,
-                                          sch_processing)
+                                           muda_titulos_lista,
+                                           retificar_linhas,
+                                           sch_processing)
 
 tmpdir = tempfile.mkdtemp()
 
