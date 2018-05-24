@@ -106,11 +106,34 @@
         </div>
     </div>
     <div id="list" class="row">
+        <div class="table-responsive col-sm-4">
+            <h4>Planilhas disponíveis (geradas por agendamento)</h4>
+            <div class="table">
+                <table class="table inlineTable table-hover table-bordered table-responsive" cellspacing="0" cellpadding="0" id="planilhas_table">
+                    {% for planilha in planilhas %}
+                    <tr id="{{ planilha }}">
+                        <td id="{{ planilha }}">{{planilha}}</td>
+                        <td id="{{ planilha }}">
+                            <a href="/static/{{ current_user.name }}/{{planilha}}">
+                                <span class="label label-success">
+                                    <b>Baixar</b>
+                                </span>
+                            </a>
+                        </td>
+                        <td align="center">
+                            <input type="button" class="btn  btn-danger" value="x" onclick="exclui_planilha('{{ planilha }}')" />
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
         <div class="table-responsive col-sm-12">
-            <h4>Lista de Riscos da Base {{filename}} - total de {{total_linhas}} linhas - exibindo as 100 primeiras, baixe a planilha para ver as restantes ou aplique mais filtros</h4>
+            <h4>Lista de Riscos da Base {{filename}} - total de {{total_linhas}} linhas - Máximos de 100 linhas, baixe a planilha
+                para ver as restantes ou aplique mais filtros</h4>
             {% if csv_salvo %}
             <big>
-                <a href="/static/{{csv_salvo}}">
+                <a href="/static/{{ current_user.name }}/{{csv_salvo}}">
                     <span class="label label-success">
                         <b>Baixar planilha</b>
                     </span>
@@ -264,4 +287,26 @@
     };
 
     /* Mostrar valores por AJAX*/
+
+    function exclui_planilha(planilha) {
+        $.getJSON('/exclui_planilha/' + planilha, {
+          
+        }, function(planilhas) {
+          table_planilha(planilhas);
+        });
+    }
+    function table_planilha(planilhas){
+        $('#planilhas_table tbody tr').remove();
+        $.each(planilhas, function(i, planilha) {
+            $('<tr>').append(
+            $('<td>').text(planilha),
+            $('<td>').html('<a href="/static/{{ current_user.name }}/' + planilha +
+                 '"><span class="label label-success"><b>Baixar</b></span></a>'),
+            $('<td>').html('<input type="button" class="btn  btn-danger" value="x" onclick="exclui_planilha("'+ planilha + '")" />')
+            ).appendTo('#planilhas_table');
+        });
+    
+    }
+
+
 </script> {% endblock %}

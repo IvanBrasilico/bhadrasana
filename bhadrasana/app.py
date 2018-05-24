@@ -180,6 +180,14 @@ def adiciona_base(nome):
     return redirect(url_for('importa_base', baseid=baseid))
 
 
+def get_planilhas_criadas_agendamento(path):
+    """Lê o diretório e retorna nomes de arquivos .csv."""
+    if not path:
+        return []
+    return [planilha.name for planilha in os.scandir(path)
+            if planilha.is_file() and planilha.name.endswith('.csv')]
+
+
 @app.route('/risco', methods=['POST', 'GET'])
 @app.route('/aplica_risco')
 @login_required
@@ -201,9 +209,14 @@ def risco():
             'excluir' - apaga dir
             'mongo' - busca no banco de dados arquivado
     """
-    user_folder = os.path.join(CSV_FOLDER, current_user.name)
     static_path = os.path.join(APP_PATH,
-                               app.config.get('STATIC_FOLDER', 'static'))
+                               app.config.get('STATIC_FOLDER', 'static'),
+                               current_user.name)
+    user_folder = os.path.join(CSV_FOLDER, current_user.name)
+    try:
+        os.mkdir(static_path)
+    except FileExistsError:
+        pass
     total_linhas = 0
     path = request.args.get('filename')
     acao = request.args.get('acao')
@@ -212,6 +225,9 @@ def risco():
     visaoid = request.args.get('visaoid', '0')
     parametros_ativos = request.args.get('parametros_ativos')
     tasks = []
+    # Lista de planilhas geradas pelo agendamento de aplica_risco
+    planilhas = get_planilhas_criadas_agendamento(static_path)
+    print(planilhas)
     task = request.args.get('task')
     if task:
         tasks.append(task)
@@ -238,7 +254,9 @@ def risco():
                     flash('Base excluída!')
                 else:
                     # As três linhas antes de chamar a task são para remover
-                    # a linha da tela
+                    # a linha da base escolhida da tela, evitando que o Usuário
+                    # tente efetuar novas ações na base que está sendo
+                    # arquivada pelo Celery
                     basedir = os.path.basename(base_csv)
                     temp_base_csv = os.path.join(tmpdir, basedir)
                     os.rename(base_csv, temp_base_csv)
@@ -325,7 +343,34 @@ def risco():
                            csv_salvo=os.path.basename(csv_salvo),
                            lista_risco=lista_risco,
                            total_linhas=total_linhas,
-                           tasks=tasks)
+                           tasks=tasks,
+                           planilhas=planilhas)
+
+
+@app.route('/exclui_planilha/<planilha>')
+@login_required
+def exclui_planilha(planilha):
+    """Função que exclui uma planilha csv e retorna restantes.
+
+    Args:
+        planilha: Nome da planilha
+
+    Returns:
+        Lista com as planilhas restantes
+
+    """
+    static_path = os.path.join(APP_PATH,
+                               app.config.get('STATIC_FOLDER', 'static'),
+                               current_user.name)
+    if planilha:
+        # planilha = secure_filename(planilha)
+        planilha = os.path.join(static_path, planilha)
+        try:
+            os.remove(planilha)
+        except OSError as err: 
+            logger.error(str(err))
+            logger.error('exclui_planilha falhou ao excluir: ' + planilha)
+    return jsonify(get_planilhas_criadas_agendamento(static_path))
 
 
 @app.route('/valores')
