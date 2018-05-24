@@ -35,6 +35,7 @@ class MySession():
         else:
             path = os.path.join(os.path.dirname(
                 os.path.abspath(__file__)), 'bhadrasana.db')
+            print('***PATH', path)
             if os.name != 'nt':
                 path = '/' + path
         self._engine = create_engine('sqlite:///' + path, convert_unicode=True)

@@ -2,6 +2,9 @@
 Any client must make this type of request to Web UI
 Made from Flask testing docs
 http://flask.pocoo.org/docs/0.12/testing/
+Use python bhadrasana/web_app_testing.py para transformar em
+teste funcional
+
 """
 import os
 import unittest
@@ -26,8 +29,8 @@ class FlaskTestCase(unittest.TestCase):
             app.app.testing = True
             app.app.config['WTF_CSRF_ENABLED'] = False
             self.app = app.app.test_client()
-            app.login.DBUser.dbsession = None  # Bypass authentication
-        rv = self.login('ajna', 'ajna')
+            # app.login.DBUser.dbsession = None  # Bypass authentication
+        rv = self.login('ivan', 'ivan')
         assert rv is not None
 
     def tearDown(self):
@@ -62,11 +65,6 @@ class FlaskTestCase(unittest.TestCase):
                                 params=dict(csrf_token=self.csrf_token))
         else:
             return self.app.get('/logout', follow_redirects=True)
-
-    def test_not_found(self):
-        if self.http_server is None:
-            rv = self.app.get('/non_ecsiste')
-            assert b'404 Not Found' in rv.data
 
     # methods
     def data(self, rv):
@@ -127,6 +125,13 @@ class FlaskTestCase(unittest.TestCase):
         app.dbsession.query(app.ParametroRisco).filter(
             app.ParametroRisco.nome_campo == 'z').delete()
         app.dbsession.commit()
+
+    # Início dos testes...
+    #
+    def test_not_found(self):
+        if self.http_server is None:
+            rv = self.app.get('/non_ecsiste')
+            assert b'404 Not Found' in rv.data
 
     # GET
     def test_1_home(self):
@@ -348,8 +353,10 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'Redirecting...' in data
 
-    """def test_b_excluiparametros(self):
-        self._excluiparametros()"""
+    """
+    def test_b_excluiparametros(self):
+        self._excluiparametros()
+    """
 
     def test_9_juncoes(self):
         if self.http_server is not None:
