@@ -43,6 +43,7 @@ setup(
             'flake8-quotes',
             'flake8-todo',
             'flask-webtest',
+            'flask-testing',
             'isort',
             'autopep8',
             'pylint',
