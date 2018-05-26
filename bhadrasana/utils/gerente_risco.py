@@ -1028,6 +1028,31 @@ class GerenteRisco():
                                     padraoid=0,
                                     visaoid=0,
                                     parametros_ativos: list=None):
+        """Escolhe o método correto de acordo com parâmetros.
+
+        Chama arquivo(s) com ou sem junção e filtro,
+        de acordo com parâmetros passados.
+
+        Ver :py:func:`aplica_risco` e :py:func:`aplica_juncao`
+
+        Args:
+
+            dbsession: conexão com o Banco de Dados
+
+            base_csv: Arquivo csv de onde carregar a lista a ser filtrada
+
+            padraoid: ID do PadraoRisco a utilizar como filtro
+
+            visaoid: objeto Visao do Banco de Dados que espeficica as
+             configurações (metadados) da base
+
+            parametros_ativos: subconjunto do parâmetros de risco a serem
+            aplicados
+
+        Returns:
+            Lista contendo os campos filtrados. 1ª linha com nomes de campo.
+
+        """
         padrao = dbsession.query(PadraoRisco).filter(
             PadraoRisco.id == padraoid
         ).first()

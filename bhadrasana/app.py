@@ -367,7 +367,7 @@ def exclui_planilha(planilha):
         planilha = os.path.join(static_path, planilha)
         try:
             os.remove(planilha)
-        except OSError as err: 
+        except OSError as err:
             logger.error(str(err))
             logger.error('exclui_planilha falhou ao excluir: ' + planilha)
     return jsonify(get_planilhas_criadas_agendamento(static_path))
