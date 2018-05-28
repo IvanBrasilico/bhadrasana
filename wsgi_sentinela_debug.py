@@ -2,7 +2,9 @@ import os
 from ajna_commons.flask.conf import BHADRASANA_URL
 os.environ['DEBUG'] = '1'
 
-from bhadrasana.app import app
+from bhadrasana.main import app
+
+
 
 
 if __name__ == '__main__':

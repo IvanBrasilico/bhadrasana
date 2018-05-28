@@ -31,40 +31,44 @@ from flask_nav.elements import Navbar, View
 from flask_session import Session
 # from flask_sslify import SSLify
 from flask_wtf.csrf import CSRFProtect
-from pymongo import MongoClient
 from werkzeug.utils import secure_filename
 
-import ajna_commons.flask.login as login
-from ajna_commons.flask.conf import (ALLOWED_EXTENSIONS, DATABASE, MONGODB_URI,
-                                     SECRET, logo)
+import ajna_commons.flask.login as login_ajna
+from ajna_commons.flask.conf import (ALLOWED_EXTENSIONS, SECRET, logo)
 from ajna_commons.flask.log import logger
 from ajna_commons.utils.sanitiza import sanitizar, unicode_sanitizar
 from bhadrasana.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER
-from bhadrasana.models.models import (Base, BaseOrigem, Coluna, DePara,
-                                      MySession, PadraoRisco, ParametroRisco,
+from bhadrasana.models.models import (BaseOrigem, Coluna, DePara,
+                                      PadraoRisco, ParametroRisco,
                                       Tabela, ValorParametro, Visao)
 from bhadrasana.utils.gerente_base import Filtro, GerenteBase
 from bhadrasana.utils.gerente_risco import GerenteRisco, SemHeaders, tmpdir
 from bhadrasana.workers.tasks import (arquiva_base_csv, aplicar_risco,
                                       importar_base)
 
-mysession = MySession(Base)
-dbsession = mysession.session
-engine = mysession.engine
-
 app = Flask(__name__, static_url_path='/static')
-conn = MongoClient(host=MONGODB_URI)
-db = conn[DATABASE]
-login.login_manager.init_app(app)
-login.configure(app)
-login.DBUser.dbsession = db
-""" mongo_info = [str(s) for s in conn.address if isinstance(
-   s, str) or isinstance(s, int)]
-logger.info('MongoDB connected ' + ':'.join(mongo_info))"""
-# CORS(app)
 csrf = CSRFProtect(app)
 Bootstrap(app)
 nav = Nav()
+nav.init_app(app)
+
+
+def configure_app(sqllitedb, mongodb):
+    """Configurações gerais e de Banco de Dados da Aplicação."""
+    app.config['DEBUG'] = os.environ.get('DEBUG', 'None') == '1'
+    if app.config['DEBUG'] is True:
+        app.jinja_env.auto_reload = True
+        app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.secret_key = SECRET
+    app.config['SECRET_KEY'] = SECRET
+    app.config['SESSION_TYPE'] = 'filesystem'
+    Session(app)
+    login_ajna.login_manager.init_app(app)
+    login_ajna.configure(app)
+    login_ajna.DBUser.dbsession = mongodb
+    app.config['dbsession'] = sqllitedb
+    app.config['mongodb'] = mongodb
+    return app
 
 
 @app.before_request
@@ -109,6 +113,7 @@ def importa_base():
 
         file: arquivo csv, sch+txt, ou conjunto deles em formato zip
     """
+    dbsession = app.config.get('dbsession')
     baseid = request.form.get('baseid')
     data = request.form.get('data')
     if request.method == 'POST':
@@ -172,6 +177,7 @@ def task_progress(taskid):
 @login_required
 def adiciona_base(nome):
     """Cria nova instância de Base Origem com o nome passado."""
+    dbsession = app.config.get('dbsession')
     logger.debug(nome)
     nova_base = BaseOrigem(nome)
     dbsession.add(nova_base)
@@ -209,6 +215,8 @@ def risco():
             'excluir' - apaga dir
             'mongo' - busca no banco de dados arquivado
     """
+    dbsession = app.config.get('dbsession')
+    mongodb = app.config.get('mongodb')
     static_path = os.path.join(APP_PATH,
                                app.config.get('STATIC_FOLDER', 'static'),
                                current_user.name)
@@ -299,11 +307,11 @@ def risco():
                 gerente.set_padraorisco(padrao)
             if visaoid == '0':
                 lista_risco = gerente.load_mongo(
-                    db, base=abase,
+                    mongodb, base=abase,
                     parametros_ativos=parametros_ativos)
             else:
                 lista_risco = gerente.aplica_juncao_mongo(
-                    db, avisao, filtrar=padrao is not None,
+                    mongodb, avisao, filtrar=padrao is not None,
                     parametros_ativos=parametros_ativos)
         else:
             if acao == 'aplicar':
@@ -385,6 +393,7 @@ def valores():
         Lista com os valores e seus respectivos filtros de busca
 
     """
+    dbsession = app.config.get('dbsession')
     parametro_id = request.args.get('parametroid')
     result = []
     if parametro_id:
@@ -413,6 +422,7 @@ def edita_risco():
 
         riscoid: ID do objeto de risco para aplicar a edição
     """
+    dbsession = app.config.get('dbsession')
     padraoid = request.args.get('padraoid')
     padroes = dbsession.query(PadraoRisco).order_by(PadraoRisco.nome).all()
     bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
@@ -474,6 +484,7 @@ def adiciona_padrao(nome):
     Args:
         nome: Nome do padrão a ser inserido no Banco de Dados
     """
+    dbsession = app.config.get('dbsession')
     logger.debug(nome)
     novo_padrao = PadraoRisco(nome)
     dbsession.add(novo_padrao)
@@ -495,6 +506,7 @@ def importa_csv(padraoid, riscoid):
 
         riscoid: ID do parâmetro de risco
     """
+    dbsession = app.config.get('dbsession')
     if request.method == 'POST':
         if 'csv' not in request.files:
             flash('No file part')
@@ -535,6 +547,7 @@ def exporta_csv():
 
         riscoid: ID do parâmetro de risco
     """
+    dbsession = app.config.get('dbsession')
     padraoid = request.args.get('padraoid')
     riscoid = request.args.get('riscoid')
     gerente = GerenteRisco()
@@ -554,6 +567,7 @@ def adiciona_parametro():
 
         lista: Lista com os nomes dos novos parâmetros
     """
+    dbsession = app.config.get('dbsession')
     padraoid = request.args.get('padraoid')
     risco_novo = request.args.get('risco_novo')
     lista = request.args.get('lista')
@@ -584,6 +598,7 @@ def exclui_parametro():
 
         riscoid: Nome do parâmetro a ser excluído
     """
+    dbsession = app.config.get('dbsession')
     padraoid = request.args.get('padraoid')
     riscoid = request.args.get('riscoid')
     dbsession.query(ParametroRisco).filter(
@@ -605,6 +620,7 @@ def adiciona_valor():
 
         tipo_filtro: Filtro que este valor deverá ser buscado nas bases
     """
+    dbsession = app.config.get('dbsession')
     padraoid = request.args.get('padraoid')
     novo_valor = request.args.get('novo_valor')
     tipo_filtro = request.args.get('filtro')
@@ -633,6 +649,7 @@ def exclui_valor():
 
         valorid: ID do valor a ser excluído
     """
+    dbsession = app.config.get('dbsession')
     padraoid = request.args.get('padraoid')
     riscoid = request.args.get('riscoid')
     valorid = request.args.get('valorid')
@@ -653,6 +670,7 @@ def edita_depara():
 
         padraoid: ID do padrão de risco
     """
+    dbsession = app.config.get('dbsession')
     baseid = request.args.get('baseid')
     padraoid = request.args.get('padraoid')
     bases = dbsession.query(BaseOrigem).all()
@@ -699,8 +717,15 @@ def adiciona_depara():
 
         titulo_novo: Titulo unificado
     """
+    dbsession = app.config.get('dbsession')
     baseid = request.args.get('baseid')
     padraoid = request.args.get('padraoid')
+    print('########################################################3')
+    print('########################################################3')
+    print('########################################################3')
+    print('########################################################3')
+    print('########################################################3')
+    print('########################################################3')
     titulo_antigo = sanitizar(request.args.get('antigo'),
                               norm_function=unicode_sanitizar)
     titulo_novo = sanitizar(request.args.get('novo'),
@@ -728,6 +753,7 @@ def exclui_depara():
 
         tituloid: ID do titulo a ser excluído
     """
+    dbsession = app.config.get('dbsession')
     baseid = request.args.get('baseid')
     padraoid = request.args.get('padraoid')
     tituloid = request.args.get('tituloid')
@@ -887,6 +913,7 @@ def juncoes():
         visaoid: ID objeto de Banco de Dados que espeficica as configurações
         (metadados) da base
     """
+    dbsession = app.config.get('dbsession')
     baseid = request.args.get('baseid')
     visaoid = request.args.get('visaoid')
     bases = dbsession.query(BaseOrigem).all()
@@ -928,6 +955,7 @@ def adiciona_visao():
         visao_novo: Nome do objeto de Banco de Dados que espeficica as
         configurações (metadados) da base
     """
+    dbsession = app.config.get('dbsession')
     baseid = request.args.get('baseid')
     visao_novo = request.args.get('visao_novo')
     visao = Visao(visao_novo)
@@ -950,6 +978,7 @@ def exclui_visao():
         visaoid: ID do objeto de Banco de Dados que espeficica as
         configurações (metadados) da base
     """
+    dbsession = app.config.get('dbsession')
     visaoid = request.args.get('visaoid')
     dbsession.query(Visao).filter(
         Visao.id == visaoid).delete()
@@ -969,6 +998,7 @@ def adiciona_coluna():
 
         col_nova: Nome da coluna que será inserida no objeto Visão
     """
+    dbsession = app.config.get('dbsession')
     visaoid = request.args.get('visaoid')
     col_nova = request.args.get('col_nova')
     coluna = Coluna(col_nova)
@@ -989,6 +1019,7 @@ def exclui_coluna():
 
         colunaid: ID da coluna a ser excluída
     """
+    dbsession = app.config.get('dbsession')
     visaoid = request.args.get('visaoid')
     colunaid = request.args.get('colunaid')
     dbsession.query(Coluna).filter(
@@ -1012,6 +1043,7 @@ def adiciona_tabela():
 
         estrangeiro:
     """
+    dbsession = app.config.get('dbsession')
     visaoid = request.args.get('visaoid')
     csv = request.args.get('csv')
     primario = request.args.get('primario')
@@ -1037,6 +1069,7 @@ def exclui_tabela():
 
         tabelaid: ID da tabela a ser excluída
     """
+    dbsession = app.config.get('dbsession')
     visaoid = request.args.get('visaoid')
     tabelaid = request.args.get('tabelaid')
     dbsession.query(Tabela).filter(
@@ -1060,21 +1093,3 @@ def mynavbar():
     if current_user.is_authenticated:
         items.append(View('Sair', 'logout'))
     return Navbar(logo, *items)
-
-
-nav.init_app(app)
-app.config['DEBUG'] = os.environ.get('DEBUG', 'None') == '1'
-if app.config['DEBUG'] is True:
-    app.jinja_env.auto_reload = True
-    app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.secret_key = SECRET
-app.config['SECRET_KEY'] = SECRET
-app.config['SESSION_TYPE'] = 'filesystem'
-Session(app)
-"""if app.config['SSL_REDIRECT']:
-        from flask_sslify import SSLify
-        sslify = SSLify(app)"""
-
-if __name__ == '__main__':
-    print('Iniciando Servidor Bhadrasana...')
-    app.run(debug=app.config['DEBUG'])

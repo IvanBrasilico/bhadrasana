@@ -1,6 +1,6 @@
 import logging
 
-from bhadrasana.app import app
+from bhadrasana.main import app
 from ajna_commons.flask.log import error_handler, sentry_handler
 
 if __name__ == '__main__':

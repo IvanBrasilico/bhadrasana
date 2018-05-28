@@ -52,6 +52,7 @@ setup(
             'pytest-mock',
             'radon',
             'sphinx',
+            'selenium',
             'testfixtures',
             'tox',
             'mongomock'
