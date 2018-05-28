@@ -4,6 +4,7 @@ Apenas testa se Servidor no ar.
 Testa se Servidor no ar e se apresenta tela de login
 
 """
+import unittest
 from urllib import request
 
 from selenium_test import SeleniumTestCase

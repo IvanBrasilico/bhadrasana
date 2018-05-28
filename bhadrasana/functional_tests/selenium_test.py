@@ -12,7 +12,6 @@ Obs:
 tox precisa ser configurado com passenv = * para selenium funcionar no venv tox
 """
 import time
-import unittest
 
 from flask_testing import LiveServerTestCase
 from pymongo import MongoClient
@@ -31,9 +30,9 @@ class AppSingleTon():
     app = None
 
     @classmethod
-    def create(cls, dbsession):
+    def create(cls, dbsession, mongodb):
         if cls.app is None:
-            cls.app = configure_app(dbsession, None)
+            cls.app = configure_app(dbsession, mongodb)
         return cls.app
 
 
@@ -45,7 +44,7 @@ class SeleniumTestCase(LiveServerTestCase):
         self.engine = mysession.engine
         conn = MongoClient(host=MONGODB_URI)
         mongodb = conn[DATABASE]
-        app = AppSingleTon.create(dbsession)
+        app = AppSingleTon.create(dbsession, mongodb)
         return app
 
     def create_database(self):
@@ -74,24 +73,3 @@ class SeleniumTestCase(LiveServerTestCase):
                 if time.time() - start_time > MAX_WAIT:
                     raise err
                 time.sleep(0.5)
-
-    def test_server_is_up_and_running(self):
-
-        response = request.urlopen(self.get_server_url())
-        self.assertEqual(response.code, 200)
-
-    def test_tela_de_login(self):
-        def test_username():
-            for names in ['username', 'senha']:
-                element = driver.find_element_by_name(names)
-                assert element is not None
-                element.send_keys('ajna')
-
-        driver = self.driver
-        driver.get(self.get_server_url())
-        self.wait_fn(test_username)
-        driver.find_element_by_id('btnlogin').click()
-
-
-if __name__ == '__name__':
-    unittest.main()
