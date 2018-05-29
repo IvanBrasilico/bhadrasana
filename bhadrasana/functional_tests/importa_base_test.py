@@ -17,7 +17,6 @@ from selenium_test import SeleniumTestCase, wait
 class ImportarBase(SeleniumTestCase):
     """Teste funcional/aceitação da tela Importa Base."""
 
-    @wait
     def test_tela_correta(self):
         """Testa se carrega a tela esperada."""
         self.driver.get(self.get_server_url() + '/importa_base')
