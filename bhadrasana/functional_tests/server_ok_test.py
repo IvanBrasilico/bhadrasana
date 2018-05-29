@@ -22,9 +22,9 @@ class ServerUp(SeleniumTestCase):
 
     def test_tela_de_login(self):
         """Ver se tela de login é exibida e se aceita entradas.
-        
+
         Fazer login e depois logoout.
-        
+
         """
         def test_username():
             for names in ['username', 'senha']:

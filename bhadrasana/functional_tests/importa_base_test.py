@@ -11,7 +11,7 @@ from io import BytesIO
 
 from flask import url_for
 
-from selenium_test import SeleniumTestCase, wait
+from selenium_test import SeleniumTestCase
 
 
 class ImportarBase(SeleniumTestCase):
