@@ -104,7 +104,7 @@ class SeleniumTestCase(LiveServerTestCase):
         conn = MongoClient(host=MONGODB_URI)
         self.mongodb = conn[DATABASE]
         app = AppSingleTon.create(self.dbsession, self.mongodb)
-        DBUser.dbsession = None # Bypass authentication
+        DBUser.dbsession = None  # Bypass authentication
         app.config.update(
             LIVESERVER_PORT=8942
         )
