@@ -35,7 +35,7 @@ class MySession():
         else:
             path = os.path.join(os.path.dirname(
                 os.path.abspath(__file__)), 'bhadrasana.db')
-            print('***PATH', path)
+            print('***Banco de Dados...', path)
             if os.name != 'nt':
                 path = '/' + path
         self._engine = create_engine('sqlite:///' + path, convert_unicode=True)
@@ -173,9 +173,11 @@ class DePara(Base):
 class ParametroRisco(Base):
     """Paramêtro de Risco.
 
-    Nomeia um parâmetro de risco que pode ser aplicado
-    como filtro em um Banco de Dados. Um parâmetro tem uma
-    lista de valores que serão o filtro efetivo.
+    Nomeia um parâmetro de risco que pode ser aplicado como filtro em um Banco
+    de Dados. Um parâmetro tem uma lista de valores que serão o filtro efetivo.
+
+    nome_campo = nome do campo da fonte de dados a ser aplicado filtro
+
     """
 
     __tablename__ = 'parametrosrisco'
@@ -187,9 +189,9 @@ class ParametroRisco(Base):
         'PadraoRisco', back_populates='parametros')
     padraorisco_id = Column(Integer, ForeignKey('padroesrisco.id'))
 
-    def __init__(self, nome, descricao='', padraorisco=None):
+    def __init__(self, nome_campo, descricao='', padraorisco=None):
         """Inicializa."""
-        self.nome_campo = nome
+        self.nome_campo = nome_campo
         self.descricao = descricao
         if padraorisco:
             self.padraorisco_id = padraorisco.id
@@ -200,10 +202,12 @@ class ValorParametro(Base):
 
     A ser aplicado como filtro em uma fonte de dados.
 
-    nomecampo = nome do campo da fonte de dados a ser aplicado filtro
+    valor = valor do campo da fonte de dados a ser aplicado filtro
 
     tipofiltro = tipo de função de filtragem a ser realizada
     (ver enum TipoFiltro)
+
+    risco = ParametroRisco onde aplicar este valor
     """
 
     __tablename__ = 'valoresparametro'
@@ -214,10 +218,12 @@ class ValorParametro(Base):
     risco = relationship(
         'ParametroRisco', back_populates='valores')
 
-    def __init__(self, nome, tipo):
+    def __init__(self, nome, tipo, risco=None):
         """Inicializa."""
         self.valor = nome
         self.tipo_filtro = tipo
+        if risco:
+            self.risco_id = risco.id
 
 
 class Visao(Base):

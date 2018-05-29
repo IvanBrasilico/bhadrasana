@@ -20,9 +20,8 @@ a aplicação de filtros/parâmetros de risco.
 from pymongo import MongoClient
 
 from ajna_commons.flask.conf import DATABASE, MONGODB_URI
-from bhadrasana.views import configure_app
 from bhadrasana.models.models import Base, MySession
-
+from bhadrasana.views import configure_app
 
 mysession = MySession(Base)
 dbsession = mysession.session

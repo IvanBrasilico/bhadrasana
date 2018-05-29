@@ -34,16 +34,16 @@ from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
 
 import ajna_commons.flask.login as login_ajna
-from ajna_commons.flask.conf import (ALLOWED_EXTENSIONS, SECRET, logo)
+from ajna_commons.flask.conf import ALLOWED_EXTENSIONS, SECRET, logo
 from ajna_commons.flask.log import logger
 from ajna_commons.utils.sanitiza import sanitizar, unicode_sanitizar
 from bhadrasana.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER
-from bhadrasana.models.models import (BaseOrigem, Coluna, DePara,
-                                      PadraoRisco, ParametroRisco,
-                                      Tabela, ValorParametro, Visao)
+from bhadrasana.models.models import (BaseOrigem, Coluna, DePara, PadraoRisco,
+                                      ParametroRisco, Tabela, ValorParametro,
+                                      Visao)
 from bhadrasana.utils.gerente_base import Filtro, GerenteBase
 from bhadrasana.utils.gerente_risco import GerenteRisco, SemHeaders, tmpdir
-from bhadrasana.workers.tasks import (arquiva_base_csv, aplicar_risco,
+from bhadrasana.workers.tasks import (aplicar_risco, arquiva_base_csv,
                                       importar_base)
 
 app = Flask(__name__, static_url_path='/static')

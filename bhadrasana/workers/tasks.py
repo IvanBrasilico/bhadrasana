@@ -5,18 +5,18 @@ Todas as tarefas que demandem tempo/carga de CPU ou I/O devem ser colocadas
 preferencialmente no processo Celery, sendo executadas de forma assíncrona/
 background.
 """
-from datetime import datetime
 import os
 import shutil
+from datetime import datetime
+
 from celery import Celery, states
 from pymongo import MongoClient
 
-from ajna_commons.flask.conf import BACKEND, BROKER
-from ajna_commons.flask.conf import DATABASE, MONGODB_URI
+from ajna_commons.flask.conf import BACKEND, BROKER, DATABASE, MONGODB_URI
 from ajna_commons.flask.log import logger
 from ajna_commons.utils.sanitiza import ascii_sanitizar
+from bhadrasana.models.models import Base, BaseOrigem, MySession
 from bhadrasana.utils.gerente_risco import GerenteRisco
-from bhadrasana.models.models import (Base, BaseOrigem, MySession)
 
 celery = Celery(__name__, broker=BROKER,
                 backend=BACKEND)

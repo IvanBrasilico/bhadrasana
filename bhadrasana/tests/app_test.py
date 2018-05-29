@@ -9,14 +9,14 @@ teste funcional
 import os
 import unittest
 from io import BytesIO
+
 from pymongo import MongoClient
 
 from ajna_commons.flask.conf import DATABASE, MONGODB_URI
-from bhadrasana.views import configure_app
 from bhadrasana.models.models import (Base, BaseOrigem, Coluna, DePara,
                                       MySession, PadraoRisco, ParametroRisco,
                                       Tabela, ValorParametro, Visao)
-
+from bhadrasana.views import configure_app
 
 mysession = MySession(Base, test=True)
 dbsession = mysession.session
@@ -202,7 +202,6 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'AJNA' in data
 
-    # Erro por causa do Celery
     def test_2_1_upload(self):
         file = {
             'file':
