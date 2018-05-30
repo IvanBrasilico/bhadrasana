@@ -99,9 +99,11 @@ class LoginPage():
     """Disponibiliza métodos de Login."""
 
     def __init__(self, selenium_test):
+        """Vincula o teste ativo."""
         self.selenium_test = selenium_test
 
     def login(self):
+        """Efetua procedimentos de login."""
         driver = self.selenium_test.driver
         driver.get(self.selenium_test.get_server_url())
         self.selenium_test.wait_fn(self.preenche_username)
@@ -109,6 +111,7 @@ class LoginPage():
         self.selenium_test.wait_to_be_logged_in()
 
     def logout(self):
+        """Efetua procedimentos de logout."""
         driver = self.selenium_test.driver
         assert url_for('index') in driver.current_url
         driver.find_element_by_link_text('Sair').click()

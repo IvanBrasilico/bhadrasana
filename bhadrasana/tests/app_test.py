@@ -313,12 +313,12 @@ class FlaskTestCase(unittest.TestCase):
 
     def test_6_aplica_risco(self):
         if self.http_server is not None:
-            rv = self.app.get('/aplica_risco?&baseid=1&padraoid=1&visaoid=0&\
+            rv = self.app.get('/risco?&baseid=1&padraoid=1&visaoid=0&\
                                &parametroid=24&filename=2018/01/01&\
                                &parametros_ativos=comida',
                               params=dict(csrf_token=self.csrf_token))
         else:
-            rv = self.app.get('/aplica_risco?&filename=2018/01/01&acao=aplicar&baseid=1&padraoid=1&visaoid=0&\
+            rv = self.app.get('/risco?&filename=2018/01/01&acao=aplicar&baseid=1&padraoid=1&visaoid=0&\
                                &parametros_ativos=comida')
         data = self.data(rv)
         assert b'Lista de Riscos da Base None' not in data
@@ -326,12 +326,12 @@ class FlaskTestCase(unittest.TestCase):
     # Excluir
     def test_7_exclui_risco(self):
         if self.http_server is not None:
-            rv = self.app.get('/aplica_risco?&baseid=1&\
+            rv = self.app.get('/risco?&baseid=1&\
                               &filename=2018/01/01&acao=excluir',
                               params=dict(csrf_token=self.csrf_token))
         else:
             rv = self.app.get(
-                '/aplica_risco?&baseid=1&filename=2018/01/01&acao=excluir')
+                '/risco?&baseid=1&filename=2018/01/01&acao=excluir')
         data = self.data(rv)
         assert b'Redirecting...' in data
 
@@ -461,11 +461,11 @@ class FlaskTestCase(unittest.TestCase):
 
     def test_arquivar(self):
         if self.http_server is not None:
-            rv = self.app.get('/aplica_risco?baseid=5&acao=arquivar',
+            rv = self.app.get('/risco?baseid=5&acao=arquivar',
                               params=dict(csrf_token=self.csrf_token))
         else:
             rv = self.app.get(
-                '/aplica_risco?baseid=5&acao=arquivar')
+                '/risco?baseid=5&acao=arquivar')
         data = self.data(rv)
         print(data)
 
