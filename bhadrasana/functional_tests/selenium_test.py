@@ -118,6 +118,7 @@ class LoginPage():
         self.selenium_test.wait_to_be_logged_out()
 
     def preenche_username(self):
+        """Preenche campos tela login."""
         driver = self.selenium_test.driver
         for names in ['username', 'senha']:
             element = driver.find_element_by_name(names)
