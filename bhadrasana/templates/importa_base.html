@@ -8,14 +8,13 @@
             <div class="form-group">
                 <form action="/importa_base" method="post" enctype="multipart/form-data" id="frmrisco">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input id="planilha" name="file" type="file" style="opacity: 0;" onchange="$('#upload-file-info').html(this.files[0].name)" />
                     <h3>
                         <i>Selecione um arquivo no disco local</i>
                     </h3>
-                    <label class="btn btn-default" for="planilhaold">
+                    <label class="btn btn-default" for="planilha">
                         Clique para selecionar planilha
                     </label>
-                    <input id="planilhaold" name="file" type="file" style="display:none" onchange="$('#upload-file-info').html(this.files[0].name)"
-                    />
                     <big>
                         <span class='label label-success' id="upload-file-info"></span>
                     </big>
@@ -46,7 +45,7 @@
                         <input class="form-control" type="date" name="data" id="data"></input>
                     </div>
                     <div class="input-btn">
-                        <input class="btn btn-primary" type="submit" value="Submeter">
+                        <input class="btn btn-primary" name="btnimporta" type="submit" value="Submeter">
                     </div>
                 </form>
             </div>

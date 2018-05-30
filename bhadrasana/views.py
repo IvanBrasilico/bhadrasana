@@ -114,6 +114,7 @@ def importa_base():
         file: arquivo csv, sch+txt, ou conjunto deles em formato zip
     """
     dbsession = app.config.get('dbsession')
+    # print('dbsession', dbsession)
     baseid = request.form.get('baseid')
     data = request.form.get('data')
     if request.method == 'POST':
@@ -194,8 +195,8 @@ def get_planilhas_criadas_agendamento(path):
             if planilha.is_file() and planilha.name.endswith('.csv')]
 
 
+# @app.route('/aplica_risco')
 @app.route('/risco', methods=['POST', 'GET'])
-@app.route('/aplica_risco')
 @login_required
 def risco():
     """Função para aplicar parâmetros de risco em arquivo(s) importados.
@@ -226,7 +227,7 @@ def risco():
     except FileExistsError:
         pass
     total_linhas = 0
-    path = request.args.get('filename')
+    path = request.args.get('filename', '')
     acao = request.args.get('acao')
     baseid = request.args.get('baseid', '0')
     padraoid = request.args.get('padraoid', '0')
@@ -303,6 +304,7 @@ def risco():
             avisao = dbsession.query(Visao).filter(
                 Visao.id == visaoid).one()
         if acao == 'mongo':
+            path = 'Arquivo ' + abase.nome if abase else base_csv
             if padrao:
                 gerente.set_padraorisco(padrao)
             if visaoid == '0':
@@ -1086,8 +1088,8 @@ def mynavbar():
              View('Importar Base', 'importa_base'),
              View('Aplicar Risco', 'risco'),
              View('Editar Riscos', 'edita_risco'),
-             View('Editar Titulos', 'edita_depara'),
              View('Editar Visão', 'juncoes'),
+             View('Editar Titulos', 'edita_depara'),
              # View('Navega Bases', 'navega_bases')
              ]
     if current_user.is_authenticated:

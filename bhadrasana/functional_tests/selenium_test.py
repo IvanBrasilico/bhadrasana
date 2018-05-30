@@ -7,12 +7,17 @@ A classe SeleniumTestCase implementa um Servidor de Testes
 para utilização e métodos reutilizáveis para os testes de cada
 História de Usuário
 
+Classe LoginPage pode ser herdada para efetuar login em outros testes.
+
+Função para criação de uma base de testes
+
 Obs:
 
 tox precisa ser configurado com passenv = * para selenium funcionar no venv tox
 """
 import time
 
+from flask import url_for
 from flask_testing import LiveServerTestCase
 from pymongo import MongoClient
 from selenium import webdriver
@@ -59,6 +64,8 @@ def wait(function):
 
 def create_base_testes(dbsession):
     """Cria base para testes funcionais."""
+    # print('Iniciando criação da base #############################')
+    # print('dbsession', dbsession)
     base1 = BaseOrigem('alimentos_e_esportes')
     dbsession.add(base1)
     dbsession.commit()
@@ -85,6 +92,34 @@ def create_base_testes(dbsession):
     dbsession.add(tabela2)
     dbsession.add(tabela3)
     dbsession.commit()
+    # print('Base criada! ########################')
+
+
+class LoginPage():
+    """Disponibiliza métodos de Login."""
+
+    def __init__(self, selenium_test):
+        self.selenium_test = selenium_test
+
+    def login(self):
+        driver = self.selenium_test.driver
+        driver.get(self.selenium_test.get_server_url())
+        self.selenium_test.wait_fn(self.preenche_username)
+        driver.find_element_by_id('btnlogin').click()
+        self.selenium_test.wait_to_be_logged_in()
+
+    def logout(self):
+        driver = self.selenium_test.driver
+        assert url_for('index') in driver.current_url
+        driver.find_element_by_link_text('Sair').click()
+        self.selenium_test.wait_to_be_logged_out()
+
+    def preenche_username(self):
+        driver = self.selenium_test.driver
+        for names in ['username', 'senha']:
+            element = driver.find_element_by_name(names)
+            assert element is not None
+            element.send_keys('ajna')
 
 
 class SeleniumTestCase(LiveServerTestCase):
@@ -101,6 +136,9 @@ class SeleniumTestCase(LiveServerTestCase):
         mysession = MySession(Base, test=True)
         self.dbsession = mysession.session
         self.engine = mysession.engine
+        # print('####################################### CREATE DATABASE')
+        Base.metadata.create_all(self.engine)
+        create_base_testes(self.dbsession)
         conn = MongoClient(host=MONGODB_URI)
         self.mongodb = conn[DATABASE]
         app = AppSingleTon.create(self.dbsession, self.mongodb)
@@ -111,24 +149,31 @@ class SeleniumTestCase(LiveServerTestCase):
         return app
 
     def create_database(self):
-        """Inicializa BD."""
-        Base.metadata.create_all(self.engine)
-        create_base_testes(self.dbsession)
+        """Inicializa BD. Está sendo criado em create_app."""
+        # Base.metadata.create_all(self.engine)
+        # create_base_testes(self.dbsession)
+        # pass
+        # print('############################################ create_database')
 
     def drop_database(self):
         """**APAGA*** BD."""
-        Base.metadata.drop_all(self.engine)
+        # print('########################################### DROP DATABASE')
+        # Base.metadata.drop_all(self.engine)
 
     def setUp(self):
         """Inicializa objetos."""
-        self.create_database()
+        # print('Chamou Setup ##################')
         try:
             self.driver = webdriver.Firefox()
         except Exception as err:
             print(err)
+        self.login_page = LoginPage(self)
+        self.login_page.login()
 
     def tearDown(self):
         """Limpa ambiente."""
+        # print('Chamou tearDown ###################')
+        self.login_page.logout()
         self.drop_database()
         self.driver.close()
 
