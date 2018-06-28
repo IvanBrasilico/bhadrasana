@@ -597,15 +597,16 @@ class GerenteRisco():
         lista_csv = []
         cabecalhos = []
         cabecalhos_nao_repetidos = set()
+        print('caminho........', path)
         caminho = os.path.join(path, str(baseorigemid))
         if not os.path.isdir(caminho):
             return set()
-        # Procura ano, depois mes, depois dia, vai adicionando no caminho
         for r in range(3):
             ano_mes_dia = sorted(os.listdir(caminho))
             if len(ano_mes_dia) == 0:
-                break
+                return set()
             caminho = os.path.join(caminho, ano_mes_dia[-1])
+            print(caminho)
         for arquivo in os.listdir(caminho):
             lista_csv.append(arquivo[:-4])
             with open(os.path.join(caminho, arquivo),
@@ -615,8 +616,7 @@ class GerenteRisco():
                 cabecalhos.extend(cabecalho)
         for word in cabecalhos:
             new_word = sanitizar(word, norm_function=unicode_sanitizar)
-            if new_word not in cabecalhos_nao_repetidos:
-                cabecalhos_nao_repetidos.add(new_word)
+            cabecalhos_nao_repetidos.add(new_word)
         if csvs:
             return lista_csv
         return cabecalhos_nao_repetidos

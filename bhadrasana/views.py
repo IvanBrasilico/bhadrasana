@@ -95,6 +95,119 @@ def index():
         return redirect(url_for('login'))
 
 
+@app.route('/adiciona_base/<nome>')
+@login_required
+def adiciona_base(nome):
+    """Cria nova instância de Base Origem com o nome passado."""
+    dbsession = app.config.get('dbsession')
+    logger.debug(nome)
+    nova_base = BaseOrigem(nome)
+    dbsession.add(nova_base)
+    dbsession.commit()
+    baseid = nova_base.id
+    return redirect(url_for('importa_base', baseid=baseid))
+
+
+@app.route('/edita_depara')
+@login_required
+def edita_depara():
+    """Tela para configurar os titulos das bases a serem importadas.
+
+    Args:
+        baseid: ID da Base de Origem do arquivo
+    """
+    dbsession = app.config.get('dbsession')
+    baseid = request.args.get('baseid')
+    bases = dbsession.query(BaseOrigem).all()
+    titulos = []
+    headers1 = []
+    headers2 = []
+    user_folder = os.path.join(CSV_FOLDER, current_user.name)
+    print('USER', current_user.name)
+    if baseid:
+        base = dbsession.query(BaseOrigem).filter(
+            BaseOrigem.id == baseid
+        ).first()
+        if base:
+            titulos = base.deparas
+            gerente = GerenteRisco()
+            headers1 = gerente.get_headers_base(
+                baseid, path=user_folder)
+            for padrao_risco in base.padroes:
+                for parametro in padrao_risco.parametros:
+                    headers2.append(parametro.nome_campo)
+            if len(headers1) == 0:
+                flash('Aviso: nenhuma base exemplo ou configuração muda títulos '
+                      'encontrada para sugestão de campo título anterior.')
+            if len(headers2) == 0:
+                flash('Aviso: nenhum parâmetro de risco '
+                      'encontrado para sugestão de campo título novo.')
+    return render_template('muda_titulos.html', bases=bases,
+                           baseid=baseid,
+                           titulos=titulos,
+                           lista_autocomplete1=headers1,
+                           lista_autocomplete2=headers2)
+
+
+@app.route('/adiciona_depara')
+def adiciona_depara():
+    """De_para - troca títulos.
+
+    Função que permite unificar o nome de colunas que possuem o mesmo
+    conteúdo.
+
+    Esta função realiza a troca do titulo de uma coluna por outro, permitindo
+    que duas colunas que tragam a mesma informação em bases diferentes sejam
+    filtradas por um único parâmetro de risco.
+
+    Args:
+        baseid: ID da Base de Origem do arquivo
+
+        titulo_antigo: Titulo original da base a ser importada
+
+        titulo_novo: Titulo unificado
+    """
+    dbsession = app.config.get('dbsession')
+    baseid = request.args.get('baseid')
+    padraoid = request.args.get('padraoid')
+    titulo_antigo = sanitizar(request.args.get('antigo'),
+                              norm_function=unicode_sanitizar)
+    titulo_novo = sanitizar(request.args.get('novo'),
+                            norm_function=unicode_sanitizar)
+    if baseid:
+        base = dbsession.query(BaseOrigem).filter(
+            BaseOrigem.id == baseid
+        ).first()
+        depara = DePara(titulo_antigo, titulo_novo, base)
+        dbsession.add(depara)
+        dbsession.commit()
+    return redirect(url_for('edita_depara', baseid=baseid,
+                            padraoid=padraoid))
+
+
+@app.route('/exclui_depara')
+def exclui_depara():
+    """Função que remove a troca de titulo selecionada.
+
+    Esta função permite unificar o nome de colunas que possuem o mesmo
+    conteúdo.
+
+    Args:
+        baseid: ID da Base de Origem do arquivo
+
+        tituloid: ID do titulo a ser excluído
+    """
+    dbsession = app.config.get('dbsession')
+    baseid = request.args.get('baseid')
+    padraoid = request.args.get('padraoid')
+    tituloid = request.args.get('tituloid')
+    dbsession.query(DePara).filter(
+        DePara.id == tituloid).delete()
+    dbsession.commit()
+    return redirect(url_for('edita_depara', baseid=baseid,
+                            padraoid=padraoid))
+
+
 @app.route('/importa_base', methods=['GET', 'POST'])
 @login_required
 def importa_base():
@@ -174,19 +287,6 @@ def task_progress(taskid):
     return jsonify(response)
 
 
-@app.route('/adiciona_base/<nome>')
-@login_required
-def adiciona_base(nome):
-    """Cria nova instância de Base Origem com o nome passado."""
-    dbsession = app.config.get('dbsession')
-    logger.debug(nome)
-    nova_base = BaseOrigem(nome)
-    dbsession.add(nova_base)
-    dbsession.commit()
-    baseid = nova_base.id
-    return redirect(url_for('importa_base', baseid=baseid))
-
-
 def get_planilhas_criadas_agendamento(path):
     """Lê o diretório e retorna nomes de arquivos .csv."""
     if not path:
@@ -195,7 +295,6 @@ def get_planilhas_criadas_agendamento(path):
             if planilha.is_file() and planilha.name.endswith('.csv')]
 
 
-# @app.route('/aplica_risco')
 @app.route('/risco', methods=['POST', 'GET'])
 @login_required
 def risco():
@@ -660,110 +759,6 @@ def exclui_valor():
     dbsession.commit()
     return redirect(url_for('edita_risco', padraoid=padraoid,
                             riscoid=riscoid))
-
-
-@app.route('/edita_depara')
-@login_required
-def edita_depara():
-    """Tela para configurar os titulos das bases a serem importadas.
-
-    Args:
-        baseid: ID da Base de Origem do arquivo
-
-        padraoid: ID do padrão de risco
-    """
-    dbsession = app.config.get('dbsession')
-    baseid = request.args.get('baseid')
-    padraoid = request.args.get('padraoid')
-    bases = dbsession.query(BaseOrigem).all()
-    padroes = dbsession.query(PadraoRisco).all()
-    titulos = []
-    headers = []
-    if baseid:
-        base = dbsession.query(BaseOrigem).filter(
-            BaseOrigem.id == baseid
-        ).first()
-        if base:
-            titulos = base.deparas
-        try:
-            padroes_risco = dbsession.query(ParametroRisco).filter(
-                ParametroRisco.padraorisco_id == padraoid).all()
-            headers = [head.nome_campo for head in padroes_risco]
-            print(headers)
-        except SemHeaders as err:
-            flash('Aviso: nenhuma base exemplo ou configuração muda títulos '
-                  'encontrada para sugestão de campo parâmetro.')
-    return render_template('muda_titulos.html', bases=bases,
-                           padroes=padroes,
-                           baseid=baseid,
-                           padraoid=padraoid,
-                           titulos=titulos,
-                           lista_autocomplete=headers)
-
-
-@app.route('/adiciona_depara')
-def adiciona_depara():
-    """De_para - troca títulos.
-
-    Função que permite unificar o nome de colunas que possuem o mesmo
-    conteúdo.
-
-    Esta função realiza a troca do titulo de uma coluna por outro, permitindo
-    que duas colunas que tragam a mesma informação em bases diferentes sejam
-    filtradas por um único parâmetro de risco.
-
-    Args:
-        baseid: ID da Base de Origem do arquivo
-
-        titulo_antigo: Titulo original da base a ser importada
-
-        titulo_novo: Titulo unificado
-    """
-    dbsession = app.config.get('dbsession')
-    baseid = request.args.get('baseid')
-    padraoid = request.args.get('padraoid')
-    print('########################################################3')
-    print('########################################################3')
-    print('########################################################3')
-    print('########################################################3')
-    print('########################################################3')
-    print('########################################################3')
-    titulo_antigo = sanitizar(request.args.get('antigo'),
-                              norm_function=unicode_sanitizar)
-    titulo_novo = sanitizar(request.args.get('novo'),
-                            norm_function=unicode_sanitizar)
-    if baseid:
-        base = dbsession.query(BaseOrigem).filter(
-            BaseOrigem.id == baseid
-        ).first()
-        depara = DePara(titulo_antigo, titulo_novo, base)
-        dbsession.add(depara)
-        dbsession.commit()
-    return redirect(url_for('edita_depara', baseid=baseid,
-                            padraoid=padraoid))
-
-
-@app.route('/exclui_depara')
-def exclui_depara():
-    """Função que remove a troca de titulo selecionada.
-
-    Esta função permite unificar o nome de colunas que possuem o mesmo
-    conteúdo.
-
-    Args:
-        baseid: ID da Base de Origem do arquivo
-
-        tituloid: ID do titulo a ser excluído
-    """
-    dbsession = app.config.get('dbsession')
-    baseid = request.args.get('baseid')
-    padraoid = request.args.get('padraoid')
-    tituloid = request.args.get('tituloid')
-    dbsession.query(DePara).filter(
-        DePara.id == tituloid).delete()
-    dbsession.commit()
-    return redirect(url_for('edita_depara', baseid=baseid,
-                            padraoid=padraoid))
 
 
 @app.route('/navega_bases')
