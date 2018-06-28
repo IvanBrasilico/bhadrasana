@@ -42,7 +42,8 @@ from bhadrasana.models.models import (BaseOrigem, Coluna, DePara, PadraoRisco,
                                       ParametroRisco, Tabela, ValorParametro,
                                       Visao)
 from bhadrasana.utils.gerente_base import Filtro, GerenteBase
-from bhadrasana.utils.gerente_risco import GerenteRisco, SemHeaders, tmpdir
+from bhadrasana.utils.gerente_risco import (ESemValorParametro, GerenteRisco,
+                                            SemHeaders, tmpdir)
 from bhadrasana.workers.tasks import (aplicar_risco, arquiva_base_csv,
                                       importar_base)
 
@@ -150,6 +151,7 @@ def edita_depara():
 
 
 @app.route('/adiciona_depara')
+@login_required
 def adiciona_depara():
     """De_para - troca títulos.
 
@@ -664,10 +666,12 @@ def importa_csv(padraoid, riscoid):
         if (csvf and '.' in csvf.filename and
                 csvf.filename.rsplit('.', 1)[1].lower() == 'csv'):
             # filename = secure_filename(csvf.filename)
-            csvf.save(os.path.join(tmpdir, risco.nome_campo + '.csv'))
-            logger.info(csvf.filename)
+            save_name = os.path.join(tmpdir, risco.nome_campo + '.csv')
+            csvf.save(save_name)
+            logger.info('CSV RECEBIDO: %s' % save_name)
             gerente = GerenteRisco()
             gerente.parametros_fromcsv(risco.nome_campo, session=dbsession)
+            logger.info('TESTE: %s %s' % (risco.nome_campo, dbsession))
     return redirect(url_for('edita_risco', padraoid=padraoid,
                             riscoid=riscoid))
 
@@ -689,12 +693,22 @@ def exporta_csv():
     padraoid = request.args.get('padraoid')
     riscoid = request.args.get('riscoid')
     gerente = GerenteRisco()
-    gerente.parametro_tocsv(riscoid, path=CSV_DOWNLOAD, dbsession=dbsession)
+    static_path = os.path.join(APP_PATH,
+                               app.config.get('STATIC_FOLDER', 'static'),
+                               current_user.name)
+    try:
+        filename = gerente.parametro_tocsv(
+            riscoid, path=static_path, dbsession=dbsession)
+        web_filename = filename.split('/')[-1]
+        return redirect('/static/%s/%s' % (current_user.name, web_filename))
+    except ESemValorParametro as err:
+        flash(str(err))
     return redirect(url_for('edita_risco', padraoid=padraoid,
                             riscoid=riscoid))
 
 
 @app.route('/adiciona_parametro')
+@login_required
 def adiciona_parametro():
     """Função que adiciona um novo parâmetro de risco.
 
@@ -748,6 +762,7 @@ def exclui_parametro():
 
 
 @app.route('/adiciona_valor')
+@login_required
 def adiciona_valor():
     """Função que adiciona um novo valor ao parâmetro de risco selecionado.
 
@@ -826,6 +841,7 @@ def navega_bases():
 
 
 @app.route('/adiciona_filtro')
+@login_required
 def adiciona_filtro():
     """Incluir Filtro. Deprecated."""
     selected_module = request.args.get('selected_module')
@@ -981,6 +997,7 @@ def juncoes():
 
 
 @app.route('/adiciona_visao')
+@login_required
 def adiciona_visao():
     """Função que permite a criação de um novo objeto Visão.
 
@@ -1024,6 +1041,7 @@ def exclui_visao():
 
 
 @app.route('/adiciona_coluna')
+@login_required
 def adiciona_coluna():
     """Função inserir uma coluna ao objeto Visão.
 
@@ -1065,6 +1083,7 @@ def exclui_coluna():
 
 
 @app.route('/adiciona_tabela')
+@login_required
 def adiciona_tabela():
     """Função para inserir uma tabela ao objeto Visão.
 

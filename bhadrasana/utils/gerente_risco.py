@@ -32,6 +32,12 @@ class SemHeaders(Exception):
     pass
 
 
+class ESemValorParametro(Exception):
+    """Exceção personalizada."""
+
+    pass
+
+
 def equality(listaoriginal, nomecampo, listavalores):
     """Realiza a filtragem dos riscos nas listas.
 
@@ -450,7 +456,8 @@ class GerenteRisco():
             if risco:
                 campo = risco.nome_campo
             if risco_all is None and dict_filtros is None:
-                return False
+                raise ESemValorParametro(
+                    'Não há valores de parâmetro de risco a exportar')
             for valor in risco_all:
                 filtro = str(valor.tipo_filtro)
                 lista.append((valor.valor, filtro[filtro.find('.') + 1:]))
@@ -508,12 +515,14 @@ class GerenteRisco():
             O arquivo .csv ou a lista DEVEM estar no formato valor, tipo_filtro
 
         """
+        logger.debug('CSV recebido')
         if not lista:
             with open(os.path.join(path, campo + '.csv'),
                       'r', encoding=ENCODE, newline='') as f:
                 reader = csv.reader(f)
                 next(reader)
                 lista = [linha for linha in reader]
+        logger.debug('CSV lido com %s linhas' % len(lista))
         if session:
             parametro = session.query(ParametroRisco).filter(
                 ParametroRisco.nome_campo == campo).first()
@@ -521,6 +530,7 @@ class GerenteRisco():
                 parametro = ParametroRisco(campo, padraorisco=padraorisco)
                 session.add(parametro)
                 session.commit()
+            logger.debug('Salvando csv em %s' % parametro)
             for linha in lista:
                 if parametro.id:
                     if len(linha) == 1:
