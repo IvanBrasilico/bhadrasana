@@ -735,7 +735,7 @@ class GerenteRisco():
             if collection_name not in db.collection_names():
                 db.create_collection(collection_name)
             # TODO: Estudar possibilidade de evitar inserções duplicadas,
-            # em caso de evidência de inseração duplicada fazer upsert
+            # em caso de evidência de inserção duplicada fazer upsert
             # É complicado, pois é necessário ter a metadata de cada tabela,
             # isto é, o campo que será considerado 'chave' para a inserção ou
             # update

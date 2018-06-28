@@ -33,9 +33,6 @@ class FlaskTestCase(unittest.TestCase):
         # Ativar esta variável de ambiente na inicialização
         # do Servidor WEB para transformar em teste de integração
         self.http_server = os.environ.get('HTTP_SERVER')
-        # TODO: Pesquisar método para testar mesmo com CSRF habilitado
-        # https://gist.github.com/singingwolfboy/2fca1de64950d5dfed72
-
         self.dbsession = dbsession
         self.engine = engine
         if self.http_server is not None:
@@ -43,23 +40,34 @@ class FlaskTestCase(unittest.TestCase):
             self.app = TestApp(self.http_server)
         else:
             app.testing = True
-            app.config['WTF_CSRF_ENABLED'] = False
+            # app.config['WTF_CSRF_ENABLED'] = False
             self.app = app.test_client()
-        rv = self.login('dummy', 'dummy')
-        assert rv is not None
 
     def tearDown(self):
         pass
 
-    def login(self, username, senha):
+    def get_token(self, url):
         if self.http_server is not None:
-            # First, get the CSRF Token
-            response = self.app.get('/login')
+            response = self.app.get(url)
             self.csrf_token = str(response.html.find_all(
                 attrs={'name': 'csrf_token'})[0])
             begin = self.csrf_token.find('value="') + 7
             end = self.csrf_token.find('"/>')
             self.csrf_token = self.csrf_token[begin: end]
+        else:
+            response = self.app.get(url)
+            csrf_token = response.data.decode()
+            begin = csrf_token.find('csrf_token"') + 10
+            end = csrf_token.find('username"') - 10
+            csrf_token = csrf_token[begin: end]
+            begin = csrf_token.find('value="') + 7
+            end = csrf_token.find('/>')
+            self.csrf_token = csrf_token[begin: end]
+            return self.csrf_token
+
+    def login(self, username, senha):
+        self.get_token('/login')
+        if self.http_server is not None:
             response = self.app.post('/login',
                                      params=dict(
                                          username=username,
@@ -70,13 +78,13 @@ class FlaskTestCase(unittest.TestCase):
         else:
             return self.app.post('/login', data=dict(
                 username=username,
-                senha=senha
+                senha=senha,
+                csrf_token=self.csrf_token
             ), follow_redirects=True)
 
     def logout(self):
         if self.http_server is not None:
-            return self.app.get('/logout',
-                                params=dict(csrf_token=self.csrf_token))
+            return self.app.get('/logout')
         else:
             return self.app.get('/logout', follow_redirects=True)
 
@@ -87,12 +95,21 @@ class FlaskTestCase(unittest.TestCase):
         return rv.data
 
     def _post(self, url, data, follow_redirects=True):
+        self.get_token(url)
+        data['csrf_token'] = self.csrf_token
         if self.http_server is not None:
-            data['csrf_token'] = self.csrf_token
             rv = self.app.post(url, params=data)
         else:
             rv = self.app.post(url, data=data,
                                follow_redirects=follow_redirects)
+        return rv
+
+    def _get(self, url, follow_redirects=True):
+        if self.http_server is not None:
+            rv = self.app.get(url)
+        else:
+            rv = self.app.get(url,
+                              follow_redirects=follow_redirects)
         return rv
 
     def _paramid(self, nome):
@@ -149,34 +166,39 @@ class FlaskTestCase(unittest.TestCase):
 
     # GET
     def test_1_home(self):
-        if self.http_server is not None:
-            rv = self.app.get('/',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/')
+        rv = self._get('/', follow_redirects=True)
         data = self.data(rv)
+        assert b'AJNA' in data
+        assert b'input type="password"' in data
+        self.login('ajna', 'ajna')
+        rv = self._get('/', follow_redirects=True)
+        data = self.data(rv)
+        assert b'input type="password"' not in data
         assert b'AJNA' in data
 
     def test_1_0_adicionabase(self):
-        if self.http_server is not None:
-            rv = self.app.get('/adiciona_base/baseteste',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/adiciona_base/baseteste')
+        rv = self._get('/adiciona_base/baseteste',
+                       follow_redirects=True)
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        assert b'input type="password"' in data
+        self.login('ajna', 'ajna')
+        rv = self._get('/adiciona_base/baseteste',
+                       follow_redirects=True)
+        data = self.data(rv)
+        assert b'baseteste' in data
 
-    # GET
     def test_1_1_editadepara(self):
-        if self.http_server is not None:
-            rv = self.app.get('/edita_depara?baseid=1',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/edita_depara?baseid=1')
+        rv = self._get('/edita_depara?baseid=1',
+                       follow_redirects=True)
+        data = self.data(rv)
+        assert b'input type="password"' in data
+        self.login('ajna', 'ajna')
+        rv = self._get('/edita_depara?baseid=1')
         data = self.data(rv)
         print(data)
-        assert b'AJNA' in data
+        assert False
 
+    """
     def test_1_2_adicionadepara(self):
         if self.http_server is not None:
             rv = self.app.get(
@@ -375,6 +397,7 @@ class FlaskTestCase(unittest.TestCase):
         assert b'Redirecting...' in data
 
     """
+
     def test_b_excluiparametros(self):
         self._excluiparametros()
     """
@@ -592,3 +615,4 @@ class FlaskTestCase(unittest.TestCase):
                               &selected_field=Escala')
         data = self.data(rv)
         assert b'AJNA' in data
+    """
