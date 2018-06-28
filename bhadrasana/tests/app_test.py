@@ -44,6 +44,7 @@ class FlaskTestCase(unittest.TestCase):
             self.app = app.test_client()
 
     def tearDown(self):
+        self.logout()
         pass
 
     def get_token(self, url):
@@ -187,99 +188,123 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         assert b'baseteste' in data
 
-    def test_1_1_editadepara(self):
-        rv = self._get('/edita_depara?baseid=1',
-                       follow_redirects=True)
-        data = self.data(rv)
-        assert b'input type="password"' in data
+    def test_1_1_0_editadepara(self):
         self.login('ajna', 'ajna')
         rv = self._get('/edita_depara?baseid=1')
         data = self.data(rv)
-        print(data)
-        assert False
+        assert b'baseteste' in data
 
-    """
-    def test_1_2_adicionadepara(self):
-        if self.http_server is not None:
-            rv = self.app.get(
-                '/adiciona_depara?baseid=1&\
-                &antigo=iguaria&novo=alimento',
-                params=dict(csrf_token=self.csrf_token)
-            )
-        else:
-            rv = self.app.get(
-                '/adiciona_depara?baseid=1&antigo=iguaria&novo=alimento'
-            )
+    def test_1_1_2_adicionadepara(self):
+        self.login('ajna', 'ajna')
+        rv = self._get(
+            '/adiciona_depara?baseid=1&antigo=iguaria&novo=alimento'
+        )
         data = self.data(rv)
-        print(data)
-        assert b'Redirecting...' in data
+        assert b'iguaria' in data
 
-    # GET
+    def test_1_1_3_excluidepara(self):
+        self.login('ajna', 'ajna')
+        rv = self._get(
+            '/exclui_depara?=tituloid=1'
+        )
+        data = self.data(rv)
+        assert b'iguaria' not in data
+
     def test_2_importabase(self):
-        if self.http_server is not None:
-            rv = self.app.get('/importa_base',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/importa_base?baseid=1')
+        self.login('ajna', 'ajna')
+        rv = self._get(
+            '/importa_base?baseid=1'
+        )
         data = self.data(rv)
         assert b'AJNA' in data
+        assert b'Submeter' in data
 
-    def test_2_1_upload(self):
+    def test_2_1_importabase_upload(self):
         file = {
             'file':
                 (BytesIO(b'iguaria, esporte\n temaki, corrida'),
                  'plan_test.csv'),
-            'baseid': '4',
+            'baseid': '1',
             'data': '2018-01-01'
         }
+        self.login('ajna', 'ajna')
         rv = self._post('/importa_base', data=file, follow_redirects=True
                         )
         data = self.data(rv)
-        assert b'clicar em submeter!' not in data
-        # assert b'Escolha Base' in data
+        assert b'Submeter' not in data
+        assert b'Informe uma base' not in data
 
-    def test_1_01_adicionapadraorisco(self):
-        if self.http_server is not None:
-            rv = self.app.get('/adiciona_padrao/padraoteste',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/adiciona_padrao/padraoteste')
+    def test_2_1_importabase_nofile(self):
+        nofile = {
+            'baseid': '1',
+            'data': '2018-01-01'
+        }
+        self.login('ajna', 'ajna')
+        rv = self._post('/importa_base', data=nofile, follow_redirects=True
+                        )
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        assert b'Submeter' in data
+        assert b'Selecionar arquivo' in data
 
-    # GET
-    def test_4_risco(self):
-        if self.http_server is not None:
-            rv = self.app.get('/risco?baseid=1',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/risco?baseid=1')
+    def test_2_1_importabase_wrongbase(self):
+        wrongbase = {
+            'file':
+                (BytesIO(b'iguaria, esporte\n temaki, corrida'),
+                 'plan_test.csv'),
+            'baseid': '1000',
+            'data': '2018-01-01'
+        }
+        self.login('ajna', 'ajna')
+        rv = self._post('/importa_base', data=wrongbase, follow_redirects=True
+                        )
         data = self.data(rv)
-        assert b'Lista de Riscos' in data
+        print(data)
+        assert b'Submeter' in data
+        assert b'Informe uma base' in data
+
+    def test_3_1_adicionapadraorisco(self):
+        self.login('ajna', 'ajna')
+        rv = self._get('/adiciona_padrao/padraoteste')
+        data = self.data(rv)
+        print(data)
+        assert b'padraoteste' in data
+
+    def test_3_2_padraorisco_vinculabase(self):
+        self.login('ajna', 'ajna')
+        rv = self._get(
+            '/vincula_base?padraoid=1&baseid=1',
+            follow_redirects=True)
+        data = self.data(rv)
+        print(data)
+        assert b'baseteste' in data
+
+    def test_3_3_padraorisco_excluibase(self):
+        self.login('ajna', 'ajna')
+        rv = self._get(
+            '/vincula_base?padraoid=1&baseid=1',
+            follow_redirects=True)
+        rv = self._get(
+            '/vincula_base?padraoid=1&baseid=1',
+            follow_redirects=True)
+        data = self.data(rv)
+        print(data)
+        assert b'"center">baseteste' in data
 
     def test_4_1_adicionaparametro(self):
-        if self.http_server is not None:
-            rv = self.app.get('/adiciona_parametro?padraoid=1&\
-                              &risco_novo=comida',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get(
-                '/adiciona_parametro?padraoid=1&risco_novo=comida')
+        self.login('ajna', 'ajna')
+        rv = self._get(
+            '/adiciona_parametro?padraoid=1&risco_novo=comida')
         data = self.data(rv)
         assert b'Redirecting...' in data
 
     def test_4_2_editarisco(self):
         param_id = self._paramid('comida')
-        if self.http_server is not None:
-            rv = self.app.get('/edita_risco?padraoid=1&riscoid=' +
-                              param_id,
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/edita_risco?padraoid=1&riscoid=' +
-                              param_id)
+        self.login('ajna', 'ajna')
+        rv = self._get('/edita_risco?padraoid=1&riscoid=' +
+                       param_id)
         data = self.data(rv)
         assert b'AJNA' in data
-
+    """
     def test_4_3_adicionavalor(self):
         param_id = self._paramid('comida')
         if self.http_server is not None:

@@ -523,8 +523,10 @@ def edita_risco():
 
         riscoid: ID do objeto de risco para aplicar a edição
     """
+    user_folder = os.path.join(CSV_FOLDER, current_user.name)
     dbsession = app.config.get('dbsession')
     padraoid = request.args.get('padraoid')
+    baseid = request.args.get('baseid')
     padroes = dbsession.query(PadraoRisco).order_by(PadraoRisco.nome).all()
     bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
     parametros = []
@@ -534,8 +536,8 @@ def edita_risco():
         padrao = dbsession.query(PadraoRisco).filter(
             PadraoRisco.id == padraoid
         ).first()
-        basesid = padrao.bases
         if padrao:
+            basesid = padrao.bases
             parametros = padrao.parametros
     riscoid = request.args.get('riscoid')
     valores = []
@@ -553,7 +555,7 @@ def edita_risco():
             logger.debug(base)
             base_id = base.id
             headers = gerente.get_headers_base(
-                base_id, path=CSV_FOLDER)
+                base_id, path=user_folder)
             headers = list(headers)
             base_headers = [depara.titulo_novo for depara in
                             dbsession.query(DePara).filter(
@@ -568,6 +570,7 @@ def edita_risco():
         logger.debug(headers)
     return render_template('edita_risco.html',
                            padraoid=padraoid,
+                           baseid=baseid,
                            padroes=padroes,
                            bases=bases,
                            basesid=basesid,
@@ -592,6 +595,40 @@ def adiciona_padrao(nome):
     dbsession.commit()
     padraoid = novo_padrao.id
     return redirect(url_for('edita_risco', padraoid=padraoid))
+
+
+@app.route('/vincula_base')
+@login_required
+def vincula_base():
+    """Função que vincula padrão de riscos e base origem.
+
+    Args:
+        padraoid: ID do padrão a ser atualizado
+        baseid: ID da base a vincular
+    """
+    dbsession = app.config.get('dbsession')
+    padraoid = request.args.get('padraoid')
+    baseid = request.args.get('baseid')
+    padrao = dbsession.query(PadraoRisco).filter(
+        PadraoRisco.id == padraoid
+    ).first()
+    if padrao == None:
+        flash('PadraoRisco %s não encontrada ' % padraoid)
+    base = dbsession.query(BaseOrigem).filter(
+        BaseOrigem.id == baseid
+    ).first()
+    if base == None:
+        flash('Base %s não encontrada ' % baseid)
+    if base and padrao:
+        if base not in padrao.bases:
+            padrao.bases.append(base)
+        else:
+            padrao.bases.remove(base)
+        dbsession.merge(padrao)
+        dbsession.commit()
+    return redirect(url_for('edita_risco',
+                            padraoid=padraoid,
+                            baseid=baseid))
 
 
 @app.route('/importa_csv/<padraoid>/<riscoid>', methods=['POST', 'GET'])
@@ -910,6 +947,7 @@ def juncoes():
         visaoid: ID objeto de Banco de Dados que espeficica as configurações
         (metadados) da base
     """
+    user_folder = os.path.join(CSV_FOLDER, current_user.name)
     dbsession = app.config.get('dbsession')
     baseid = request.args.get('baseid')
     visaoid = request.args.get('visaoid')
@@ -921,8 +959,8 @@ def juncoes():
     arquivos = []
     if baseid:
         gerente = GerenteRisco()
-        arquivos = gerente.get_headers_base(baseid, CSV_FOLDER, csvs=True)
-        headers = gerente.get_headers_base(baseid, CSV_FOLDER)
+        arquivos = gerente.get_headers_base(baseid, user_folder, csvs=True)
+        headers = gerente.get_headers_base(baseid, user_folder)
         list(headers)
     if visaoid:
         tabelas = dbsession.query(Tabela).filter(
