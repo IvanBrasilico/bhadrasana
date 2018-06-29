@@ -37,13 +37,13 @@ import ajna_commons.flask.login as login_ajna
 from ajna_commons.flask.conf import ALLOWED_EXTENSIONS, SECRET, logo
 from ajna_commons.flask.log import logger
 from ajna_commons.utils.sanitiza import sanitizar, unicode_sanitizar
-from bhadrasana.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER
+from bhadrasana.conf import APP_PATH, CSV_FOLDER
 from bhadrasana.models.models import (BaseOrigem, Coluna, DePara, PadraoRisco,
                                       ParametroRisco, Tabela, ValorParametro,
                                       Visao)
 from bhadrasana.utils.gerente_base import Filtro, GerenteBase
 from bhadrasana.utils.gerente_risco import (ESemValorParametro, GerenteRisco,
-                                            SemHeaders, tmpdir)
+                                            tmpdir)
 from bhadrasana.workers.tasks import (aplicar_risco, arquiva_base_csv,
                                       importar_base)
 
@@ -138,8 +138,9 @@ def edita_depara():
                 for parametro in padrao_risco.parametros:
                     headers2.append(parametro.nome_campo)
             if len(headers1) == 0:
-                flash('Aviso: nenhuma base exemplo ou configuração muda títulos '
-                      'encontrada para sugestão de campo título anterior.')
+                flash('Aviso: nenhuma base exemplo ou configuração muda '
+                      'títulos encontrada para sugestão de campo título '
+                      'anterior.')
             if len(headers2) == 0:
                 flash('Aviso: nenhum parâmetro de risco '
                       'encontrado para sugestão de campo título novo.')
@@ -614,12 +615,12 @@ def vincula_base():
     padrao = dbsession.query(PadraoRisco).filter(
         PadraoRisco.id == padraoid
     ).first()
-    if padrao == None:
+    if padrao is None:
         flash('PadraoRisco %s não encontrada ' % padraoid)
     base = dbsession.query(BaseOrigem).filter(
         BaseOrigem.id == baseid
     ).first()
-    if base == None:
+    if base is None:
         flash('Base %s não encontrada ' % baseid)
     if base and padrao:
         if base not in padrao.bases:
@@ -811,71 +812,6 @@ def exclui_valor():
     dbsession.commit()
     return redirect(url_for('edita_risco', padraoid=padraoid,
                             riscoid=riscoid))
-
-
-@app.route('/navega_bases')
-@login_required
-def navega_bases():
-    """Navega Bases. Deprecated."""
-    selected_module = request.args.get('selected_module')
-    selected_model = request.args.get('selected_model')
-    selected_field = request.args.get('selected_field')
-    filters = session.get('filters', [])
-    gerente = GerenteBase()
-    list_modulos = gerente.list_modulos
-    list_models = []
-    list_fields = []
-    if selected_module:
-        gerente.set_module(selected_module)
-        list_models = gerente.list_models
-        if selected_model:
-            list_fields = gerente.dict_models[selected_model]['campos']
-    return render_template('navega_bases.html',
-                           selected_module=selected_module,
-                           selected_model=selected_model,
-                           selected_field=selected_field,
-                           filters=filters,
-                           list_modulos=list_modulos,
-                           list_models=list_models,
-                           list_fields=list_fields)
-
-
-@app.route('/adiciona_filtro')
-@login_required
-def adiciona_filtro():
-    """Incluir Filtro. Deprecated."""
-    selected_module = request.args.get('selected_module')
-    selected_model = request.args.get('selected_model')
-    selected_field = request.args.get('selected_field')
-    filters = session.get('filters', [])
-    tipo_filtro = request.args.get('filtro')
-    valor = request.args.get('valor')
-    afilter = Filtro(selected_field, tipo_filtro, valor)
-    filters.append(afilter)
-    session['filters'] = filters
-    return redirect(url_for('navega_bases',
-                            selected_module=selected_module,
-                            selected_model=selected_model,
-                            selected_field=selected_field,
-                            filters=filters))
-
-
-@app.route('/exclui_filtro')
-def exclui_filtro():
-    """Excluir Filtro. Deprecated."""
-    selected_module = request.args.get('selected_module')
-    selected_model = request.args.get('selected_model')
-    selected_field = request.args.get('selected_field')
-    filters = session.get('filters', [])
-    index = request.args.get('index')
-    if filters:
-        filters.pop(int(index))
-    session['filters'] = filters
-    return redirect(url_for('navega_bases',
-                            selected_module=selected_module,
-                            selected_model=selected_model,
-                            selected_field=selected_field,
-                            filters=filters))
 
 
 @app.route('/consulta_bases_executar')
