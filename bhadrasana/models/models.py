@@ -244,9 +244,10 @@ class Visao(Base):
     base = relationship(
         'BaseOrigem', back_populates='visoes')
 
-    def __init__(self, csv):
+    def __init__(self, nome, base_id):
         """Inicializa."""
-        self.csv = csv
+        self.nome = nome
+        self.base_id = base_id
 
 
 class Coluna(Base):

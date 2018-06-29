@@ -179,7 +179,8 @@ class GerenteRisco():
                                  data[:4], data[5:7], data[8:10])
         if os.path.exists(dest_path):
             raise FileExistsError(
-                'Já houve importação de base para os parâmetros informados')
+                'Já houve importação de base para os parâmetros informados' +
+                ' %s ' % dest_path)
         else:
             os.makedirs(dest_path)
         try:

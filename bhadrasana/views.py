@@ -967,28 +967,39 @@ def juncoes():
     dbsession = app.config.get('dbsession')
     baseid = request.args.get('baseid')
     visaoid = request.args.get('visaoid')
+    visao_desc = request.args.get('visao_desc', '')
     bases = dbsession.query(BaseOrigem).all()
-    visoes = dbsession.query(Visao).order_by(Visao.nome).all()
     tabelas = []
     colunas = []
     headers = []
     arquivos = []
+    visoes = []
+    if visaoid:
+        visao = dbsession.query(Visao).filter(
+            Visao.id == visaoid
+        ).first()
+        if visao:
+            tabelas = dbsession.query(Tabela).filter(
+                Tabela.visao_id == visaoid
+            ).all()
+            colunas = dbsession.query(Coluna).filter(
+                Coluna.visao_id == visaoid
+            ).all()
+            baseid = visao.base_id
     if baseid:
+        visoes = dbsession.query(Visao).filter(
+            Visao.base_id == baseid
+        ).order_by(Visao.nome).all()
         gerente = GerenteRisco()
         arquivos = gerente.get_headers_base(baseid, user_folder, csvs=True)
         headers = gerente.get_headers_base(baseid, user_folder)
-        list(headers)
-    if visaoid:
-        tabelas = dbsession.query(Tabela).filter(
-            Tabela.visao_id == visaoid
-        ).all()
-        colunas = dbsession.query(Coluna).filter(
-            Coluna.visao_id == visaoid
-        ).all()
+        print(arquivos)
+        print(headers)
     return render_template('gerencia_juncoes.html',
                            baseid=baseid,
                            bases=bases,
                            visaoid=visaoid,
+                           visao_desc=visao_desc,
                            visoes=visoes,
                            colunas=colunas,
                            tabelas=tabelas,
@@ -1009,17 +1020,34 @@ def adiciona_visao():
     """
     dbsession = app.config.get('dbsession')
     baseid = request.args.get('baseid')
-    visao_novo = request.args.get('visao_novo')
-    visao = Visao(visao_novo)
-    visao.nome = visao_novo
-    dbsession.add(visao)
-    dbsession.commit()
-    visao = dbsession.query(Visao).filter(
-        Visao.nome == visao_novo
+    visao_novo = request.args.get('visao_novo', '')
+    params = {}
+    if not visao_novo:
+        flash('Informar nome da Visão a incluir.')
+    else:
+        params['visao_desc'] = visao_novo
+    base = dbsession.query(BaseOrigem).filter(
+        BaseOrigem.id == baseid
     ).first()
+    if not base:
+        flash('Selecionar Base vinculada à Visão.')
+    else:
+        params['baseid'] = base.id
+    if base and visao_novo:
+        visao = Visao(visao_novo, base.id)
+        dbsession.add(visao)
+        try:
+            dbsession.commit()
+        except Exception as err:
+            flash(str(err))
+            dbsession.rollback()
+        visao = dbsession.query(Visao).filter(
+            Visao.nome == visao_novo
+        ).first()
+        if visao:
+            params['visaoid'] = visao.id
     return redirect(url_for('juncoes',
-                            visaoid=visao.id,
-                            baseid=baseid))
+                            **params))
 
 
 @app.route('/exclui_visao')

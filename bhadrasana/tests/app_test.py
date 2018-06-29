@@ -5,18 +5,43 @@ http://flask.pocoo.org/docs/0.12/testing/
 Use python bhadrasana/web_app_testing.py para transformar em
 teste funcional
 
+Alguns testes (importa_base, aplica_risco, arquiva_base),
+gravam registros no Servidor Celery, portanto a saída
+só será realmente avaliada nos testes funcionais
+
 """
 import os
+import pytest
 import unittest
 from io import BytesIO
 
 from pymongo import MongoClient
 
+from ajna_commons.flask.conf import BACKEND, BROKER
 from ajna_commons.flask.conf import DATABASE, MONGODB_URI
+from bhadrasana.conf import CSV_FOLDER
 from bhadrasana.models.models import (Base, BaseOrigem, Coluna, DePara,
                                       MySession, PadraoRisco, ParametroRisco,
                                       Tabela, ValorParametro, Visao)
 from bhadrasana.views import configure_app
+from bhadrasana.utils.gerente_risco import tmpdir
+from bhadrasana.workers.tasks import celery
+from bhadrasana.workers.tasks import importar_base
+
+
+@pytest.fixture(scope='session')
+def celery_config():
+    return {
+        'broker_url': BROKER,
+        'result_backend': BACKEND
+    }
+
+
+class FlaskCeleryTestCase(unittest.TestCase):
+    @pytest.fixture(autouse=True)
+    def init_worker(self, celery_worker):
+        self.worker = celery_worker
+
 
 mysession = MySession(Base, test=True)
 dbsession = mysession.session
@@ -221,9 +246,14 @@ class FlaskTestCase(unittest.TestCase):
         assert b'Submeter' in data
 
     def test_2_1_importabase_upload(self):
+        # Aqui o teste é apenas se muda de tela.
+        # Depois, ao aplicar risco, será validado se o arquivo
+        # for realmente processado.
         file = {
             'file':
-                (BytesIO(b'iguaria, esporte\n temaki, corrida'),
+                (BytesIO(b'iguaria, esporte\n'
+                         b'temaki, corrida\n'
+                         b'churros, remo\n'),
                  'plan_test.csv'),
             'baseid': '1',
             'data': '2018-01-01'
@@ -340,7 +370,6 @@ class FlaskTestCase(unittest.TestCase):
             '/importa_csv/1/' + param_id,
             data=file, follow_redirects=True)
         data = self.data(rv)
-        print(data)
         assert b'hot roll' in data
         assert b'churros' in data
 
@@ -353,177 +382,126 @@ class FlaskTestCase(unittest.TestCase):
         assert b'temaki' in data
 
     def test_6_aplica_risco(self):
-
+        # Se este método der erro "No such file"
+        # Significa que o importa_base não funcionou
+        # Para funcionar é necessário habilitar um Servidor Celery
+        self.login('ajna', 'ajna')
         rv = self._get('/risco?&filename=2018/01/01&acao=aplicar&baseid=1&padraoid=1&visaoid=0&\
                                &parametros_ativos=comida')
         data = self.data(rv)
-        assert b'Lista de Riscos da Base None' not in data
-    """
-    # Excluir
+        assert b'Lista de Riscos da Base 2018/01/01' in data
+
     def test_7_exclui_risco(self):
+        self.login('ajna', 'ajna')
         rv = self._get(
-                '/risco?&baseid=1&filename=2018/01/01&acao=excluir')
+            '/risco?&baseid=1&filename=2018/01/01&acao=excluir')
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        print(data)
+        # assert b'2018/01/01' not in data
 
     def test_7_1_excluivalor(self):
+        self.login('ajna', 'ajna')
         valor_id = self._valorid('temaki')
         param_id = self._paramid('comida')
         rv = self._get('/exclui_valor?padraoid=1&\
                               &riscoid=' + param_id + '&valorid=' +
-                              str(valor_id))
+                       str(valor_id))
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        assert b'temaki' not in data
+        assert b'churros' in data
 
     def test_7_2_excluidepara(self):
+        self.login('ajna', 'ajna')
         depara = self._deparaid('iguaria')
         rv = self._get('/exclui_depara?baseid=1&\
                               &tituloid=' + str(depara))
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        assert b'iguaria' not in data
 
     def test_8_excluiparametro(self):
+        self.login('ajna', 'ajna')
+        param_id = self._paramid('comida')
         rv = self._get('/exclui_parametro?padraoid=1&riscoid=' +
-                              param_id)
+                       param_id)
         data = self.data(rv)
-        assert b'Redirecting...' in data
-
-    """
-
-    def test_b_excluiparametros(self):
-        self._excluiparametros()
-    """
+        assert b'comida' not in data
 
     def test_9_juncoes(self):
+        self.login('ajna', 'ajna')
         rv = self._get('/juncoes?baseid=1&visaoid=1')
         data = self.data(rv)
         assert b'AJNA' in data
 
-    def test_9_1_adicionavisao(self):
-        rv = self.app.get('/adiciona_visao?visao_novo=visaotest')
+    def test_9_0_adicionavisao_erros(self):
+        self.login('ajna', 'ajna')
+        rv = self._get('/adiciona_visao?visao_novo=visaotest')
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        assert b'>visaotest' not in data
+        assert b'Selecionar Base' in data
+        rv = self._get('/adiciona_visao?baseid=1&visao_novo=')
+        data = self.data(rv)
+        assert b'Informar nome' in data
+        assert b'Selecionar Base' not in data
+
+    def test_9_1_adicionavisao(self):
+        self.login('ajna', 'ajna')
+        rv = self._get('/adiciona_visao?baseid=1&visao_novo=visaotest')
+        data = self.data(rv)
+        print(data)
+        assert b'>visaotest' in data
 
     def test_9_2_adicionacoluna(self):
+        self.login('ajna', 'ajna')
         visaoid = self._visaoid('visaotest')
         rv = self._get('/adiciona_coluna?visaoid=' + str(visaoid) +
                               '&col_nova=colunatest')
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        assert b'colunatest' in data
 
     def test_9_3_adicionatabela(self):
+        self.login('ajna', 'ajna')
         visaoid = self._visaoid('visaotest')
         rv = self._get('/adiciona_tabela?visaoid=' + str(visaoid) +
-                              '&csv=c&primario=p&estrangeiro=e&\
+                              '&csv=tabelateste&primario=p&estrangeiro=e&\
                               &pai_id=1&descricao=d')
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        assert b'primario' in data
+        assert b'tabelateste' in data
+        
 
     def test_9_4_excluicoluna(self):
+        self.login('ajna', 'ajna')
         visaoid = self._visaoid('visaotest')
         colunaid = self._colunaid('colunatest')
-        if self.http_server is not None:
-            rv = self.app.get('/exclui_coluna?visaoid=' + str(visaoid) + '&\
-                              &colunaid=' + str(colunaid),
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/exclui_coluna?visaoid=' + str(visaoid) + '&\
+        rv = self._get('/exclui_coluna?visaoid=' + str(visaoid) + '&\
                               &colunaid=' + str(colunaid))
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        assert b'colunatest' not in data
 
     def test_9_5_excluitabela(self):
+        self.login('ajna', 'ajna')
         visaoid = self._visaoid('visaotest')
-        tabelaid = self._tabelaid('c')
-        if self.http_server is not None:
-            rv = self.app.get('/exclui_tabela?visaoid=' + str(visaoid) +
-                              '&tabelaid=' + str(tabelaid),
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/exclui_tabela?visaoid=' + str(visaoid) +
+        tabelaid = self._tabelaid('tabelateste')
+        rv = self._get('/exclui_tabela?visaoid=' + str(visaoid) +
                               '&tabelaid=' + str(tabelaid))
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        assert b'tabelateste' not in data
 
     def test_9_6_excluivisao(self):
+        self.login('ajna', 'ajna')
         visaoid = self._visaoid('visaotest')
-        if self.http_server is not None:
-            rv = self.app.get('/exclui_visao?visaoid=' + str(visaoid),
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/exclui_visao?visaoid=' + str(visaoid))
+        rv = self._get('/exclui_visao?visaoid=' + str(visaoid))
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        assert b'visaotest' not in data
 
     def test_arquivar(self):
-        if self.http_server is not None:
-            rv = self.app.get('/risco?baseid=5&acao=arquivar',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get(
+        self.login('ajna', 'ajna')
+        rv = self._get(
                 '/risco?baseid=5&acao=arquivar')
         data = self.data(rv)
         print(data)
 
-    # testes dos erros
-    def test_importacsv(self):
-        if self.http_server is not None:
-            rv = self.app.get('/importa_csv/4/26',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self._post(
-                '/importa_csv/4/26', data={'': ''}, follow_redirects=False)
-        data = self.data(rv)
-        file = {
-            'csv': (BytesIO(b'FILE CONTENT'), 'arq.csv')
-        }
-        rv = self._post(
-            '/importa_csv/4/None', data=file, follow_redirects=False)
-        data = self.data(rv)
-        assert b'Redirecting..' in data
-
-    def test_importabase(self):
-        file = {
-            'file':
-                (BytesIO(b'iguaria, esporte\n temaki, corrida'),
-                 'plan_test.csv'),
-            'baseid': None,
-            'data': '2018-01-01'
-        }
-        if self.http_server is not None:
-            rv = self.app.get('/importa_base',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self._post('/importa_base',
-                            data={'file': None},
-                            follow_redirects=True
-                            )
-        data = self.data(rv)
-        print(data)
-        png = {
-            'file': (BytesIO(b'FILE CONTENT'), 'arq.png')
-        }
-        rv = self._post('/importa_base', data=png, follow_redirects=True)
-        data = self.data(rv)
-        print(data)
-        rv = self._post('/importa_base', data=file, follow_redirects=True)
-        data = self.data(rv)
-        print(data)
-        # assert False
-
-    def test_navegabases(self):
-        if self.http_server is not None:
-            rv = self.app.get('/navega_bases?selected_module=carga&\
-                              &selected_model=Escala&\
-                              &selected_field=Escala',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/navega_bases?&selected_module=carga&\
-                              &selected_model=Escala&\
-                              &selected_field=Escala')
-        data = self.data(rv)
-        assert b'AJNA' in data
-
+    """
     def test_adicionafiltro(self):
         if self.http_server is not None:
             rv = self.app.get('/adiciona_filtro?selected_module=carga&\
