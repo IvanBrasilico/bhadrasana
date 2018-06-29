@@ -454,7 +454,7 @@ class FlaskTestCase(unittest.TestCase):
         self.login('ajna', 'ajna')
         visaoid = self._visaoid('visaotest')
         rv = self._get('/adiciona_coluna?visaoid=' + str(visaoid) +
-                              '&col_nova=colunatest')
+                       '&col_nova=colunatest')
         data = self.data(rv)
         assert b'colunatest' in data
 
@@ -462,12 +462,11 @@ class FlaskTestCase(unittest.TestCase):
         self.login('ajna', 'ajna')
         visaoid = self._visaoid('visaotest')
         rv = self._get('/adiciona_tabela?visaoid=' + str(visaoid) +
-                              '&csv=tabelateste&primario=p&estrangeiro=e&\
+                       '&csv=tabelateste&primario=p&estrangeiro=e&\
                               &pai_id=1&descricao=d')
         data = self.data(rv)
         assert b'primario' in data
         assert b'tabelateste' in data
-        
 
     def test_9_4_excluicoluna(self):
         self.login('ajna', 'ajna')
@@ -483,7 +482,7 @@ class FlaskTestCase(unittest.TestCase):
         visaoid = self._visaoid('visaotest')
         tabelaid = self._tabelaid('tabelateste')
         rv = self._get('/exclui_tabela?visaoid=' + str(visaoid) +
-                              '&tabelaid=' + str(tabelaid))
+                       '&tabelaid=' + str(tabelaid))
         data = self.data(rv)
         assert b'tabelateste' not in data
 
@@ -497,73 +496,24 @@ class FlaskTestCase(unittest.TestCase):
     def test_arquivar(self):
         self.login('ajna', 'ajna')
         rv = self._get(
-                '/risco?baseid=5&acao=arquivar')
+            '/risco?baseid=5&acao=arquivar')
         data = self.data(rv)
         print(data)
 
-    """
+
+    # TODO: Test da adição e exclusão de filtro mais detalhado
     def test_adicionafiltro(self):
-        if self.http_server is not None:
-            rv = self.app.get('/adiciona_filtro?selected_module=carga&\
-                              &selected_model=Escala&\
-                              &selected_field=Escala',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/adiciona_filtro?&selected_module=carga&\
+        self.login('ajna', 'ajna')
+        rv = self._get('/adiciona_filtro?&selected_module=carga&\
                               &selected_model=Escala&\
                               &selected_field=Escala&filtro=None&valor=E-01')
         data = self.data(rv)
-        assert b'Redirecting...' in data
+        assert b'Escala' in data
 
     def test_excluifiltro(self):
-        if self.http_server is not None:
-            rv = self.app.get('/exclui_filtro?selected_module=carga&\
-                              &selected_model=Escala&\
-                              &selected_field=Escala',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/exclui_filtro?&selected_module=carga&\
+        self.login('ajna', 'ajna')
+        rv = self._get('/exclui_filtro?&selected_module=carga&\
                               &selected_model=Escala&\
                               &selected_field=Escala&index=0')
         data = self.data(rv)
-        assert b'Redirecting...' in data
-
-    def test_arvoreteste(self):
-        if self.http_server is not None:
-            rv = self.app.get('/arvore_teste',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/arvore_teste')
-        data = self.data(rv)
-        print(data)
-        assert b'Escala' in data
-
-    def test_arvore(self):
-        if self.http_server is not None:
-            rv = self.app.get('/arvore?selected_module=carga&\
-                              &selected_model=Escala&\
-                              &selected_field=Escala&instance_id=E-01',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/arvore?selected_module=carga&\
-                              &selected_model=Escala&selected_field=Escala&\
-                              &instance_id=E-01')
-        data = self.data(rv)
-        print(data)
-        assert b'odyniec' in data
-
-    def test_consultabases(self):
-        if self.http_server is not None:
-            rv = self.app.get('/consulta_bases_executar?\
-                              &selected_module=carga&\
-                              &selected_model=Escala&\
-                              &selected_field=Escala',
-                              params=dict(csrf_token=self.csrf_token))
-        else:
-            rv = self.app.get('/consulta_bases_executar?\
-                              &selected_module=carga&\
-                              &selected_model=Escala&\
-                              &selected_field=Escala')
-        data = self.data(rv)
-        assert b'AJNA' in data
-    """
+        # assert b'Escala' not in data
