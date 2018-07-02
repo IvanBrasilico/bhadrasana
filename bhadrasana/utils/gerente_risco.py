@@ -231,6 +231,7 @@ class GerenteRisco():
         self._riscosativos = {}
         if self._padraorisco:
             for parametro in self._padraorisco.parametros:
+                print(parametro)
                 self.add_risco(parametro)
 
     def cria_padraorisco(self, nomepadraorisco, session):
@@ -842,7 +843,7 @@ class GerenteRisco():
     def aplica_juncao_mongo(self, db, visao,
                             parametros_ativos=None,
                             filtrar=False,
-                            limit=100,
+                            limit=0,
                             skip=0):
         """Lê as coleções configuradas no mongo através de aggregates.
 
@@ -870,30 +871,33 @@ class GerenteRisco():
         pipeline = []
         for r in range(1, numero_juncoes):
             tabela = visao.tabelas[r]
-            paifilhoname = base.nome + '.' + tabela.csv
+            paifilhoname = base.nome + '.' + tabela.csv_table
             pipeline.append({
                 '$lookup':
                 {'from': paifilhoname,
                  'localField': tabela.primario.lower(),
                  'foreignField': tabela.estrangeiro.lower(),
-                 'as': tabela.csv
+                 'as': tabela.csv_table
                  }})
             pipeline.append(
-                {'$unwind': {'path': '$' + tabela.csv}}
+                {'$unwind': {'path': '$' + tabela.csv_table}}
             )
-        painame = visao.tabelas[0].csv
+        painame = visao.tabelas[0].csv_table
         collection = db[base.nome + '.' + painame]
-        tabelas = [tabela.csv for tabela in visao.tabelas]
+        tabelas = [tabela.csv_table for tabela in visao.tabelas]
         if visao.colunas:
             colunas = {'_id': 0}
             for coluna in visao.colunas:
-                print(coluna.nome, tabelas)
+                print('Coluna', coluna.nome)
+                print('Tabelas', tabelas)
                 if coluna.nome not in tabelas:
                     colunas[coluna.nome.lower()] = 1
                 for tabela in tabelas[1:]:
                     colunas[tabela + '.' + coluna.nome.lower()] = 1
             pipeline.append({'$project': colunas})
+        print('FILTRAR', filtrar)
         if filtrar:
+            print('Entrou em filtro!')
             filtro = []
             if parametros_ativos:
                 riscos = set([parametro.lower()
@@ -901,22 +905,25 @@ class GerenteRisco():
             else:
                 riscos = set([key.lower() for key
                               in self._riscosativos.keys()])
-                for campo in riscos:
-                    dict_filtros = self._riscosativos.get(campo)
-                    for tipo_filtro, lista_filtros in dict_filtros.items():
-                        print(tipo_filtro, lista_filtros)
-                        # filter_function = filter_functions.get(tipo_filtro)
-                        for valor in lista_filtros:
-                            filtro.append({campo: valor})
-                            for tabela in visao.tabelas:
-                                filtro.append(
-                                    {tabela.csv + '.' + campo: valor}
-                                )
+            print('RISCOS', riscos)
+            for campo in riscos:
+                dict_filtros = self._riscosativos.get(campo)
+                for tipo_filtro, lista_filtros in dict_filtros.items():
+                    print(tipo_filtro, lista_filtros)
+                    # filter_function = filter_functions.get(tipo_filtro)
+                    for valor in lista_filtros:
+                        filtro.append({campo: valor})
+                        for tabela in visao.tabelas:
+                            filtro.append(
+                                {tabela.csv_table + '.' + campo: valor}
+                            )
             if filtro:
                 print('FILTRO', filtro)
                 pipeline.append({'$match': {'$or': filtro}})
-        pipeline.append({'$limit': skip + limit})
-        pipeline.append({'$skip': skip})
+        if limit:
+            pipeline.append({'$limit': skip + limit})
+        if skip:
+            pipeline.append({'$skip': skip})
         print('PIPELINE', pipeline)
         mongo_list = list(collection.aggregate(pipeline))
         # print(mongo_list)
@@ -942,13 +949,15 @@ class GerenteRisco():
                     linha_lista.append(valor)
                 result.append(linha_lista)
             return result
+        logger.warning('Mongo não retornou linhas!')
         return None
 
     def aplica_risco_por_parametros(self, dbsession,
-                                    base_csv: str,
                                     padraoid=0,
                                     visaoid=0,
-                                    parametros_ativos: list=None):
+                                    parametros_ativos: list=None,
+                                    base_csv=None,
+                                    db=None):
         """Escolhe o método correto de acordo com parâmetros.
 
         Chama arquivo(s) com ou sem junção e filtro,
@@ -960,7 +969,9 @@ class GerenteRisco():
 
             dbsession: conexão com o Banco de Dados
 
-            base_csv: Arquivo csv de onde carregar a lista a ser filtrada
+            base_csv: Arquivo csv de onde carregar dados a serem filtrados
+            OU 
+            db: conexão MongoDB de onde carregar dados
 
             padraoid: ID do PadraoRisco a utilizar como filtro
 
@@ -978,6 +989,7 @@ class GerenteRisco():
             PadraoRisco.id == padraoid
         ).first()
         self.set_padraorisco(padrao)
+        print('PADRAO', padrao, padraoid)
         if visaoid == '0':
             dir_content = os.listdir(base_csv)
             arquivo = os.path.join(base_csv, dir_content[0])
@@ -991,6 +1003,11 @@ class GerenteRisco():
         else:
             avisao = dbsession.query(Visao).filter(
                 Visao.id == visaoid).one()
+            if db is not None:  # Usar MongoDB como fonte
+                return self.aplica_juncao_mongo(db, avisao,
+                                                filtrar=padrao is not None,
+                                                parametros_ativos=parametros_ativos
+                                                )
             return self.aplica_juncao(
                 avisao, path=base_csv,
                 filtrar=padrao is not None,

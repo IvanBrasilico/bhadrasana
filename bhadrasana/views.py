@@ -44,6 +44,7 @@ from bhadrasana.models.models import (BaseOrigem, Coluna, DePara, PadraoRisco,
 from bhadrasana.utils.gerente_risco import (ESemValorParametro, GerenteRisco,
                                             tmpdir)
 from bhadrasana.workers.tasks import (aplicar_risco, arquiva_base_csv,
+                                      aplicar_risco_mongo,
                                       importar_base)
 
 app = Flask(__name__, static_url_path='/static')
@@ -403,26 +404,25 @@ def risco():
     lista_risco = []
     csv_salvo = ''
     try:
-        if visaoid != '0':
-            print(visaoid)
-            avisao = dbsession.query(Visao).filter(
-                Visao.id == visaoid).one()
         if acao == 'mongo':
             path = 'Arquivo ' + abase.nome if abase else base_csv
-            if padrao:
-                gerente.set_padraorisco(padrao)
             if visaoid == '0':
+                if padrao:
+                    gerente.set_padraorisco(padrao)
                 lista_risco = gerente.load_mongo(
                     mongodb, base=abase,
                     parametros_ativos=parametros_ativos)
             else:
-                lista_risco = gerente.aplica_juncao_mongo(
-                    mongodb, avisao, filtrar=padrao is not None,
-                    parametros_ativos=parametros_ativos)
+                task = aplicar_risco_mongo.apply_async((
+                    visaoid, padraoid,
+                    parametros_ativos, static_path
+                ))
         else:
             if acao == 'aplicar':
                 lista_risco = gerente.aplica_risco_por_parametros(
-                    dbsession, base_csv, padraoid, visaoid, parametros_ativos
+                    dbsession, padraoid, visaoid,
+                    parametros_ativos=parametros_ativos,
+                    base_csv=base_csv
                 )
             elif acao == 'agendar':
                 task = aplicar_risco.apply_async((
@@ -442,7 +442,7 @@ def risco():
         gerente.save_csv(lista_risco, csv_salvo)
         total_linhas = len(lista_risco) - 1
         lista_risco = lista_risco[:100]
-    if acao and acao != 'aplicar' and acao !='mongo':
+    if acao and task:
         return redirect(url_for('risco',
                                 baseid=baseid,
                                 padraoid=padraoid,

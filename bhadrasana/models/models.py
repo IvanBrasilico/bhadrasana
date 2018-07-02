@@ -151,6 +151,11 @@ class PadraoRisco(Base):
         if base:
             self.base_id = base.id
 
+    def __repr__(self):
+        return 'Nome %s\n base %s\n parametros %s\n ' % \
+            (self.nome, self.base_id,
+            [(param.nome_campo, param.valores) for param in self.parametros])
+
 
 class DePara(Base):
     """Renomeia os titulos das colunas ao importar uma base."""
@@ -304,4 +309,11 @@ class Tabela(Base):
         """Acesso ao campo csv. Inclui extensão."""
         if self.csv.find('.csv') == -1:
             return self.csv + '.csv'
+        return self.csv
+
+    @property
+    def csv_table(self):
+        """Acesso ao nome de tabela. Não inclui extensão."""
+        if self.csv.find('.csv') != -1:
+            return self.csv[:-4]
         return self.csv
