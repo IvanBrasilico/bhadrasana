@@ -150,7 +150,7 @@ class GerenteRisco():
         self._riscosativos = {}
         self._padraorisco = None
 
-    def importa_base(self, csv_folder: str, baseid: int, data,
+    def importa_base(self, csv_folder: str, baseid: int, data: str,
                      filename: str, remove=False):
         """Copia base para dest_path, processando se necessário.
 
@@ -163,8 +163,8 @@ class GerenteRisco():
 
             base_id: id da base, será usada para identificar uma subpasta
 
-            data: data do período inicial da base/extração. Será usada
-            para gerar subpasta no formato YYYY/MM/DD
+            data: data formato YYYY-MM-DD do período inicial da base/extração.
+            Será usada para gerar subpasta no formato YYYY/MM/DD
 
             filename: caminho completo do arquivo da base de origem
             (fonte externa/extração)
@@ -842,98 +842,8 @@ class GerenteRisco():
     def aplica_juncao_mongo(self, db, visao,
                             parametros_ativos=None,
                             filtrar=False,
-                            pandas=False,
                             limit=100,
                             skip=0):
-        """Apenas um proxy para compatibilidade reversa.
-
-        Proxy para compatibilidade e escolha.
-        Repassa todos os parâmetros para o método utilizando
-        pandas se param pandas=True ou aggregate se False.
-        """
-        if pandas:
-            return self.aplica_juncao_mongo_pandas(db, visao,
-                                                   parametros_ativos,
-                                                   filtrar)
-        return self.aplica_juncao_mongo_aggregate(db, visao,
-                                                  parametros_ativos,
-                                                  filtrar,
-                                                  limit,
-                                                  skip)
-
-    def aplica_juncao_mongo_pandas(self, db, visao,
-                                   parametros_ativos=None,
-                                   filtrar=False):
-        """Lê as coleções configuradas no mongo.
-
-        Lê as coleções, carrega em DataFrames e faz merge destes.
-
-        Args:
-            db: MongoDB
-            visao: objeto de Banco de Dados que espeficica as configurações
-            (metadados) da base
-            parametros_ativos: subconjunto do parâmetros de risco a serem
-            aplicados
-            filtrar: aplica_risco após merge dos DataFrames
-
-        Returns:
-            Lista contendo os campos filtrados. 1ª linha com nomes de campo
-
-        """
-        base = visao.base
-        numero_juncoes = len(visao.tabelas)
-        dffilho = None
-        if numero_juncoes > 1:   # Caso apenas uma tabela esteja na visão,
-            tabela = visao.tabelas[numero_juncoes - 1]  # não há junção
-            filhoname = base.nome + '.' + tabela.csv_file
-            print(filhoname)
-            lista = self.load_mongo(db, collection_name=filhoname)
-            dffilho = pd.DataFrame(lista[1:], columns=lista[0])
-            if hasattr(tabela, 'type'):
-                how = tabela.type
-            else:
-                how = 'inner'
-        # A primeira precisa ser "pulada", sempre é a junção 2 tabelas
-        # de cada vez. Se numero_juncoes for >2, entrará aqui fazendo
-        # a junção em cadeia desde o último até o primeiro filho
-        for r in range(numero_juncoes - 2, 0, -1):
-            tabela = visao.tabelas[r]
-            paifilhoname = base.nome + '.' + tabela.csv_file
-            if hasattr(tabela, 'type'):
-                how = tabela.type
-            else:
-                how = 'inner'
-            lista = self.load_mongo(db, collection_name=paifilhoname)
-            dfpaifilho = pd.DataFrame(lista[1:], columns=lista[0])
-            # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
-            dffilho = dfpaifilho.merge(dffilho, how=how,
-                                       left_on=tabela.primario.lower(),
-                                       right_on=tabela.estrangeiro.lower())
-        painame = base.nome + '.' + visao.tabelas[0].csv_file
-        lista = self.load_mongo(db, collection_name=painame)
-        dfpai = pd.DataFrame(lista[1:], columns=lista[0])
-        if dffilho is not None:
-            dfpai = dfpai.merge(dffilho, how=how,
-                                left_on=tabela.primario.lower(),
-                                right_on=tabela.estrangeiro.lower())
-        if visao.colunas:
-            colunas = [coluna.nome.lower() for coluna in visao.colunas]
-            result_df = dfpai[colunas]
-            result_list = [colunas]
-        else:
-            result_df = dfpai
-            result_list = [result_df.columns.tolist()]
-        result_list.extend(result_df.values.tolist())
-        if filtrar:
-            return self.aplica_risco(result_list,
-                                     parametros_ativos=parametros_ativos)
-        return result_list
-
-    def aplica_juncao_mongo_aggregate(self, db, visao,
-                                      parametros_ativos=None,
-                                      filtrar=False,
-                                      limit=100,
-                                      skip=0):
         """Lê as coleções configuradas no mongo através de aggregates.
 
         Monta um pipeline MongoDB.
@@ -1086,30 +996,3 @@ class GerenteRisco():
                 filtrar=padrao is not None,
                 parametros_ativos=parametros_ativos
             )
-
-
-"""
-db.getCollection('CARGA.Conhecimento').aggregate(
-    [{'$lookup': {'from': 'CARGA.NCM',
-                 'localField': 'conhecimento',
-                 'foreignField': 'conhecimento',
-                 'as': 'NCM'}},
-    {'$unwind': {'path': '$NCM'}},
-    {'$project':
-     {'_id': 0, 'Conhecimento': 1,
-      'Conhecimento.Conhecimento': 1,
-      'NCM.Conhecimento': 1,
-      'NCM': 1,
-      'Conhecimento.NCM': 1,
-      'NCM.NCM': 1,
-      'CPFCNPJConsignatario': 1,
-      'Conhecimento.CPFCNPJConsignatario': 1,
-      'NCM.CPFCNPJConsignatario': 1,
-      'DescricaoMercadoria': 1,
-      'Conhecimento.DescricaoMercadoria': 1,
-      'NCM.DescricaoMercadoria': 1,
-      'IdentificacaoEmbarcador': 1,
-      'Conhecimento.IdentificacaoEmbarcador': 1,
-      'NCM.IdentificacaoEmbarcador': 1}}
-      ]
-"""

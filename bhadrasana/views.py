@@ -22,7 +22,7 @@ import os
 import shutil
 
 from flask import (Flask, flash, jsonify, redirect, render_template, request,
-                   session, url_for)
+                   url_for)
 from flask_bootstrap import Bootstrap
 # from flask_cors import CORS
 from flask_login import current_user, login_required
@@ -41,7 +41,6 @@ from bhadrasana.conf import APP_PATH, CSV_FOLDER
 from bhadrasana.models.models import (BaseOrigem, Coluna, DePara, PadraoRisco,
                                       ParametroRisco, Tabela, ValorParametro,
                                       Visao)
-from bhadrasana.utils.gerente_base import Filtro, GerenteBase
 from bhadrasana.utils.gerente_risco import (ESemValorParametro, GerenteRisco,
                                             tmpdir)
 from bhadrasana.workers.tasks import (aplicar_risco, arquiva_base_csv,
@@ -361,8 +360,11 @@ def risco():
         try:
             if abase and base_csv:
                 if acao == 'excluir':
-                    shutil.rmtree(base_csv)
-                    flash('Base excluída!')
+                    try:
+                        shutil.rmtree(base_csv)
+                        flash('Base excluída!')
+                    except FileNotFoundError as err:
+                        flash('Não encontrou arquivo ' + str(err))
                 else:
                     # As três linhas antes de chamar a task são para remover
                     # a linha da base escolhida da tela, evitando que o Usuário
@@ -812,80 +814,6 @@ def exclui_valor():
     dbsession.commit()
     return redirect(url_for('edita_risco', padraoid=padraoid,
                             riscoid=riscoid))
-
-
-@app.route('/consulta_bases_executar')
-def consulta_bases_executar():
-    """Deprecated."""
-    selected_module = request.args.get('selected_module')
-    selected_model = request.args.get('selected_model')
-    selected_field = request.args.get('selected_field')
-    filters = session.get('filters', [])
-    gerente = GerenteBase()
-    gerente.set_module(selected_module, db='cargatest.db')
-    dados = gerente.filtra(selected_model, filters)
-    list_modulos = gerente.list_modulos
-    list_models = []
-    list_fields = []
-    if selected_module:
-        gerente.set_module(selected_module)
-        list_models = gerente.list_models
-        if selected_model:
-            list_fields = gerente.dict_models[selected_model]['campos']
-    return render_template('navega_bases.html',
-                           selected_module=selected_module,
-                           selected_model=selected_model,
-                           selected_field=selected_field,
-                           filters=filters,
-                           list_modulos=list_modulos,
-                           list_models=list_models,
-                           list_fields=list_fields,
-                           dados=dados)
-
-
-@app.route('/arvore')
-def arvore():
-    """Àrvore GerenteBase. Deprecated."""
-    gerente = GerenteBase()
-    selected_module = request.args.get('selected_module')
-    selected_model = request.args.get('selected_model')
-    selected_field = request.args.get('selected_field')
-    instance_id = request.args.get('instance_id')
-    logger.info(selected_module)
-    gerente.set_module(selected_module, db='cargatest.db')
-    filters = []
-    afilter = Filtro(selected_field, None, instance_id)
-    filters.append(afilter)
-    q = gerente.filtra(selected_model, filters, return_query=True)
-    instance = q.first()
-    string_arvore = ''
-    logger.info(instance)
-    pai = gerente.get_paiarvore(instance)
-    logger.info(pai)
-    if pai:
-        lista = gerente.recursive_tree(pai)
-        string_arvore = '\n'.join(lista)
-    return render_template('arvore.html',
-                           arvore=string_arvore)
-
-
-@app.route('/arvore_teste')
-def arvore_teste():
-    """Deprecated."""
-    gerente = GerenteBase()
-    gerente.set_module('carga', db='cargatest.db')
-    filters = []
-    afilter = Filtro('Manifesto', None, 'M-2')
-    filters.append(afilter)
-    q = gerente.filtra('Manifesto', filters, return_query=True)
-    manifesto = q.first()
-    escala = gerente.get_paiarvore(manifesto)
-    string_arvore = ''
-    if escala:
-        lista = gerente.recursive_tree(escala, child=manifesto)
-        string_arvore = '\n'.join(lista)
-    return render_template('arvore.html',
-                           arvore=string_arvore)
 
 
 @app.route('/juncoes')
