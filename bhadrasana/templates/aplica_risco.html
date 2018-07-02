@@ -110,12 +110,6 @@
             <h4>Tarefas pendentes no Servidor</h4>
             <div class="table">
                 <table class="table inlineTable table-hover table-bordered table-responsive" cellspacing="0" cellpadding="0" id="tasks_table">
-                    {% for task in tasks %}
-                    <tr id="{{ task }}">
-                        <td id="{{ task }}">
-                        </td>
-                    </tr>
-                    {% endfor %}
                 </table>
             </div>
         </div>
@@ -134,7 +128,7 @@
                             </a>
                         </td>
                         <td align="center">
-                            <input type="button" class="btn  btn-danger" value="x" onclick="exclui_planilha('{{ planilha }}')" />
+                            <input type="button" class="btn  btn-danger" value="x" onclick="exclui_planilha('{{planilha}}')" />
                         </td>
                     </tr>
                     {% endfor %}
@@ -265,37 +259,41 @@
                 $('<td>').text(planilha),
                 $('<td>').html('<a href="/static/{{ current_user.name }}/' + planilha +
                     '"><span class="label label-success"><b>Baixar</b></span></a>'),
-                $('<td>').html('<input type="button" class="btn  btn-danger" value="x" onclick="exclui_planilha("' + planilha + '")" />')
+                $('<td>').html('<input type="button" class="btn  btn-danger" value="x" onclick="exclui_planilha(\'' + planilha + '\')" />')
             ).appendTo('#planilhas_table');
         });
 
     }
-    function update_progress(task) {
+    function update_progress(tasks) {
         // send GET request to status URL
-        var status_url = '/api/task_progress/' + task;
-        $.getJSON(status_url, function (data) {
-            if (data['state'] == 'PENDING' || data['state'] == 'PROGRESS' || data['state'] == 'STARTED') {
-                $('<tr>').append(
-                    $('<td>').text('Em progresso'),
-                    $('<td>').text(data['status'])
-                ).appendTo('#tasks_table');
-                // rerun in 2 seconds
-                setTimeout(function () {
-                    update_progress(task);
-                }, 2000);
-            }
-            if (data['state'] == 'FAILURE') {
-                $('<tr>').append(
-                    $('<td>').text('Erro!'),
-                    $('<td>').text(data['status'])
-                ).appendTo('#tasks_table');
-            }
-            if (data['state'] == 'SUCESS') {
-                $('<tr>').append(
-                    $('<td>').text('Terminado. Atualize tela.'),
-                    $('<td>').text(data['status'])
-                ).appendTo('#tasks_table');
-            }
+        $('#tasks_table tr').remove();
+        $.each(tasks, function (i, task) {
+            var status_url = '/api/task_progress/' + task;
+            $.getJSON(status_url, function (data) {
+                console.log(data);
+                if (data['state'] == 'PENDING' || data['state'] == 'PROGRESS' || data['state'] == 'STARTED') {
+                    $('<tr>').append(
+                        $('<td>').text('Em progresso'),
+                        $('<td>').text(data['status'])
+                    ).appendTo('#tasks_table');
+                    // rerun in 2 seconds
+                    setTimeout(function () {
+                        update_progress(tasks);
+                    }, 2000);
+                }
+                if (data['state'] == 'FAILURE') {
+                    $('<tr>').append(
+                        $('<td>').text('Erro!'),
+                        $('<td>').text(data['status'])
+                    ).appendTo('#tasks_table');
+                }
+                if (data['state'] == 'SUCCESS') {
+                    $('<tr>').append(
+                        $('<td>').text('Terminado. Atualize tela se necessário.'),
+                        $('<td>').text(data['status'])
+                    ).appendTo('#tasks_table');
+                }
+            });
         });
     }
     $(document).ready(function () {
@@ -338,13 +336,11 @@
         $('#arquivar').on('click', function () {
             $('#confirmacaomodal').modal()
         });
-        tasks = [];
+        ltasks = [];
         {% for task in tasks %}
-        tasks.append(task);
+        ltasks[ltasks.length] = "{{task}}";
         {% endfor %}
-        $.each(tasks, function (i, task) {
-            update_progress(task);
-        });
+        update_progress(ltasks);
     });
 
 </script> {% endblock %}

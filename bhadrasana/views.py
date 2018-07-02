@@ -428,7 +428,6 @@ def risco():
                 task = aplicar_risco.apply_async((
                     base_csv, padraoid, visaoid, parametros_ativos, static_path
                 ))
-                tasks.append(task.id)
 
     except Exception as err:
         logger.error(err, exc_info=True)
@@ -443,6 +442,13 @@ def risco():
         gerente.save_csv(lista_risco, csv_salvo)
         total_linhas = len(lista_risco) - 1
         lista_risco = lista_risco[:100]
+    if acao and acao != 'aplicar' and acao !='mongo':
+        return redirect(url_for('risco',
+                                baseid=baseid,
+                                padraoid=padraoid,
+                                visaoid=visaoid,
+                                filename=path,
+                                task=task))
     return render_template('aplica_risco.html',
                            lista_arquivos=lista_arquivos,
                            bases=bases,
@@ -473,18 +479,18 @@ def exclui_planilha(planilha):
         Lista com as planilhas restantes
 
     """
-    static_path = os.path.join(APP_PATH,
-                               app.config.get('STATIC_FOLDER', 'static'),
-                               current_user.name)
+    user_path = os.path.join(APP_PATH,
+                             app.config.get('STATIC_FOLDER', 'static'),
+                             current_user.name)
     if planilha:
         # planilha = secure_filename(planilha)
-        planilha = os.path.join(static_path, planilha)
+        planilha = os.path.join(user_path, planilha)
         try:
             os.remove(planilha)
         except OSError as err:
             logger.error(str(err))
             logger.error('exclui_planilha falhou ao excluir: ' + planilha)
-    return jsonify(get_planilhas_criadas_agendamento(static_path))
+    return jsonify(get_planilhas_criadas_agendamento(user_path))
 
 
 @app.route('/valores')

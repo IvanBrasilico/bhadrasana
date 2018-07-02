@@ -17,6 +17,7 @@ from io import BytesIO
 from pymongo import MongoClient
 
 from ajna_commons.flask.conf import DATABASE, MONGODB_URI
+from bhadrasana.conf import APP_PATH
 from bhadrasana.models.models import (Base, BaseOrigem, Coluna, DePara,
                                       MySession, PadraoRisco, ParametroRisco,
                                       Tabela, ValorParametro, Visao)
@@ -299,6 +300,7 @@ class FlaskTestCase(unittest.TestCase):
         print(data)
         assert b'"center">baseteste' in data
     """
+
     def test_4_1_adicionaparametro(self):
         self.login('ajna', 'ajna')
         rv = self._get(
@@ -479,3 +481,21 @@ class FlaskTestCase(unittest.TestCase):
         data = self.data(rv)
         print(data)
         assert data is not None
+
+    def test_excluiplanilha(self):
+        csv_file = ['iguaria, esporte\n',
+                    'temaki, corrida\n',
+                    'churros, remo\n']
+        tempfile_name = 'plan_test.csv'
+        user_path = os.path.join(APP_PATH,
+                                 app.config.get('STATIC_FOLDER', 'static'),
+                                 'ajna')
+        planilha = os.path.join(user_path, tempfile_name)
+        with open(planilha, 'w') as out_csv:
+            for linha in csv_file:
+                out_csv.write(linha)
+        self.login('ajna', 'ajna')
+        rv = self._get('/exclui_planilha/plan_test.csv')
+        data = self.data(rv)
+        assert data is not None
+        assert not os.path.exists(planilha)
