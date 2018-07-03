@@ -127,7 +127,7 @@ class TestCase(unittest.TestCase):
         assert len(lista) == 4
         assert len(lista[0]) == 4
 
-    def test_gerente_juncao_filtro1(self):
+    def test_gerente_juncao_filtro_parametros(self):
         # Teste com 3 tabelas e filtro (risco)
         cheio = type('ValorParametro', (object, ),
                      {'tipo_filtro': Filtro.igual,
@@ -150,6 +150,30 @@ class TestCase(unittest.TestCase):
         lista = self.gerente.aplica_juncao_mongo(
             self.db,
             self.containers_conhecimento_ncms,
+            filtrar=True)
+        print('LISTA', lista)
+        assert len(lista) == 3
+        parametros_ativos = ['ncm']
+        lista = self.gerente.aplica_juncao_mongo(
+            self.db,
+            self.containers_conhecimento_ncms,
+            parametros_ativos=parametros_ativos,
+            filtrar=True)
+        print('LISTA', lista)
+        assert len(lista) == 2
+        parametros_ativos = ['container']
+        lista = self.gerente.aplica_juncao_mongo(
+            self.db,
+            self.containers_conhecimento_ncms,
+            parametros_ativos=parametros_ativos,
+            filtrar=True)
+        print('LISTA', lista)
+        assert len(lista) == 2
+        parametros_ativos = ['container', 'ncm']
+        lista = self.gerente.aplica_juncao_mongo(
+            self.db,
+            self.containers_conhecimento_ncms,
+            parametros_ativos=parametros_ativos,
             filtrar=True)
         print('LISTA', lista)
         assert len(lista) == 3
