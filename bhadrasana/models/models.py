@@ -152,6 +152,7 @@ class PadraoRisco(Base):
             self.base_id = base.id
 
     def __repr__(self):
+        """String representation."""
         return 'Nome %s\n base %s\n parametros %s\n ' % \
             (self.nome, self.base_id,
              [(param.nome_campo, param.valores) for param in self.parametros])
