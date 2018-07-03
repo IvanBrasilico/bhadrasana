@@ -154,7 +154,7 @@ class PadraoRisco(Base):
     def __repr__(self):
         return 'Nome %s\n base %s\n parametros %s\n ' % \
             (self.nome, self.base_id,
-            [(param.nome_campo, param.valores) for param in self.parametros])
+             [(param.nome_campo, param.valores) for param in self.parametros])
 
 
 class DePara(Base):

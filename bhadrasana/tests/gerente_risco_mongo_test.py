@@ -58,9 +58,10 @@ class TestCase(unittest.TestCase):
         self.containers_conhecimento_ncms = type('Visao', (object, ),
                                                  {'nome': 'ncms_conhecimento',
                                                   'base': self.carga,
-                                                  'tabelas': [self.containers,
-                                                              self.conhecimentos,
-                                                              self.ncms],
+                                                  'tabelas':
+                                                  [self.containers,
+                                                   self.conhecimentos,
+                                                   self.ncms],
                                                   'colunas': []
                                                   })
 
@@ -94,7 +95,8 @@ class TestCase(unittest.TestCase):
         containers_conhecimento = type('Visao', (object, ),
                                        {'nome': 'containers_conhecimento',
                                         'base': self.carga,
-                                        'tabelas': [self.containers, self.conhecimentos],
+                                        'tabelas': [self.containers,
+                                                    self.conhecimentos],
                                         'colunas': []
                                         })
         lista = self.gerente.aplica_juncao_mongo(self.db,
@@ -104,9 +106,10 @@ class TestCase(unittest.TestCase):
 
     def test_gerente_juncao3(self):
         # Teste com 3 tabelas
-        lista = self.gerente.aplica_juncao_mongo(self.db,
-                                                 self.containers_conhecimento_ncms,
-                                                 filtrar=False)
+        lista = self.gerente.aplica_juncao_mongo(
+            self.db,
+            self.containers_conhecimento_ncms,
+            filtrar=False)
         assert len(lista) == 4
 
     def test_gerente_juncao_campos(self):
@@ -116,9 +119,10 @@ class TestCase(unittest.TestCase):
         coluna2 = type('Visao', (object, ),
                        {'nome': 'container'})
         self.containers_conhecimento_ncms.colunas = [coluna1, coluna2]
-        lista = self.gerente.aplica_juncao_mongo(self.db,
-                                                 self.containers_conhecimento_ncms,
-                                                 filtrar=False)
+        lista = self.gerente.aplica_juncao_mongo(
+            self.db,
+            self.containers_conhecimento_ncms,
+            filtrar=False)
         # pprint.pprint(lista)
         assert len(lista) == 4
         assert len(lista[0]) == 4
@@ -143,9 +147,10 @@ class TestCase(unittest.TestCase):
                          )
         self.gerente.add_risco(risco_cheio)
         self.gerente.add_risco(risco_ncm)
-        lista = self.gerente.aplica_juncao_mongo(self.db,
-                                                 self.containers_conhecimento_ncms,
-                                                 filtrar=True)
+        lista = self.gerente.aplica_juncao_mongo(
+            self.db,
+            self.containers_conhecimento_ncms,
+            filtrar=True)
         print('LISTA', lista)
         assert len(lista) == 3
 
@@ -155,21 +160,21 @@ class TestCase(unittest.TestCase):
                       'valor': 'cheio'
                       })
         risco_cheio = type('ParametroRisco', (object, ),
-                         {'nome_campo': 'container',
-                          'valores': [cheio]}
-                         )
+                           {'nome_campo': 'container',
+                            'valores': [cheio]}
+                           )
         container_numero_cheio = type('PadraoRisco', (object, ),
                                       {'nome': 'dummy',
                                        'parametros': [risco_cheio]}
                                       )
 
         self.gerente.set_padraorisco(container_numero_cheio)
-        lista = self.gerente.aplica_juncao_mongo(self.db,
-                                                 self.containers_conhecimento_ncms,
-                                                 filtrar=True)
+        lista = self.gerente.aplica_juncao_mongo(
+            self.db,
+            self.containers_conhecimento_ncms,
+            filtrar=True)
         print('LISTA', lista)
         assert len(lista) == 2
-
 
 
 # Chamar python bhadrasana/tests/gerente_risco_mongo_test.py criará o Banco

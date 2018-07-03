@@ -46,6 +46,8 @@ def importar_base(self, csv_folder, baseid, data, filename, remove=False):
     self.update_state(state=states.STARTED,
                       meta={'status': 'Processando arquivo ' + basefilename +
                             '. Aguarde!!!'})
+    mysession = MySession(Base)
+    dbsession = mysession.session
     gerente = GerenteRisco()
     try:
         abase = dbsession.query(BaseOrigem).filter(
@@ -73,11 +75,10 @@ def arquiva_base_csv(self, baseid, base_csv):
     """Copia CSVs para MongoDB e apaga do disco."""
     # Aviso: Esta função rmtree só deve ser utilizada com caminhos seguros,
     # de preferência gerados pela própria aplicação
-    mysession = MySession(Base)
-    dbsession = mysession.session
-    engine = mysession.engine
     self.update_state(state=states.STARTED,
                       meta={'status': 'Aguarde. Arquivando base ' + base_csv})
+    mysession = MySession(Base)
+    dbsession = mysession.session
     try:
         abase = dbsession.query(BaseOrigem).filter(
             BaseOrigem.id == baseid).first()
@@ -98,12 +99,11 @@ def arquiva_base_csv(self, baseid, base_csv):
 def aplicar_risco(self, base_csv, padraoid, visaoid,
                   parametros_ativos, dest_path):
     """Chama função de aplicação de risco e grava resultado em arquivo."""
-    mysession = MySession(Base)
-    dbsession = mysession.session
-    engine = mysession.engine
     mensagem = 'Aguarde. Aplicando risco na base ' + \
         '-'.join(base_csv.split('/')[-3:])
     self.update_state(state=states.STARTED, meta={'status': mensagem})
+    mysession = MySession(Base)
+    dbsession = mysession.session
     gerente = GerenteRisco()
     try:
         self.update_state(state=states.PENDING, meta={'status': mensagem})
@@ -127,13 +127,13 @@ def aplicar_risco_mongo(self, visaoid, padraoid,
     """Chama função de aplicação de risco e grava resultado em arquivo."""
     mensagem = 'Aguarde. Aplicando risco no MongoDB. Visão: ' + visaoid
     self.update_state(state=states.STARTED, meta={'status': mensagem})
+    mysession = MySession(Base)
+    dbsession = mysession.session
+    conn = MongoClient(host=MONGODB_URI)
+    db = conn[DATABASE]
     gerente = GerenteRisco()
     try:
         self.update_state(state=states.PENDING, meta={'status': mensagem})
-        mysession = MySession(Base)
-        dbsession = mysession.session
-        conn = MongoClient(host=MONGODB_URI)
-        db = conn[DATABASE]
         lista_risco = gerente.aplica_risco_por_parametros(
             dbsession,
             visaoid=visaoid, padraoid=padraoid,

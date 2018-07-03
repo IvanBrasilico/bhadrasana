@@ -970,7 +970,7 @@ class GerenteRisco():
             dbsession: conexão com o Banco de Dados
 
             base_csv: Arquivo csv de onde carregar dados a serem filtrados
-            OU 
+            OU
             db: conexão MongoDB de onde carregar dados
 
             padraoid: ID do PadraoRisco a utilizar como filtro
@@ -1004,10 +1004,11 @@ class GerenteRisco():
             avisao = dbsession.query(Visao).filter(
                 Visao.id == visaoid).one()
             if db is not None:  # Usar MongoDB como fonte
-                return self.aplica_juncao_mongo(db, avisao,
-                                                filtrar=padrao is not None,
-                                                parametros_ativos=parametros_ativos
-                                                )
+                return self.aplica_juncao_mongo(
+                    db, avisao,
+                    filtrar=padrao is not None,
+                    parametros_ativos=parametros_ativos
+                )
             return self.aplica_juncao(
                 avisao, path=base_csv,
                 filtrar=padrao is not None,
