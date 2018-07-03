@@ -691,14 +691,32 @@ class GerenteRisco():
         paifilename = os.path.join(path, csv_pai)
         dfpai = pd.read_csv(paifilename, encoding=ENCODE, dtype=str)
         # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
-        if dffilho is not None:
-            dfpai = dfpai.merge(dffilho, how=how,
-                                left_on=tabela.primario.lower(),
-                                right_on=tabela.estrangeiro.lower())
+        try:
+            if dffilho is not None:
+                dfpai = dfpai.merge(dffilho, how=how,
+                                    left_on=tabela.primario.lower(),
+                                    right_on=tabela.estrangeiro.lower())
+        except KeyError as err:
+            logger.error('Erro ao fazer merge!')
+            msg = 'Erro ao montar consulta. KeyError: %s.' % str(err) + \
+                ' Tabela %s primario %s estrangeiro %s' % \
+                (tabela.csv_table, tabela.primario, tabela.estrangeiro)
+            msglog = msg + '\n' + \
+                '**dffilho: %s ' % ', '.join(dffilho.columns) + '\n' \
+                '**dfpai %s ' % ', '.join(dfpai.columns)
+            logger.error(msglog)
+            raise KeyError(msg)
         # print(dfpai)
         if visao.colunas:
             colunas = [coluna.nome.lower() for coluna in visao.colunas]
-            result_df = dfpai[colunas]
+            try:
+                result_df = dfpai[colunas]
+            except KeyError as err:
+                msg = 'Erro ao selecionar colunas. KeyError: ' + str(err) + \
+                    ' Colunas disponíveis: %s ' % \
+                    ', '.join(dfpai.columns)
+                logger.error(msg)
+                raise KeyError(msg)
             result_list = [colunas]
         else:
             result_df = dfpai
