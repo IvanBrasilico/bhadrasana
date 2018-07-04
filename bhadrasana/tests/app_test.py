@@ -170,7 +170,7 @@ class FlaskTestCase(unittest.TestCase):
     def test_not_found(self):
         if self.http_server is None:
             rv = self.app.get('/non_ecsiste')
-            assert b'404 Not Found' in rv.data
+            assert b'Erro 404' in rv.data
 
     # GET
     def test_1_home(self):
