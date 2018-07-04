@@ -666,6 +666,7 @@ class GerenteRisco():
             filhofilename = os.path.join(path, tabela.csv_file)
             dffilho = pd.read_csv(filhofilename, encoding=ENCODE,
                                   dtype=str)
+            logger.debug('DataFrame criado. Tabela % s ' % tabela.csv_file)
             if hasattr(tabela, 'type'):
                 how = tabela.type
             else:
@@ -684,18 +685,39 @@ class GerenteRisco():
             paifilhofilename = os.path.join(path, tabela.csv_file)
             dfpaifilho = pd.read_csv(paifilhofilename, encoding=ENCODE,
                                      dtype=str)
-            dffilho = dfpaifilho.merge(dffilho, how=how,
-                                       left_on=primario,
-                                       right_on=estrangeiro)
+            logger.debug('DataFrame criado. Tabela % s ' % tabela.csv_file)
+            try:
+                dffilho = dfpaifilho.merge(dffilho, how=how,
+                                           left_on=primario,
+                                           right_on=estrangeiro)
+                logger.debug('Merge realizado usando tabelas anteriores ' +
+                             'primario % s, estrangeiro %s ' % (
+                                 primario, estrangeiro)
+                             )
+            except KeyError as err:
+                logger.error('Erro ao fazer merge!')
+                msg = 'Erro ao montar consulta. KeyError: %s.' % str(err) + \
+                    ' Tabela %s primario %s estrangeiro %s' % \
+                    (tabela.csv_table, primario, estrangeiro)
+                msglog = msg + '\n' + \
+                    '**dffilho: %s ' % ', '.join(dffilho.columns) + '\n' \
+                    '**dfpai %s ' % ', '.join(dfpaifilho.columns)
+                logger.error(msglog)
+                raise KeyError(msg)
         csv_pai = visao.tabelas[0].csv_file
         paifilename = os.path.join(path, csv_pai)
         dfpai = pd.read_csv(paifilename, encoding=ENCODE, dtype=str)
+        logger.debug('DataFrame criado. Tabela % s ' % csv_pai)
         # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
         try:
             if dffilho is not None:
                 dfpai = dfpai.merge(dffilho, how=how,
                                     left_on=tabela.primario.lower(),
                                     right_on=tabela.estrangeiro.lower())
+            logger.debug('Merge realizado usando tabelas anteriores ' +
+                         'primario % s, estrangeiro %s ' % (
+                             tabela.primario, tabela.estrangeiro)
+                         )
         except KeyError as err:
             logger.error('Erro ao fazer merge!')
             msg = 'Erro ao montar consulta. KeyError: %s.' % str(err) + \

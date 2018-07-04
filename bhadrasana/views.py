@@ -93,7 +93,7 @@ def index():
     if current_user.is_authenticated:
         return render_template('index.html')
     else:
-        return redirect(url_for('login'))
+        return redirect(url_for('commons.login'))
 
 
 @app.route('/adiciona_base/<nome>')
@@ -1043,5 +1043,5 @@ def mynavbar():
              # View('Navega Bases', 'navega_bases')
              ]
     if current_user.is_authenticated:
-        items.append(View('Sair', 'logout'))
+        items.append(View('Sair', 'commons.logout'))
     return Navbar(logo, *items)
