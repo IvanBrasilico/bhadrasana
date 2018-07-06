@@ -193,7 +193,7 @@ class GerenteRisco():
                 # Para sch zipados e lista de csv zipados, esta verificação
                 # é mais custosa, mas também precisa ser implementada
                 cabecalhos_antigos = self.get_headers_base(baseid, csv_folder)
-                diferenca_cabecalhos = set()
+                diferenca_cabecalhos:set = set()
                 if cabecalhos_antigos:
                     with open(filename, 'r', newline='') as file:
                         reader = csv.reader(file)
