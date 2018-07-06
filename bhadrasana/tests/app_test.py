@@ -23,7 +23,6 @@ from bhadrasana.models.models import (Base, BaseOrigem, Coluna, DePara,
                                       Tabela, ValorParametro, Visao)
 from bhadrasana.views import configure_app
 
-
 mysession = MySession(Base, test=True)
 dbsession = mysession.session
 engine = mysession.engine
@@ -46,12 +45,10 @@ class FlaskTestCase(unittest.TestCase):
             self.app = TestApp(self.http_server)
         else:
             app.testing = True
-            # app.config['WTF_CSRF_ENABLED'] = False
             self.app = app.test_client()
 
     def tearDown(self):
         self.logout()
-        pass
 
     def get_token(self, url):
         if self.http_server is not None:
@@ -74,6 +71,7 @@ class FlaskTestCase(unittest.TestCase):
 
     def login(self, username, senha):
         self.get_token('/login')
+        self.http_server = None
         if self.http_server is not None:
             response = self.app.post('/login',
                                      params=dict(
@@ -90,10 +88,7 @@ class FlaskTestCase(unittest.TestCase):
             ), follow_redirects=True)
 
     def logout(self):
-        if self.http_server is not None:
-            return self.app.get('/logout')
-        else:
-            return self.app.get('/logout', follow_redirects=True)
+        return self._get('/logout', follow_redirects=True)
 
     # methods
     def data(self, rv):
@@ -168,11 +163,9 @@ class FlaskTestCase(unittest.TestCase):
     # Início dos testes...
     #
     def test_not_found(self):
-        if self.http_server is None:
-            rv = self.app.get('/non_ecsiste')
-            assert b'Erro 404' in rv.data
+        rv = self._get('/non_ecsiste')
+        assert b'Erro 404' in rv.data
 
-    # GET
     def test_1_home(self):
         rv = self._get('/', follow_redirects=True)
         data = self.data(rv)
@@ -290,7 +283,6 @@ class FlaskTestCase(unittest.TestCase):
         print(data)
         assert b'"selected">baseteste' in data
 
-    """
     def test_3_3_padraorisco_excluibase(self):
         self.login('ajna', 'ajna')
         rv = self._get(
@@ -298,8 +290,7 @@ class FlaskTestCase(unittest.TestCase):
             follow_redirects=True)
         data = self.data(rv)
         print(data)
-        assert b'"center">baseteste' in data
-    """
+        assert b'"center">baseteste' not in data
 
     def test_4_1_adicionaparametro(self):
         self.login('ajna', 'ajna')

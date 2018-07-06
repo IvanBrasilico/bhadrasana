@@ -216,14 +216,14 @@ class TestGerenteRisco(unittest.TestCase):
     def test_juntacsv(self):
         gerente = self.gerente
         autores = type('Tabela', (object, ),
-                       {'csv': 'autores',
-                        'primario': 'id',
+                       {'csv_table': 'autores',
+                        'primario': 'autor',
                         'estrangeiro': 'livroid',
                         'csv_file': 'autores.csv'
                         })
         livro = type('Tabela', (object, ),
-                     {'csv': 'livros',
-                      'primario': 'id',
+                     {'csv_table': 'livros',
+                      'primario': 'livro',
                       'filhos': [autores],
                       'csv_file': 'livros.csv'
                       })
@@ -233,21 +233,21 @@ class TestGerenteRisco(unittest.TestCase):
                               'colunas': []
                               })
         sub_capitulos = type('Tabela', (object, ),
-                             {'csv': 'subcapitulos',
-                              'primario': 'id',
+                             {'csv_table': 'subcapitulos',
+                              'primario': 'subcapitulo',
                               'estrangeiro': 'capituloid',
                               'type': 'outer',
                               'csv_file': 'subcapitulos.csv'
                               })
         capitulos = type('Tabela', (object, ),
-                         {'csv': 'capitulos',
-                          'primario': 'id',
+                         {'csv_table': 'capitulos',
+                          'primario': 'capitulo',
                           'estrangeiro': 'livroid',
                           'filhos': [sub_capitulos],
                           'csv_file': 'capitulos.csv'
                           })
-        nome = type('Tabela', (object, ),
-                    {'nome': 'nome'})
+        nome = type('Coluna', (object, ),
+                    {'nome': 'titulo'})
         capitulos_livro = type('Visao', (object, ),
                                {'nome': 'capitulos_livro',
                                 'tabelas': [livro, capitulos, sub_capitulos],
@@ -259,7 +259,7 @@ class TestGerenteRisco(unittest.TestCase):
         assert len(result) == 4
         result = gerente.aplica_juncao(capitulos_livro, path=path)
         print(result)
-        assert len(result) == 9
+        assert len(result) == 7
         gerente.aplica_juncao(capitulos_livro, path=path, filtrar=True)
         # assert False  # Uncomment to view output
 

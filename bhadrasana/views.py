@@ -43,9 +43,8 @@ from bhadrasana.models.models import (BaseOrigem, Coluna, DePara, PadraoRisco,
                                       Visao)
 from bhadrasana.utils.gerente_risco import (ESemValorParametro, GerenteRisco,
                                             tmpdir)
-from bhadrasana.workers.tasks import (aplicar_risco, arquiva_base_csv,
-                                      aplicar_risco_mongo,
-                                      importar_base)
+from bhadrasana.workers.tasks import (aplicar_risco, aplicar_risco_mongo,
+                                      arquiva_base_csv, importar_base)
 
 app = Flask(__name__, static_url_path='/static')
 csrf = CSRFProtect(app)
@@ -64,7 +63,6 @@ def configure_app(sqllitedb, mongodb):
     app.config['SECRET_KEY'] = SECRET
     app.config['SESSION_TYPE'] = 'filesystem'
     Session(app)
-    login_ajna.login_manager.init_app(app)
     login_ajna.configure(app)
     login_ajna.DBUser.dbsession = mongodb
     app.config['dbsession'] = sqllitedb

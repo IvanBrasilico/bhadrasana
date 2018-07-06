@@ -96,8 +96,8 @@ def arquiva_base_csv(self, baseid, base_csv):
 
 
 @celery.task(bind=True)
-def aplicar_risco(self, base_csv:str, padraoid:int, visaoid:int,
-                  parametros_ativos:list, dest_path:str):
+def aplicar_risco(self, base_csv: str, padraoid: int, visaoid: int,
+                  parametros_ativos: list, dest_path: str):
     """Chama função de aplicação de risco e grava resultado em arquivo."""
     mensagem = 'Aguarde. Aplicando risco na base ' + \
         '-'.join(base_csv.split('/')[-3:])
@@ -107,10 +107,11 @@ def aplicar_risco(self, base_csv:str, padraoid:int, visaoid:int,
     gerente = GerenteRisco()
     try:
         self.update_state(state=states.PENDING, meta={'status': mensagem})
-        lista_risco = gerente.aplica_risco_por_parametros(dbsession,
-                                                          padraoid=padraoid, visaoid=visaoid,
-                                                          parametros_ativos=parametros_ativos,
-                                                          base_csv=base_csv)
+        lista_risco = gerente.aplica_risco_por_parametros(
+            dbsession,
+            padraoid=padraoid, visaoid=visaoid,
+            parametros_ativos=parametros_ativos,
+            base_csv=base_csv)
         if lista_risco:
             csv_salvo = os.path.join(dest_path,
                                      datetime.today().strftime

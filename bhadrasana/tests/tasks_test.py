@@ -1,13 +1,13 @@
-import time
-import pytest
-import unittest
 import os
 import shutil
+import time
+import unittest
+
+import pytest
+from celery import states
 
 from ajna_commons.flask.conf import BACKEND, BROKER
-from celery import states
-from bhadrasana.workers.tasks import celery
-from bhadrasana.workers.tasks import importar_base
+from bhadrasana.workers.tasks import celery, importar_base
 
 
 @pytest.fixture(scope='session')
