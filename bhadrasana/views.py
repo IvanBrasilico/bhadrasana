@@ -438,7 +438,7 @@ def risco():
     # Salvar resultado um arquivo para donwload
     # Limita resultados em 100 linhas na tela
     if lista_risco:
-        csv_salvo = os.path.join(static_path, 'baixar.csv')
+        csv_salvo = os.path.join(static_path, u'Última planilha.csv')
         gerente.save_csv(lista_risco, csv_salvo)
         total_linhas = len(lista_risco) - 1
         lista_risco = lista_risco[:100]
@@ -930,12 +930,17 @@ def exclui_visao():
     """
     dbsession = app.config.get('dbsession')
     visaoid = request.args.get('visaoid')
-    dbsession.query(Visao).filter(
-        Visao.id == visaoid).delete()
+    baseid = 0
+    visao = dbsession.query(Visao).filter(
+        Visao.id == visaoid).first()
+    if visao:
+        baseid = visao.base_id
     dbsession.query(Coluna).filter(
         Coluna.visao_id == visaoid).delete()
+    dbsession.query(Visao).filter(
+        Visao.id == visaoid).delete()
     dbsession.commit()
-    return redirect(url_for('juncoes'))
+    return redirect(url_for('juncoes', baseid=baseid))
 
 
 @app.route('/adiciona_coluna')

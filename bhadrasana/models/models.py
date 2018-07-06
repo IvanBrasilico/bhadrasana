@@ -155,7 +155,7 @@ class PadraoRisco(Base):
         """Retorna representação String."""
         return 'Nome %s\n base %s\n parametros %s\n ' % \
             (self.nome, self.base_id,
-             [(param.nome_campo, param.valores.valor)
+             [(param.nome_campo, param.valores[0].valor)
               for param in self.parametros])
 
 

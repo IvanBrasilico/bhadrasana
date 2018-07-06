@@ -660,50 +660,49 @@ class GerenteRisco():
 
         """
         numero_juncoes = len(visao.tabelas)
-        dffilho = None
-        if numero_juncoes > 1:  # Caso apenas uma tabela esteja na visão,
-            tabela = visao.tabelas[numero_juncoes - 1]  # não há junção
-            filhofilename = os.path.join(path, tabela.csv_file)
-            dffilho = pd.read_csv(filhofilename, encoding=ENCODE,
-                                  dtype=str)
-            logger.debug('DataFrame criado. Tabela % s ' % tabela.csv_file)
-            if hasattr(tabela, 'type'):
-                how = tabela.type
-            else:
-                how = 'inner'
-        # A primeira precisa ser "pulada", sempre é a junção 2 tabelas
-        # de cada vez. Se numero_juncoes for >2, entrará aqui fazendo
-        # a junção em cadeia desde o último até o primeiro filho
-        for r in range(numero_juncoes - 2, 0, -1):
-            estrangeiro = tabela.estrangeiro.lower()
+        tabela = visao.tabelas[0]
+        print('CSV File', tabela.csv_file)
+        filename = os.path.join(path, tabela.csv_file)
+        dfpai = pd.read_csv(filename, encoding=ENCODE,
+                            dtype=str)
+        logger.debug('DataFrame criado. Tabela %s. %s linhas ' %
+                     (tabela.csv_file, len(dfpai)))
+        if hasattr(tabela, 'type'):
+            how = tabela.type
+        else:
+            how = 'inner'
+        for r in range(1, numero_juncoes):
+            primario = tabela.primario.lower()
             if hasattr(tabela, 'type'):
                 how = tabela.type
             else:
                 how = 'inner'
             tabela = visao.tabelas[r]
-            primario = tabela.primario.lower()
-            paifilhofilename = os.path.join(path, tabela.csv_file)
-            dfpaifilho = pd.read_csv(paifilhofilename, encoding=ENCODE,
-                                     dtype=str)
-            logger.debug('DataFrame criado. Tabela % s ' % tabela.csv_file)
+            estrangeiro = tabela.estrangeiro.lower()
+            filhofilename = os.path.join(path, tabela.csv_file)
+            dffilho = pd.read_csv(filhofilename, encoding=ENCODE,
+                                  dtype=str)
+            logger.debug('DataFrame criado. Tabela % s. Linhas %s ' %
+                         (tabela.csv_file, len(dffilho)))
             try:
-                dffilho = dfpaifilho.merge(dffilho, how=how,
-                                           left_on=primario,
-                                           right_on=estrangeiro)
+                dfpai = dfpai.merge(dffilho, how=how,
+                                    left_on=primario,
+                                    right_on=estrangeiro)
                 logger.debug('Merge realizado usando tabelas anteriores ' +
-                             'primario % s, estrangeiro %s ' % (
-                                 primario, estrangeiro)
+                             'primario % s, estrangeiro %s, linhas %s ' % (
+                                 primario, estrangeiro, len(dffilho))
                              )
             except KeyError as err:
-                logger.error('Erro ao fazer merge!')
-                msg = 'Erro ao montar consulta. KeyError: %s.' % str(err) + \
+                logger.error('Erro ao fazer merge 1!')
+                msg = 'Erro ao montar consulta 1. KeyError: %s.' % str(err) + \
                     ' Tabela %s primario %s estrangeiro %s' % \
                     (tabela.csv_table, primario, estrangeiro)
                 msglog = msg + '\n' + \
                     '**dffilho: %s ' % ', '.join(dffilho.columns) + '\n' \
-                    '**dfpai %s ' % ', '.join(dfpaifilho.columns)
+                    '**dfpai %s ' % ', '.join(dfpai.columns)
                 logger.error(msglog)
                 raise KeyError(msg)
+        """
         csv_pai = visao.tabelas[0].csv_file
         paifilename = os.path.join(path, csv_pai)
         dfpai = pd.read_csv(paifilename, encoding=ENCODE, dtype=str)
@@ -714,13 +713,13 @@ class GerenteRisco():
                 dfpai = dfpai.merge(dffilho, how=how,
                                     left_on=tabela.primario.lower(),
                                     right_on=tabela.estrangeiro.lower())
-            logger.debug('Merge realizado usando tabelas anteriores ' +
-                         'primario % s, estrangeiro %s ' % (
-                             tabela.primario, tabela.estrangeiro)
-                         )
+                logger.debug('Merge realizado usando tabelas anteriores ' +
+                             'primario % s, estrangeiro %s, linhas %s' %
+                             (tabela.primario, tabela.estrangeiro, len(dfpai))
+                             )
         except KeyError as err:
-            logger.error('Erro ao fazer merge!')
-            msg = 'Erro ao montar consulta. KeyError: %s.' % str(err) + \
+            logger.error('Erro ao fazer merge 2!')
+            msg = 'Erro ao montar consulta 2. KeyError: %s.' % str(err) + \
                 ' Tabela %s primario %s estrangeiro %s' % \
                 (tabela.csv_table, tabela.primario, tabela.estrangeiro)
             msglog = msg + '\n' + \
@@ -729,6 +728,7 @@ class GerenteRisco():
             logger.error(msglog)
             raise KeyError(msg)
         # print(dfpai)
+        """
         if visao.colunas:
             colunas = [coluna.nome.lower() for coluna in visao.colunas]
             try:
@@ -993,10 +993,10 @@ class GerenteRisco():
         return None
 
     def aplica_risco_por_parametros(self, dbsession,
-                                    padraoid=0,
-                                    visaoid=0,
-                                    parametros_ativos: list=None,
-                                    base_csv=None,
+                                    padraoid: int = 0,
+                                    visaoid: int = 0,
+                                    parametros_ativos: list= None,
+                                    base_csv: str = None,
                                     db=None):
         """Escolhe o método correto de acordo com parâmetros.
 
@@ -1032,7 +1032,7 @@ class GerenteRisco():
         print('PADRAO', padrao, padraoid)
         if visaoid == '0':
             dir_content = os.listdir(base_csv)
-            arquivo = os.path.join(base_csv, dir_content[0])
+            arquivo = os.path.join(base_csv, str(dir_content[0]))
             lista_risco = self.load_csv(arquivo)
             if padrao is None:
                 return lista_risco
