@@ -7,7 +7,8 @@ teste funcional
 
 Alguns testes (importa_base, aplica_risco, arquiva_base),
 gravam registros no Servidor Celery, portanto a saída
-só será realmente avaliada nos testes funcionais
+só será realmente avaliada nos testes funcionais com Selenium,
+sendo necessário rodar paralelamente o serviço Celery.
 
 """
 import os
