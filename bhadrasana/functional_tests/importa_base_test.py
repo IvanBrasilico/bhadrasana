@@ -12,9 +12,9 @@ import unittest
 
 from flask import url_for
 from selenium.webdriver.support.ui import Select
-from selenium_test import SeleniumTestCase
 
 from bhadrasana.conf import ENCODE, tmpdir
+from selenium_test import SeleniumTestCase
 
 
 class ImportarBase(SeleniumTestCase):

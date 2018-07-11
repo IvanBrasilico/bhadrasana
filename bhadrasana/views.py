@@ -22,7 +22,7 @@ import os
 import shutil
 
 from flask import (Flask, flash, jsonify, redirect, render_template, request,
-                   session, url_for)
+                   url_for)
 from flask_bootstrap import Bootstrap
 # from flask_cors import CORS
 from flask_login import current_user, login_required
@@ -37,14 +37,14 @@ import ajna_commons.flask.login as login_ajna
 from ajna_commons.flask.conf import ALLOWED_EXTENSIONS, SECRET, logo
 from ajna_commons.flask.log import logger
 from ajna_commons.utils.sanitiza import sanitizar, unicode_sanitizar
-from bhadrasana.conf import APP_PATH, CSV_DOWNLOAD, CSV_FOLDER
+from bhadrasana.conf import APP_PATH, CSV_FOLDER
 from bhadrasana.models.models import (BaseOrigem, Coluna, DePara, PadraoRisco,
                                       ParametroRisco, Tabela, ValorParametro,
                                       Visao)
-from bhadrasana.utils.gerente_base import Filtro, GerenteBase
-from bhadrasana.utils.gerente_risco import GerenteRisco, SemHeaders, tmpdir
-from bhadrasana.workers.tasks import (aplicar_risco, arquiva_base_csv,
-                                      importar_base)
+from bhadrasana.utils.gerente_risco import (ESemValorParametro, GerenteRisco,
+                                            tmpdir)
+from bhadrasana.workers.tasks import (aplicar_risco, aplicar_risco_mongo,
+                                      arquiva_base_csv, importar_base)
 
 app = Flask(__name__, static_url_path='/static')
 csrf = CSRFProtect(app)
@@ -63,7 +63,6 @@ def configure_app(sqllitedb, mongodb):
     app.config['SECRET_KEY'] = SECRET
     app.config['SESSION_TYPE'] = 'filesystem'
     Session(app)
-    login_ajna.login_manager.init_app(app)
     login_ajna.configure(app)
     login_ajna.DBUser.dbsession = mongodb
     app.config['dbsession'] = sqllitedb
@@ -92,7 +91,122 @@ def index():
     if current_user.is_authenticated:
         return render_template('index.html')
     else:
-        return redirect(url_for('login'))
+        return redirect(url_for('commons.login'))
+
+
+@app.route('/adiciona_base/<nome>')
+@login_required
+def adiciona_base(nome):
+    """Cria nova instância de Base Origem com o nome passado."""
+    dbsession = app.config.get('dbsession')
+    logger.debug(nome)
+    nova_base = BaseOrigem(nome)
+    dbsession.add(nova_base)
+    dbsession.commit()
+    baseid = nova_base.id
+    return redirect(url_for('importa_base', baseid=baseid))
+
+
+@app.route('/edita_depara')
+@login_required
+def edita_depara():
+    """Tela para configurar os titulos das bases a serem importadas.
+
+    Args:
+        baseid: ID da Base de Origem do arquivo
+    """
+    dbsession = app.config.get('dbsession')
+    baseid = request.args.get('baseid')
+    bases = dbsession.query(BaseOrigem).all()
+    titulos = []
+    headers1 = []
+    headers2 = []
+    user_folder = os.path.join(CSV_FOLDER, current_user.name)
+    print('USER', current_user.name)
+    if baseid:
+        base = dbsession.query(BaseOrigem).filter(
+            BaseOrigem.id == baseid
+        ).first()
+        if base:
+            titulos = base.deparas
+            gerente = GerenteRisco()
+            headers1 = gerente.get_headers_base(
+                baseid, path=user_folder)
+            for padrao_risco in base.padroes:
+                for parametro in padrao_risco.parametros:
+                    headers2.append(parametro.nome_campo)
+            if len(headers1) == 0:
+                flash('Aviso: nenhuma base exemplo ou configuração muda '
+                      'títulos encontrada para sugestão de campo título '
+                      'anterior.')
+            if len(headers2) == 0:
+                flash('Aviso: nenhum parâmetro de risco '
+                      'encontrado para sugestão de campo título novo.')
+    return render_template('muda_titulos.html', bases=bases,
+                           baseid=baseid,
+                           titulos=titulos,
+                           lista_autocomplete1=headers1,
+                           lista_autocomplete2=headers2)
+
+
+@app.route('/adiciona_depara')
+@login_required
+def adiciona_depara():
+    """De_para - troca títulos.
+
+    Função que permite unificar o nome de colunas que possuem o mesmo
+    conteúdo.
+
+    Esta função realiza a troca do titulo de uma coluna por outro, permitindo
+    que duas colunas que tragam a mesma informação em bases diferentes sejam
+    filtradas por um único parâmetro de risco.
+
+    Args:
+        baseid: ID da Base de Origem do arquivo
+
+        titulo_antigo: Titulo original da base a ser importada
+
+        titulo_novo: Titulo unificado
+    """
+    dbsession = app.config.get('dbsession')
+    baseid = request.args.get('baseid')
+    padraoid = request.args.get('padraoid')
+    titulo_antigo = sanitizar(request.args.get('antigo'),
+                              norm_function=unicode_sanitizar)
+    titulo_novo = sanitizar(request.args.get('novo'),
+                            norm_function=unicode_sanitizar)
+    if baseid:
+        base = dbsession.query(BaseOrigem).filter(
+            BaseOrigem.id == baseid
+        ).first()
+        depara = DePara(titulo_antigo, titulo_novo, base)
+        dbsession.add(depara)
+        dbsession.commit()
+    return redirect(url_for('edita_depara', baseid=baseid,
+                            padraoid=padraoid))
+
+
+@app.route('/exclui_depara')
+def exclui_depara():
+    """Função que remove a troca de titulo selecionada.
+
+    Esta função permite unificar o nome de colunas que possuem o mesmo
+    conteúdo.
+
+    Args:
+        baseid: ID da Base de Origem do arquivo
+
+        tituloid: ID do titulo a ser excluído
+    """
+    dbsession = app.config.get('dbsession')
+    baseid = request.args.get('baseid')
+    padraoid = request.args.get('padraoid')
+    tituloid = request.args.get('tituloid')
+    dbsession.query(DePara).filter(
+        DePara.id == tituloid).delete()
+    dbsession.commit()
+    return redirect(url_for('edita_depara', baseid=baseid,
+                            padraoid=padraoid))
 
 
 @app.route('/importa_base', methods=['GET', 'POST'])
@@ -174,19 +288,6 @@ def task_progress(taskid):
     return jsonify(response)
 
 
-@app.route('/adiciona_base/<nome>')
-@login_required
-def adiciona_base(nome):
-    """Cria nova instância de Base Origem com o nome passado."""
-    dbsession = app.config.get('dbsession')
-    logger.debug(nome)
-    nova_base = BaseOrigem(nome)
-    dbsession.add(nova_base)
-    dbsession.commit()
-    baseid = nova_base.id
-    return redirect(url_for('importa_base', baseid=baseid))
-
-
 def get_planilhas_criadas_agendamento(path):
     """Lê o diretório e retorna nomes de arquivos .csv."""
     if not path:
@@ -195,7 +296,6 @@ def get_planilhas_criadas_agendamento(path):
             if planilha.is_file() and planilha.name.endswith('.csv')]
 
 
-# @app.route('/aplica_risco')
 @app.route('/risco', methods=['POST', 'GET'])
 @login_required
 def risco():
@@ -259,8 +359,11 @@ def risco():
         try:
             if abase and base_csv:
                 if acao == 'excluir':
-                    shutil.rmtree(base_csv)
-                    flash('Base excluída!')
+                    try:
+                        shutil.rmtree(base_csv)
+                        flash('Base excluída!')
+                    except FileNotFoundError as err:
+                        flash('Não encontrou arquivo ' + str(err))
                 else:
                     # As três linhas antes de chamar a task são para remover
                     # a linha da base escolhida da tela, evitando que o Usuário
@@ -299,32 +402,30 @@ def risco():
     lista_risco = []
     csv_salvo = ''
     try:
-        if visaoid != '0':
-            print(visaoid)
-            avisao = dbsession.query(Visao).filter(
-                Visao.id == visaoid).one()
         if acao == 'mongo':
             path = 'Arquivo ' + abase.nome if abase else base_csv
-            if padrao:
-                gerente.set_padraorisco(padrao)
             if visaoid == '0':
+                if padrao:
+                    gerente.set_padraorisco(padrao)
                 lista_risco = gerente.load_mongo(
                     mongodb, base=abase,
                     parametros_ativos=parametros_ativos)
             else:
-                lista_risco = gerente.aplica_juncao_mongo(
-                    mongodb, avisao, filtrar=padrao is not None,
-                    parametros_ativos=parametros_ativos)
+                task = aplicar_risco_mongo.apply_async((
+                    visaoid, padraoid,
+                    parametros_ativos, static_path
+                ))
         else:
             if acao == 'aplicar':
                 lista_risco = gerente.aplica_risco_por_parametros(
-                    dbsession, base_csv, padraoid, visaoid, parametros_ativos
+                    dbsession, padraoid, visaoid,
+                    parametros_ativos=parametros_ativos,
+                    base_csv=base_csv
                 )
             elif acao == 'agendar':
                 task = aplicar_risco.apply_async((
                     base_csv, padraoid, visaoid, parametros_ativos, static_path
                 ))
-                tasks.append(task.id)
 
     except Exception as err:
         logger.error(err, exc_info=True)
@@ -335,10 +436,17 @@ def risco():
     # Salvar resultado um arquivo para donwload
     # Limita resultados em 100 linhas na tela
     if lista_risco:
-        csv_salvo = os.path.join(static_path, 'baixar.csv')
+        csv_salvo = os.path.join(static_path, u'Última planilha.csv')
         gerente.save_csv(lista_risco, csv_salvo)
         total_linhas = len(lista_risco) - 1
         lista_risco = lista_risco[:100]
+    if acao and task:
+        return redirect(url_for('risco',
+                                baseid=baseid,
+                                padraoid=padraoid,
+                                visaoid=visaoid,
+                                filename=path,
+                                task=task))
     return render_template('aplica_risco.html',
                            lista_arquivos=lista_arquivos,
                            bases=bases,
@@ -369,18 +477,18 @@ def exclui_planilha(planilha):
         Lista com as planilhas restantes
 
     """
-    static_path = os.path.join(APP_PATH,
-                               app.config.get('STATIC_FOLDER', 'static'),
-                               current_user.name)
+    user_path = os.path.join(APP_PATH,
+                             app.config.get('STATIC_FOLDER', 'static'),
+                             current_user.name)
     if planilha:
         # planilha = secure_filename(planilha)
-        planilha = os.path.join(static_path, planilha)
+        planilha = os.path.join(user_path, planilha)
         try:
             os.remove(planilha)
         except OSError as err:
             logger.error(str(err))
             logger.error('exclui_planilha falhou ao excluir: ' + planilha)
-    return jsonify(get_planilhas_criadas_agendamento(static_path))
+    return jsonify(get_planilhas_criadas_agendamento(user_path))
 
 
 @app.route('/valores')
@@ -424,8 +532,10 @@ def edita_risco():
 
         riscoid: ID do objeto de risco para aplicar a edição
     """
+    user_folder = os.path.join(CSV_FOLDER, current_user.name)
     dbsession = app.config.get('dbsession')
     padraoid = request.args.get('padraoid')
+    baseid = request.args.get('baseid')
     padroes = dbsession.query(PadraoRisco).order_by(PadraoRisco.nome).all()
     bases = dbsession.query(BaseOrigem).order_by(BaseOrigem.nome).all()
     parametros = []
@@ -435,8 +545,8 @@ def edita_risco():
         padrao = dbsession.query(PadraoRisco).filter(
             PadraoRisco.id == padraoid
         ).first()
-        basesid = padrao.bases
         if padrao:
+            basesid = padrao.bases
             parametros = padrao.parametros
     riscoid = request.args.get('riscoid')
     valores = []
@@ -454,7 +564,7 @@ def edita_risco():
             logger.debug(base)
             base_id = base.id
             headers = gerente.get_headers_base(
-                base_id, path=CSV_FOLDER)
+                base_id, path=user_folder)
             headers = list(headers)
             base_headers = [depara.titulo_novo for depara in
                             dbsession.query(DePara).filter(
@@ -469,6 +579,7 @@ def edita_risco():
         logger.debug(headers)
     return render_template('edita_risco.html',
                            padraoid=padraoid,
+                           baseid=baseid,
                            padroes=padroes,
                            bases=bases,
                            basesid=basesid,
@@ -493,6 +604,40 @@ def adiciona_padrao(nome):
     dbsession.commit()
     padraoid = novo_padrao.id
     return redirect(url_for('edita_risco', padraoid=padraoid))
+
+
+@app.route('/vincula_base')
+@login_required
+def vincula_base():
+    """Função que vincula padrão de riscos e base origem.
+
+    Args:
+        padraoid: ID do padrão a ser atualizado
+        baseid: ID da base a vincular
+    """
+    dbsession = app.config.get('dbsession')
+    padraoid = request.args.get('padraoid')
+    baseid = request.args.get('baseid')
+    padrao = dbsession.query(PadraoRisco).filter(
+        PadraoRisco.id == padraoid
+    ).first()
+    if padrao is None:
+        flash('PadraoRisco %s não encontrada ' % padraoid)
+    base = dbsession.query(BaseOrigem).filter(
+        BaseOrigem.id == baseid
+    ).first()
+    if base is None:
+        flash('Base %s não encontrada ' % baseid)
+    if base and padrao:
+        if base not in padrao.bases:
+            padrao.bases.append(base)
+        else:
+            padrao.bases.remove(base)
+        dbsession.merge(padrao)
+        dbsession.commit()
+    return redirect(url_for('edita_risco',
+                            padraoid=padraoid,
+                            baseid=baseid))
 
 
 @app.route('/importa_csv/<padraoid>/<riscoid>', methods=['POST', 'GET'])
@@ -528,10 +673,12 @@ def importa_csv(padraoid, riscoid):
         if (csvf and '.' in csvf.filename and
                 csvf.filename.rsplit('.', 1)[1].lower() == 'csv'):
             # filename = secure_filename(csvf.filename)
-            csvf.save(os.path.join(tmpdir, risco.nome_campo + '.csv'))
-            logger.info(csvf.filename)
+            save_name = os.path.join(tmpdir, risco.nome_campo + '.csv')
+            csvf.save(save_name)
+            logger.info('CSV RECEBIDO: %s' % save_name)
             gerente = GerenteRisco()
             gerente.parametros_fromcsv(risco.nome_campo, session=dbsession)
+            logger.info('TESTE: %s %s' % (risco.nome_campo, dbsession))
     return redirect(url_for('edita_risco', padraoid=padraoid,
                             riscoid=riscoid))
 
@@ -553,12 +700,22 @@ def exporta_csv():
     padraoid = request.args.get('padraoid')
     riscoid = request.args.get('riscoid')
     gerente = GerenteRisco()
-    gerente.parametro_tocsv(riscoid, path=CSV_DOWNLOAD, dbsession=dbsession)
+    static_path = os.path.join(APP_PATH,
+                               app.config.get('STATIC_FOLDER', 'static'),
+                               current_user.name)
+    try:
+        filename = gerente.parametro_tocsv(
+            riscoid, path=static_path, dbsession=dbsession)
+        web_filename = filename.split('/')[-1]
+        return redirect('/static/%s/%s' % (current_user.name, web_filename))
+    except ESemValorParametro as err:
+        flash(str(err))
     return redirect(url_for('edita_risco', padraoid=padraoid,
                             riscoid=riscoid))
 
 
 @app.route('/adiciona_parametro')
+@login_required
 def adiciona_parametro():
     """Função que adiciona um novo parâmetro de risco.
 
@@ -612,6 +769,7 @@ def exclui_parametro():
 
 
 @app.route('/adiciona_valor')
+@login_required
 def adiciona_valor():
     """Função que adiciona um novo valor ao parâmetro de risco selecionado.
 
@@ -662,248 +820,6 @@ def exclui_valor():
                             riscoid=riscoid))
 
 
-@app.route('/edita_depara')
-@login_required
-def edita_depara():
-    """Tela para configurar os titulos das bases a serem importadas.
-
-    Args:
-        baseid: ID da Base de Origem do arquivo
-
-        padraoid: ID do padrão de risco
-    """
-    dbsession = app.config.get('dbsession')
-    baseid = request.args.get('baseid')
-    padraoid = request.args.get('padraoid')
-    bases = dbsession.query(BaseOrigem).all()
-    padroes = dbsession.query(PadraoRisco).all()
-    titulos = []
-    headers = []
-    if baseid:
-        base = dbsession.query(BaseOrigem).filter(
-            BaseOrigem.id == baseid
-        ).first()
-        if base:
-            titulos = base.deparas
-        try:
-            padroes_risco = dbsession.query(ParametroRisco).filter(
-                ParametroRisco.padraorisco_id == padraoid).all()
-            headers = [head.nome_campo for head in padroes_risco]
-            print(headers)
-        except SemHeaders as err:
-            flash('Aviso: nenhuma base exemplo ou configuração muda títulos '
-                  'encontrada para sugestão de campo parâmetro.')
-    return render_template('muda_titulos.html', bases=bases,
-                           padroes=padroes,
-                           baseid=baseid,
-                           padraoid=padraoid,
-                           titulos=titulos,
-                           lista_autocomplete=headers)
-
-
-@app.route('/adiciona_depara')
-def adiciona_depara():
-    """De_para - troca títulos.
-
-    Função que permite unificar o nome de colunas que possuem o mesmo
-    conteúdo.
-
-    Esta função realiza a troca do titulo de uma coluna por outro, permitindo
-    que duas colunas que tragam a mesma informação em bases diferentes sejam
-    filtradas por um único parâmetro de risco.
-
-    Args:
-        baseid: ID da Base de Origem do arquivo
-
-        titulo_antigo: Titulo original da base a ser importada
-
-        titulo_novo: Titulo unificado
-    """
-    dbsession = app.config.get('dbsession')
-    baseid = request.args.get('baseid')
-    padraoid = request.args.get('padraoid')
-    print('########################################################3')
-    print('########################################################3')
-    print('########################################################3')
-    print('########################################################3')
-    print('########################################################3')
-    print('########################################################3')
-    titulo_antigo = sanitizar(request.args.get('antigo'),
-                              norm_function=unicode_sanitizar)
-    titulo_novo = sanitizar(request.args.get('novo'),
-                            norm_function=unicode_sanitizar)
-    if baseid:
-        base = dbsession.query(BaseOrigem).filter(
-            BaseOrigem.id == baseid
-        ).first()
-        depara = DePara(titulo_antigo, titulo_novo, base)
-        dbsession.add(depara)
-        dbsession.commit()
-    return redirect(url_for('edita_depara', baseid=baseid,
-                            padraoid=padraoid))
-
-
-@app.route('/exclui_depara')
-def exclui_depara():
-    """Função que remove a troca de titulo selecionada.
-
-    Esta função permite unificar o nome de colunas que possuem o mesmo
-    conteúdo.
-
-    Args:
-        baseid: ID da Base de Origem do arquivo
-
-        tituloid: ID do titulo a ser excluído
-    """
-    dbsession = app.config.get('dbsession')
-    baseid = request.args.get('baseid')
-    padraoid = request.args.get('padraoid')
-    tituloid = request.args.get('tituloid')
-    dbsession.query(DePara).filter(
-        DePara.id == tituloid).delete()
-    dbsession.commit()
-    return redirect(url_for('edita_depara', baseid=baseid,
-                            padraoid=padraoid))
-
-
-@app.route('/navega_bases')
-@login_required
-def navega_bases():
-    """Navega Bases. Deprecated."""
-    selected_module = request.args.get('selected_module')
-    selected_model = request.args.get('selected_model')
-    selected_field = request.args.get('selected_field')
-    filters = session.get('filters', [])
-    gerente = GerenteBase()
-    list_modulos = gerente.list_modulos
-    list_models = []
-    list_fields = []
-    if selected_module:
-        gerente.set_module(selected_module)
-        list_models = gerente.list_models
-        if selected_model:
-            list_fields = gerente.dict_models[selected_model]['campos']
-    return render_template('navega_bases.html',
-                           selected_module=selected_module,
-                           selected_model=selected_model,
-                           selected_field=selected_field,
-                           filters=filters,
-                           list_modulos=list_modulos,
-                           list_models=list_models,
-                           list_fields=list_fields)
-
-
-@app.route('/adiciona_filtro')
-def adiciona_filtro():
-    """Incluir Filtro. Deprecated."""
-    selected_module = request.args.get('selected_module')
-    selected_model = request.args.get('selected_model')
-    selected_field = request.args.get('selected_field')
-    filters = session.get('filters', [])
-    tipo_filtro = request.args.get('filtro')
-    valor = request.args.get('valor')
-    afilter = Filtro(selected_field, tipo_filtro, valor)
-    filters.append(afilter)
-    session['filters'] = filters
-    return redirect(url_for('navega_bases',
-                            selected_module=selected_module,
-                            selected_model=selected_model,
-                            selected_field=selected_field,
-                            filters=filters))
-
-
-@app.route('/exclui_filtro')
-def exclui_filtro():
-    """Excluir Filtro. Deprecated."""
-    selected_module = request.args.get('selected_module')
-    selected_model = request.args.get('selected_model')
-    selected_field = request.args.get('selected_field')
-    filters = session.get('filters', [])
-    index = request.args.get('index')
-    if filters:
-        filters.pop(int(index))
-    session['filters'] = filters
-    return redirect(url_for('navega_bases',
-                            selected_module=selected_module,
-                            selected_model=selected_model,
-                            selected_field=selected_field,
-                            filters=filters))
-
-
-@app.route('/consulta_bases_executar')
-def consulta_bases_executar():
-    """Deprecated."""
-    selected_module = request.args.get('selected_module')
-    selected_model = request.args.get('selected_model')
-    selected_field = request.args.get('selected_field')
-    filters = session.get('filters', [])
-    gerente = GerenteBase()
-    gerente.set_module(selected_module, db='cargatest.db')
-    dados = gerente.filtra(selected_model, filters)
-    list_modulos = gerente.list_modulos
-    list_models = []
-    list_fields = []
-    if selected_module:
-        gerente.set_module(selected_module)
-        list_models = gerente.list_models
-        if selected_model:
-            list_fields = gerente.dict_models[selected_model]['campos']
-    return render_template('navega_bases.html',
-                           selected_module=selected_module,
-                           selected_model=selected_model,
-                           selected_field=selected_field,
-                           filters=filters,
-                           list_modulos=list_modulos,
-                           list_models=list_models,
-                           list_fields=list_fields,
-                           dados=dados)
-
-
-@app.route('/arvore')
-def arvore():
-    """Àrvore GerenteBase. Deprecated."""
-    gerente = GerenteBase()
-    selected_module = request.args.get('selected_module')
-    selected_model = request.args.get('selected_model')
-    selected_field = request.args.get('selected_field')
-    instance_id = request.args.get('instance_id')
-    logger.info(selected_module)
-    gerente.set_module(selected_module, db='cargatest.db')
-    filters = []
-    afilter = Filtro(selected_field, None, instance_id)
-    filters.append(afilter)
-    q = gerente.filtra(selected_model, filters, return_query=True)
-    instance = q.first()
-    string_arvore = ''
-    logger.info(instance)
-    pai = gerente.get_paiarvore(instance)
-    logger.info(pai)
-    if pai:
-        lista = gerente.recursive_tree(pai)
-        string_arvore = '\n'.join(lista)
-    return render_template('arvore.html',
-                           arvore=string_arvore)
-
-
-@app.route('/arvore_teste')
-def arvore_teste():
-    """Deprecated."""
-    gerente = GerenteBase()
-    gerente.set_module('carga', db='cargatest.db')
-    filters = []
-    afilter = Filtro('Manifesto', None, 'M-2')
-    filters.append(afilter)
-    q = gerente.filtra('Manifesto', filters, return_query=True)
-    manifesto = q.first()
-    escala = gerente.get_paiarvore(manifesto)
-    string_arvore = ''
-    if escala:
-        lista = gerente.recursive_tree(escala, child=manifesto)
-        string_arvore = '\n'.join(lista)
-    return render_template('arvore.html',
-                           arvore=string_arvore)
-
-
 @app.route('/juncoes')
 @login_required
 def juncoes():
@@ -915,31 +831,43 @@ def juncoes():
         visaoid: ID objeto de Banco de Dados que espeficica as configurações
         (metadados) da base
     """
+    user_folder = os.path.join(CSV_FOLDER, current_user.name)
     dbsession = app.config.get('dbsession')
     baseid = request.args.get('baseid')
     visaoid = request.args.get('visaoid')
+    visao_desc = request.args.get('visao_desc', '')
     bases = dbsession.query(BaseOrigem).all()
-    visoes = dbsession.query(Visao).order_by(Visao.nome).all()
     tabelas = []
     colunas = []
     headers = []
     arquivos = []
-    if baseid:
-        gerente = GerenteRisco()
-        arquivos = gerente.get_headers_base(baseid, CSV_FOLDER, csvs=True)
-        headers = gerente.get_headers_base(baseid, CSV_FOLDER)
-        list(headers)
+    visoes = []
     if visaoid:
-        tabelas = dbsession.query(Tabela).filter(
-            Tabela.visao_id == visaoid
-        ).all()
-        colunas = dbsession.query(Coluna).filter(
-            Coluna.visao_id == visaoid
-        ).all()
+        visao = dbsession.query(Visao).filter(
+            Visao.id == visaoid
+        ).first()
+        if visao:
+            tabelas = dbsession.query(Tabela).filter(
+                Tabela.visao_id == visaoid
+            ).all()
+            colunas = dbsession.query(Coluna).filter(
+                Coluna.visao_id == visaoid
+            ).all()
+            baseid = visao.base_id
+    if baseid:
+        visoes = dbsession.query(Visao).filter(
+            Visao.base_id == baseid
+        ).order_by(Visao.nome).all()
+        gerente = GerenteRisco()
+        arquivos = gerente.get_headers_base(baseid, user_folder, csvs=True)
+        headers = gerente.get_headers_base(baseid, user_folder)
+        print(arquivos)
+        print(headers)
     return render_template('gerencia_juncoes.html',
                            baseid=baseid,
                            bases=bases,
                            visaoid=visaoid,
+                           visao_desc=visao_desc,
                            visoes=visoes,
                            colunas=colunas,
                            tabelas=tabelas,
@@ -948,6 +876,7 @@ def juncoes():
 
 
 @app.route('/adiciona_visao')
+@login_required
 def adiciona_visao():
     """Função que permite a criação de um novo objeto Visão.
 
@@ -959,17 +888,34 @@ def adiciona_visao():
     """
     dbsession = app.config.get('dbsession')
     baseid = request.args.get('baseid')
-    visao_novo = request.args.get('visao_novo')
-    visao = Visao(visao_novo)
-    visao.nome = visao_novo
-    dbsession.add(visao)
-    dbsession.commit()
-    visao = dbsession.query(Visao).filter(
-        Visao.nome == visao_novo
+    visao_novo = request.args.get('visao_novo', '')
+    params = {}
+    if not visao_novo:
+        flash('Informar nome da Visão a incluir.')
+    else:
+        params['visao_desc'] = visao_novo
+    base = dbsession.query(BaseOrigem).filter(
+        BaseOrigem.id == baseid
     ).first()
+    if not base:
+        flash('Selecionar Base vinculada à Visão.')
+    else:
+        params['baseid'] = base.id
+    if base and visao_novo:
+        visao = Visao(visao_novo, base.id)
+        dbsession.add(visao)
+        try:
+            dbsession.commit()
+        except Exception as err:
+            flash(str(err))
+            dbsession.rollback()
+        visao = dbsession.query(Visao).filter(
+            Visao.nome == visao_novo
+        ).first()
+        if visao:
+            params['visaoid'] = visao.id
     return redirect(url_for('juncoes',
-                            visaoid=visao.id,
-                            baseid=baseid))
+                            **params))
 
 
 @app.route('/exclui_visao')
@@ -982,15 +928,21 @@ def exclui_visao():
     """
     dbsession = app.config.get('dbsession')
     visaoid = request.args.get('visaoid')
-    dbsession.query(Visao).filter(
-        Visao.id == visaoid).delete()
+    baseid = 0
+    visao = dbsession.query(Visao).filter(
+        Visao.id == visaoid).first()
+    if visao:
+        baseid = visao.base_id
     dbsession.query(Coluna).filter(
         Coluna.visao_id == visaoid).delete()
+    dbsession.query(Visao).filter(
+        Visao.id == visaoid).delete()
     dbsession.commit()
-    return redirect(url_for('juncoes'))
+    return redirect(url_for('juncoes', baseid=baseid))
 
 
 @app.route('/adiciona_coluna')
+@login_required
 def adiciona_coluna():
     """Função inserir uma coluna ao objeto Visão.
 
@@ -1032,6 +984,7 @@ def exclui_coluna():
 
 
 @app.route('/adiciona_tabela')
+@login_required
 def adiciona_tabela():
     """Função para inserir uma tabela ao objeto Visão.
 
@@ -1093,5 +1046,5 @@ def mynavbar():
              # View('Navega Bases', 'navega_bases')
              ]
     if current_user.is_authenticated:
-        items.append(View('Sair', 'logout'))
+        items.append(View('Sair', 'commons.logout'))
     return Navbar(logo, *items)

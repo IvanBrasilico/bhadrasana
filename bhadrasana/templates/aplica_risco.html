@@ -107,6 +107,13 @@
     </div>
     <div id="list" class="row">
         <div class="table-responsive col-sm-4">
+            <h4>Tarefas pendentes no Servidor</h4>
+            <div class="table">
+                <table class="table inlineTable table-hover table-bordered table-responsive" cellspacing="0" cellpadding="0" id="tasks_table">
+                </table>
+            </div>
+        </div>
+        <div class="table-responsive col-sm-4">
             <h4>Planilhas disponíveis (geradas por agendamento)</h4>
             <div class="table">
                 <table class="table inlineTable table-hover table-bordered table-responsive" cellspacing="0" cellpadding="0" id="planilhas_table">
@@ -121,7 +128,7 @@
                             </a>
                         </td>
                         <td align="center">
-                            <input type="button" class="btn  btn-danger" value="x" onclick="exclui_planilha('{{ planilha }}')" />
+                            <input type="button" class="btn  btn-danger" value="x" onclick="exclui_planilha('{{planilha}}')" />
                         </td>
                     </tr>
                     {% endfor %}
@@ -229,7 +236,67 @@
         );
     };
 
-    $(function () {
+    function confirmacao(filename, acao) {
+        var filename = filename
+        var acao = acao
+        console.log(filename, acao)
+        $('#btn_exec_acao').on('click', function () {
+            aplica_risco(filename, acao)
+        });
+    };
+
+    function exclui_planilha(planilha) {
+        $.getJSON('/exclui_planilha/' + planilha, {
+
+        }, function (planilhas) {
+            table_planilha(planilhas);
+        });
+    }
+    function table_planilha(planilhas) {
+        $('#planilhas_table tbody tr').remove();
+        $.each(planilhas, function (i, planilha) {
+            $('<tr>').append(
+                $('<td>').text(planilha),
+                $('<td>').html('<a href="/static/{{ current_user.name }}/' + planilha +
+                    '"><span class="label label-success"><b>Baixar</b></span></a>'),
+                $('<td>').html('<input type="button" class="btn  btn-danger" value="x" onclick="exclui_planilha(\'' + planilha + '\')" />')
+            ).appendTo('#planilhas_table');
+        });
+
+    }
+    function update_progress(tasks) {
+        // send GET request to status URL
+        $('#tasks_table tr').remove();
+        $.each(tasks, function (i, task) {
+            var status_url = '/api/task_progress/' + task;
+            $.getJSON(status_url, function (data) {
+                console.log(data);
+                if (data['state'] == 'PENDING' || data['state'] == 'PROGRESS' || data['state'] == 'STARTED') {
+                    $('<tr>').append(
+                        $('<td>').text('Em progresso'),
+                        $('<td>').text(data['status'])
+                    ).appendTo('#tasks_table');
+                    // rerun in 2 seconds
+                    setTimeout(function () {
+                        update_progress(tasks);
+                    }, 2000);
+                }
+                if (data['state'] == 'FAILURE') {
+                    $('<tr>').append(
+                        $('<td>').text('Erro!'),
+                        $('<td>').text(data['status'])
+                    ).appendTo('#tasks_table');
+                }
+                if (data['state'] == 'SUCCESS') {
+                    $('<tr>').append(
+                        $('<td>').text('Terminado. Atualize tela se necessário.'),
+                        $('<td>').text(data['status'])
+                    ).appendTo('#tasks_table');
+                }
+            });
+        });
+    }
+    $(document).ready(function () {
         var submit_form = function (e) {
             window.location.assign('/risco?baseid=' + $("#base").val() +
                 '&padraoid=' + $("#padrao").val() +
@@ -240,9 +307,6 @@
         $('#base').bind('change', submit_form);
         $('#padrao').bind('change', submit_form);
         $('#visao').bind('change', submit_form);
-    });
-
-    $(document).ready(function () {
         $('#pd_risco td:first-child').click(function () {
             $('#valores tr').remove();
             var id_risco = $(this).attr('id')
@@ -266,47 +330,17 @@
                 }
             });
         });
-    });
-
-    $(document).ready(function () {
         $('#excluir').on('click', function () {
             $('#confirmacaomodal').modal()
         })
         $('#arquivar').on('click', function () {
             $('#confirmacaomodal').modal()
         });
+        ltasks = [];
+        {% for task in tasks %}
+        ltasks[ltasks.length] = "{{task}}";
+        {% endfor %}
+        update_progress(ltasks);
     });
-
-    function confirmacao(filename, acao) {
-        var filename = filename
-        var acao = acao
-        console.log(filename, acao)
-        $('#btn_exec_acao').on('click', function () {
-            aplica_risco(filename, acao)
-        });
-    };
-
-    /* Mostrar valores por AJAX*/
-
-    function exclui_planilha(planilha) {
-        $.getJSON('/exclui_planilha/' + planilha, {
-          
-        }, function(planilhas) {
-          table_planilha(planilhas);
-        });
-    }
-    function table_planilha(planilhas){
-        $('#planilhas_table tbody tr').remove();
-        $.each(planilhas, function(i, planilha) {
-            $('<tr>').append(
-            $('<td>').text(planilha),
-            $('<td>').html('<a href="/static/{{ current_user.name }}/' + planilha +
-                 '"><span class="label label-success"><b>Baixar</b></span></a>'),
-            $('<td>').html('<input type="button" class="btn  btn-danger" value="x" onclick="exclui_planilha("'+ planilha + '")" />')
-            ).appendTo('#planilhas_table');
-        });
-    
-    }
-
 
 </script> {% endblock %}

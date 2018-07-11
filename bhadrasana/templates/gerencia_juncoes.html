@@ -18,19 +18,18 @@
                     {% endfor %}
                 </select>
             </div>
-            <form id="frmvisoes" class="form-group">
-                <div class="form-group col-sm-6">
-                    <div class="input-group">
-                        <input class="form-control ui-autocomplete-input" autocomplete="off" id="visao_novo" type="text" placeholder="Nova Visao">
-                        <div class="input-group-btn">
-                            <button type="button" class="btn btn-default" onclick="adiciona_visao()" id="btn_visao" aria-haspopup="true" aria-expanded="false"
-                                title="Adicionar">
-                                OK
-                            </button>
-                        </div>
+            <div class="form-group col-sm-6">
+                <div class="input-group">
+                    <input class="form-control ui-autocomplete-input" autocomplete="off" id="visao_novo" type="text" placeholder="Nova Visao"
+                        value="{{visao_desc}}">
+                    <div class="input-group-btn">
+                        <button type="button" class="btn btn-default" onclick="adiciona_visao()" id="btn_visao" aria-haspopup="true" aria-expanded="false"
+                            title="Adicionar">
+                            OK
+                        </button>
                     </div>
                 </div>
-            </form>
+            </div>
             {% if visoes %}
             <div class="table">
                 <table class="inlineTable table table-bordered table-hover table-responsive" cellspacing="0" cellpadding="0" id="visoes">
@@ -46,21 +45,19 @@
             </div>
         </div>
         <div class="col-sm-6">
-            <form id="frmcolunas" class="form-group">
-                <div class="form-group">
-                    <div class="form-group col-sm-9">
-                        <div class="input-group">
-                            <input class="form-control ui-autocomplete-input" autocomplete="off" id="col_nova" type="text" placeholder="Nova Coluna">
-                            <div class="input-group-btn">
-                                <button type="button" class="btn btn-default" onclick="adiciona_coluna()" id="btn_col" aria-haspopup="true" aria-expanded="false"
-                                    title="Adicionar" {% if not visaoid %} disabled{% endif %}>
-                                    OK
-                                </button>
-                            </div>
+            <div class="form-group">
+                <div class="form-group col-sm-9">
+                    <div class="input-group">
+                        <input class="form-control ui-autocomplete-input" autocomplete="off" id="col_nova" type="text" placeholder="Nova Coluna">
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-default" onclick="adiciona_coluna()" id="btn_col" aria-haspopup="true" aria-expanded="false"
+                                title="Adicionar" {% if not visaoid %} disabled{% endif %}>
+                                OK
+                            </button>
                         </div>
                     </div>
                 </div>
-            </form>
+            </div>
             <div class="table">
                 <table class="inlineTable table table-striped table-bordered table-hover table-responsive" cellspacing="0" cellpadding="0"
                     id="colunas">
@@ -160,6 +157,13 @@
             window.location.assign('/adiciona_visao?visao_novo=' + visao_novo + '&baseid=' + $("#base").val())
         }
     };
+    $('#visao_novo').keypress(function (event) {
+        var keycode = (event.keyCode ? event.keyCode : event.which);
+        if (keycode == '13') {
+            adiciona_visao();
+        }
+        event.stopPropagation();
+    });
     function exclui_visao(visaoid) {
         window.location.assign('/exclui_visao?visaoid=' + visaoid)
     }
@@ -171,6 +175,13 @@
                 '&col_nova=' + col_nova)
         }
     }
+    $('#col_nova').keypress(function (event) {
+        var keycode = (event.keyCode ? event.keyCode : event.which);
+        if (keycode == '13') {
+            adiciona_coluna();
+        }
+        event.stopPropagation();
+    });
 
     function exclui_coluna(colunaid) {
         window.location.assign('/exclui_coluna?visaoid={{ visaoid }}' +

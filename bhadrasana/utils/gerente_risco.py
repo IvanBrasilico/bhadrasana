@@ -32,6 +32,12 @@ class SemHeaders(Exception):
     pass
 
 
+class ESemValorParametro(Exception):
+    """Exceção personalizada."""
+
+    pass
+
+
 def equality(listaoriginal, nomecampo, listavalores):
     """Realiza a filtragem dos riscos nas listas.
 
@@ -144,7 +150,7 @@ class GerenteRisco():
         self._riscosativos = {}
         self._padraorisco = None
 
-    def importa_base(self, csv_folder: str, baseid: int, data,
+    def importa_base(self, csv_folder: str, baseid: int, data: str,
                      filename: str, remove=False):
         """Copia base para dest_path, processando se necessário.
 
@@ -157,8 +163,8 @@ class GerenteRisco():
 
             base_id: id da base, será usada para identificar uma subpasta
 
-            data: data do período inicial da base/extração. Será usada
-            para gerar subpasta no formato YYYY/MM/DD
+            data: data formato YYYY-MM-DD do período inicial da base/extração.
+            Será usada para gerar subpasta no formato YYYY/MM/DD
 
             filename: caminho completo do arquivo da base de origem
             (fonte externa/extração)
@@ -173,7 +179,8 @@ class GerenteRisco():
                                  data[:4], data[5:7], data[8:10])
         if os.path.exists(dest_path):
             raise FileExistsError(
-                'Já houve importação de base para os parâmetros informados')
+                'Já houve importação de base para os parâmetros informados' +
+                ' %s ' % dest_path)
         else:
             os.makedirs(dest_path)
         try:
@@ -224,6 +231,7 @@ class GerenteRisco():
         self._riscosativos = {}
         if self._padraorisco:
             for parametro in self._padraorisco.parametros:
+                print(parametro)
                 self.add_risco(parametro)
 
     def cria_padraorisco(self, nomepadraorisco, session):
@@ -450,7 +458,8 @@ class GerenteRisco():
             if risco:
                 campo = risco.nome_campo
             if risco_all is None and dict_filtros is None:
-                return False
+                raise ESemValorParametro(
+                    'Não há valores de parâmetro de risco a exportar')
             for valor in risco_all:
                 filtro = str(valor.tipo_filtro)
                 lista.append((valor.valor, filtro[filtro.find('.') + 1:]))
@@ -508,12 +517,14 @@ class GerenteRisco():
             O arquivo .csv ou a lista DEVEM estar no formato valor, tipo_filtro
 
         """
+        logger.debug('CSV recebido')
         if not lista:
             with open(os.path.join(path, campo + '.csv'),
                       'r', encoding=ENCODE, newline='') as f:
                 reader = csv.reader(f)
                 next(reader)
                 lista = [linha for linha in reader]
+        logger.debug('CSV lido com %s linhas' % len(lista))
         if session:
             parametro = session.query(ParametroRisco).filter(
                 ParametroRisco.nome_campo == campo).first()
@@ -521,6 +532,7 @@ class GerenteRisco():
                 parametro = ParametroRisco(campo, padraorisco=padraorisco)
                 session.add(parametro)
                 session.commit()
+            logger.debug('Salvando csv em %s' % parametro)
             for linha in lista:
                 if parametro.id:
                     if len(linha) == 1:
@@ -597,15 +609,16 @@ class GerenteRisco():
         lista_csv = []
         cabecalhos = []
         cabecalhos_nao_repetidos = set()
+        print('caminho........', path)
         caminho = os.path.join(path, str(baseorigemid))
         if not os.path.isdir(caminho):
             return set()
-        # Procura ano, depois mes, depois dia, vai adicionando no caminho
         for r in range(3):
             ano_mes_dia = sorted(os.listdir(caminho))
             if len(ano_mes_dia) == 0:
-                break
+                return set()
             caminho = os.path.join(caminho, ano_mes_dia[-1])
+            print(caminho)
         for arquivo in os.listdir(caminho):
             lista_csv.append(arquivo[:-4])
             with open(os.path.join(caminho, arquivo),
@@ -615,8 +628,7 @@ class GerenteRisco():
                 cabecalhos.extend(cabecalho)
         for word in cabecalhos:
             new_word = sanitizar(word, norm_function=unicode_sanitizar)
-            if new_word not in cabecalhos_nao_repetidos:
-                cabecalhos_nao_repetidos.add(new_word)
+            cabecalhos_nao_repetidos.add(new_word)
         if csvs:
             return lista_csv
         return cabecalhos_nao_repetidos
@@ -648,45 +660,85 @@ class GerenteRisco():
 
         """
         numero_juncoes = len(visao.tabelas)
-        dffilho = None
-        if numero_juncoes > 1:  # Caso apenas uma tabela esteja na visão,
-            tabela = visao.tabelas[numero_juncoes - 1]  # não há junção
-            filhofilename = os.path.join(path, tabela.csv_file)
-            dffilho = pd.read_csv(filhofilename, encoding=ENCODE,
-                                  dtype=str)
-            if hasattr(tabela, 'type'):
-                how = tabela.type
-            else:
-                how = 'inner'
-        # A primeira precisa ser "pulada", sempre é a junção 2 tabelas
-        # de cada vez. Se numero_juncoes for >2, entrará aqui fazendo
-        # a junção em cadeia desde o último até o primeiro filho
-        for r in range(numero_juncoes - 2, 0, -1):
-            estrangeiro = tabela.estrangeiro.lower()
+        tabela = visao.tabelas[0]
+        print('CSV File', tabela.csv_file)
+        filename = os.path.join(path, tabela.csv_file)
+        dfpai = pd.read_csv(filename, encoding=ENCODE,
+                            dtype=str)
+        logger.debug('DataFrame criado. Tabela %s. %s linhas ' %
+                     (tabela.csv_file, len(dfpai)))
+        if hasattr(tabela, 'type'):
+            how = tabela.type
+        else:
+            how = 'inner'
+        for r in range(1, numero_juncoes):
+            primario = tabela.primario.lower()
             if hasattr(tabela, 'type'):
                 how = tabela.type
             else:
                 how = 'inner'
             tabela = visao.tabelas[r]
-            primario = tabela.primario.lower()
-            paifilhofilename = os.path.join(path, tabela.csv_file)
-            dfpaifilho = pd.read_csv(paifilhofilename, encoding=ENCODE,
-                                     dtype=str)
-            dffilho = dfpaifilho.merge(dffilho, how=how,
-                                       left_on=primario,
-                                       right_on=estrangeiro)
+            estrangeiro = tabela.estrangeiro.lower()
+            filhofilename = os.path.join(path, tabela.csv_file)
+            dffilho = pd.read_csv(filhofilename, encoding=ENCODE,
+                                  dtype=str)
+            logger.debug('DataFrame criado. Tabela % s. Linhas %s ' %
+                         (tabela.csv_file, len(dffilho)))
+            try:
+                dfpai = dfpai.merge(dffilho, how=how,
+                                    left_on=primario,
+                                    right_on=estrangeiro)
+                logger.debug('Merge realizado usando tabelas anteriores ' +
+                             'primario % s, estrangeiro %s, linhas %s ' % (
+                                 primario, estrangeiro, len(dffilho))
+                             )
+            except KeyError as err:
+                logger.error('Erro ao fazer merge 1!')
+                msg = 'Erro ao montar consulta 1. KeyError: %s.' % str(err) + \
+                    ' Tabela %s primario %s estrangeiro %s' % \
+                    (tabela.csv_table, primario, estrangeiro)
+                msglog = msg + '\n' + \
+                    '**dffilho: %s ' % ', '.join(dffilho.columns) + '\n' \
+                    '**dfpai %s ' % ', '.join(dfpai.columns)
+                logger.error(msglog)
+                raise KeyError(msg)
+        """
         csv_pai = visao.tabelas[0].csv_file
         paifilename = os.path.join(path, csv_pai)
         dfpai = pd.read_csv(paifilename, encoding=ENCODE, dtype=str)
+        logger.debug('DataFrame criado. Tabela % s ' % csv_pai)
         # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
-        if dffilho is not None:
-            dfpai = dfpai.merge(dffilho, how=how,
-                                left_on=tabela.primario.lower(),
-                                right_on=tabela.estrangeiro.lower())
+        try:
+            if dffilho is not None:
+                dfpai = dfpai.merge(dffilho, how=how,
+                                    left_on=tabela.primario.lower(),
+                                    right_on=tabela.estrangeiro.lower())
+                logger.debug('Merge realizado usando tabelas anteriores ' +
+                             'primario % s, estrangeiro %s, linhas %s' %
+                             (tabela.primario, tabela.estrangeiro, len(dfpai))
+                             )
+        except KeyError as err:
+            logger.error('Erro ao fazer merge 2!')
+            msg = 'Erro ao montar consulta 2. KeyError: %s.' % str(err) + \
+                ' Tabela %s primario %s estrangeiro %s' % \
+                (tabela.csv_table, tabela.primario, tabela.estrangeiro)
+            msglog = msg + '\n' + \
+                '**dffilho: %s ' % ', '.join(dffilho.columns) + '\n' \
+                '**dfpai %s ' % ', '.join(dfpai.columns)
+            logger.error(msglog)
+            raise KeyError(msg)
         # print(dfpai)
+        """
         if visao.colunas:
             colunas = [coluna.nome.lower() for coluna in visao.colunas]
-            result_df = dfpai[colunas]
+            try:
+                result_df = dfpai[colunas]
+            except KeyError as err:
+                msg = 'Erro ao selecionar colunas. KeyError: ' + str(err) + \
+                    ' Colunas disponíveis: %s ' % \
+                    ', '.join(dfpai.columns)
+                logger.error(msg)
+                raise KeyError(msg)
             result_list = [colunas]
         else:
             result_df = dfpai
@@ -735,7 +787,7 @@ class GerenteRisco():
             if collection_name not in db.collection_names():
                 db.create_collection(collection_name)
             # TODO: Estudar possibilidade de evitar inserções duplicadas,
-            # em caso de evidência de inseração duplicada fazer upsert
+            # em caso de evidência de inserção duplicada fazer upsert
             # É complicado, pois é necessário ter a metadata de cada tabela,
             # isto é, o campo que será considerado 'chave' para a inserção ou
             # update
@@ -831,98 +883,8 @@ class GerenteRisco():
     def aplica_juncao_mongo(self, db, visao,
                             parametros_ativos=None,
                             filtrar=False,
-                            pandas=False,
-                            limit=100,
+                            limit=0,
                             skip=0):
-        """Apenas um proxy para compatibilidade reversa.
-
-        Proxy para compatibilidade e escolha.
-        Repassa todos os parâmetros para o método utilizando
-        pandas se param pandas=True ou aggregate se False.
-        """
-        if pandas:
-            return self.aplica_juncao_mongo_pandas(db, visao,
-                                                   parametros_ativos,
-                                                   filtrar)
-        return self.aplica_juncao_mongo_aggregate(db, visao,
-                                                  parametros_ativos,
-                                                  filtrar,
-                                                  limit,
-                                                  skip)
-
-    def aplica_juncao_mongo_pandas(self, db, visao,
-                                   parametros_ativos=None,
-                                   filtrar=False):
-        """Lê as coleções configuradas no mongo.
-
-        Lê as coleções, carrega em DataFrames e faz merge destes.
-
-        Args:
-            db: MongoDB
-            visao: objeto de Banco de Dados que espeficica as configurações
-            (metadados) da base
-            parametros_ativos: subconjunto do parâmetros de risco a serem
-            aplicados
-            filtrar: aplica_risco após merge dos DataFrames
-
-        Returns:
-            Lista contendo os campos filtrados. 1ª linha com nomes de campo
-
-        """
-        base = visao.base
-        numero_juncoes = len(visao.tabelas)
-        dffilho = None
-        if numero_juncoes > 1:   # Caso apenas uma tabela esteja na visão,
-            tabela = visao.tabelas[numero_juncoes - 1]  # não há junção
-            filhoname = base.nome + '.' + tabela.csv_file
-            print(filhoname)
-            lista = self.load_mongo(db, collection_name=filhoname)
-            dffilho = pd.DataFrame(lista[1:], columns=lista[0])
-            if hasattr(tabela, 'type'):
-                how = tabela.type
-            else:
-                how = 'inner'
-        # A primeira precisa ser "pulada", sempre é a junção 2 tabelas
-        # de cada vez. Se numero_juncoes for >2, entrará aqui fazendo
-        # a junção em cadeia desde o último até o primeiro filho
-        for r in range(numero_juncoes - 2, 0, -1):
-            tabela = visao.tabelas[r]
-            paifilhoname = base.nome + '.' + tabela.csv_file
-            if hasattr(tabela, 'type'):
-                how = tabela.type
-            else:
-                how = 'inner'
-            lista = self.load_mongo(db, collection_name=paifilhoname)
-            dfpaifilho = pd.DataFrame(lista[1:], columns=lista[0])
-            # print(tabela.csv_file, tabela.estrangeiro, tabela.primario)
-            dffilho = dfpaifilho.merge(dffilho, how=how,
-                                       left_on=tabela.primario.lower(),
-                                       right_on=tabela.estrangeiro.lower())
-        painame = base.nome + '.' + visao.tabelas[0].csv_file
-        lista = self.load_mongo(db, collection_name=painame)
-        dfpai = pd.DataFrame(lista[1:], columns=lista[0])
-        if dffilho is not None:
-            dfpai = dfpai.merge(dffilho, how=how,
-                                left_on=tabela.primario.lower(),
-                                right_on=tabela.estrangeiro.lower())
-        if visao.colunas:
-            colunas = [coluna.nome.lower() for coluna in visao.colunas]
-            result_df = dfpai[colunas]
-            result_list = [colunas]
-        else:
-            result_df = dfpai
-            result_list = [result_df.columns.tolist()]
-        result_list.extend(result_df.values.tolist())
-        if filtrar:
-            return self.aplica_risco(result_list,
-                                     parametros_ativos=parametros_ativos)
-        return result_list
-
-    def aplica_juncao_mongo_aggregate(self, db, visao,
-                                      parametros_ativos=None,
-                                      filtrar=False,
-                                      limit=100,
-                                      skip=0):
         """Lê as coleções configuradas no mongo através de aggregates.
 
         Monta um pipeline MongoDB.
@@ -949,30 +911,33 @@ class GerenteRisco():
         pipeline = []
         for r in range(1, numero_juncoes):
             tabela = visao.tabelas[r]
-            paifilhoname = base.nome + '.' + tabela.csv
+            paifilhoname = base.nome + '.' + tabela.csv_table
             pipeline.append({
                 '$lookup':
                 {'from': paifilhoname,
                  'localField': tabela.primario.lower(),
                  'foreignField': tabela.estrangeiro.lower(),
-                 'as': tabela.csv
+                 'as': tabela.csv_table
                  }})
             pipeline.append(
-                {'$unwind': {'path': '$' + tabela.csv}}
+                {'$unwind': {'path': '$' + tabela.csv_table}}
             )
-        painame = visao.tabelas[0].csv
+        painame = visao.tabelas[0].csv_table
         collection = db[base.nome + '.' + painame]
-        tabelas = [tabela.csv for tabela in visao.tabelas]
+        tabelas = [tabela.csv_table for tabela in visao.tabelas]
         if visao.colunas:
             colunas = {'_id': 0}
             for coluna in visao.colunas:
-                print(coluna.nome, tabelas)
+                print('Coluna', coluna.nome)
+                print('Tabelas', tabelas)
                 if coluna.nome not in tabelas:
                     colunas[coluna.nome.lower()] = 1
                 for tabela in tabelas[1:]:
                     colunas[tabela + '.' + coluna.nome.lower()] = 1
             pipeline.append({'$project': colunas})
+        print('FILTRAR', filtrar)
         if filtrar:
+            print('Entrou em filtro!')
             filtro = []
             if parametros_ativos:
                 riscos = set([parametro.lower()
@@ -980,22 +945,25 @@ class GerenteRisco():
             else:
                 riscos = set([key.lower() for key
                               in self._riscosativos.keys()])
-                for campo in riscos:
-                    dict_filtros = self._riscosativos.get(campo)
-                    for tipo_filtro, lista_filtros in dict_filtros.items():
-                        print(tipo_filtro, lista_filtros)
-                        # filter_function = filter_functions.get(tipo_filtro)
-                        for valor in lista_filtros:
-                            filtro.append({campo: valor})
-                            for tabela in visao.tabelas:
-                                filtro.append(
-                                    {tabela.csv + '.' + campo: valor}
-                                )
+            print('RISCOS', riscos)
+            for campo in riscos:
+                dict_filtros = self._riscosativos.get(campo)
+                for tipo_filtro, lista_filtros in dict_filtros.items():
+                    print(tipo_filtro, lista_filtros)
+                    # filter_function = filter_functions.get(tipo_filtro)
+                    for valor in lista_filtros:
+                        filtro.append({campo: valor})
+                        for tabela in visao.tabelas:
+                            filtro.append(
+                                {tabela.csv_table + '.' + campo: valor}
+                            )
             if filtro:
                 print('FILTRO', filtro)
                 pipeline.append({'$match': {'$or': filtro}})
-        pipeline.append({'$limit': skip + limit})
-        pipeline.append({'$skip': skip})
+        if limit:
+            pipeline.append({'$limit': skip + limit})
+        if skip:
+            pipeline.append({'$skip': skip})
         print('PIPELINE', pipeline)
         mongo_list = list(collection.aggregate(pipeline))
         # print(mongo_list)
@@ -1021,13 +989,15 @@ class GerenteRisco():
                     linha_lista.append(valor)
                 result.append(linha_lista)
             return result
+        logger.warning('Mongo não retornou linhas!')
         return None
 
     def aplica_risco_por_parametros(self, dbsession,
-                                    base_csv: str,
-                                    padraoid=0,
-                                    visaoid=0,
-                                    parametros_ativos: list=None):
+                                    padraoid: int = 0,
+                                    visaoid: int = 0,
+                                    parametros_ativos: list= None,
+                                    base_csv: str = None,
+                                    db=None):
         """Escolhe o método correto de acordo com parâmetros.
 
         Chama arquivo(s) com ou sem junção e filtro,
@@ -1039,7 +1009,9 @@ class GerenteRisco():
 
             dbsession: conexão com o Banco de Dados
 
-            base_csv: Arquivo csv de onde carregar a lista a ser filtrada
+            base_csv: Arquivo csv de onde carregar dados a serem filtrados
+            OU
+            db: conexão MongoDB de onde carregar dados
 
             padraoid: ID do PadraoRisco a utilizar como filtro
 
@@ -1057,9 +1029,10 @@ class GerenteRisco():
             PadraoRisco.id == padraoid
         ).first()
         self.set_padraorisco(padrao)
+        print('PADRAO', padrao, padraoid)
         if visaoid == '0':
             dir_content = os.listdir(base_csv)
-            arquivo = os.path.join(base_csv, dir_content[0])
+            arquivo = os.path.join(base_csv, str(dir_content[0]))
             lista_risco = self.load_csv(arquivo)
             if padrao is None:
                 return lista_risco
@@ -1070,35 +1043,14 @@ class GerenteRisco():
         else:
             avisao = dbsession.query(Visao).filter(
                 Visao.id == visaoid).one()
+            if db is not None:  # Usar MongoDB como fonte
+                return self.aplica_juncao_mongo(
+                    db, avisao,
+                    filtrar=padrao is not None,
+                    parametros_ativos=parametros_ativos
+                )
             return self.aplica_juncao(
                 avisao, path=base_csv,
                 filtrar=padrao is not None,
                 parametros_ativos=parametros_ativos
             )
-
-
-"""
-db.getCollection('CARGA.Conhecimento').aggregate(
-    [{'$lookup': {'from': 'CARGA.NCM',
-                 'localField': 'conhecimento',
-                 'foreignField': 'conhecimento',
-                 'as': 'NCM'}},
-    {'$unwind': {'path': '$NCM'}},
-    {'$project':
-     {'_id': 0, 'Conhecimento': 1,
-      'Conhecimento.Conhecimento': 1,
-      'NCM.Conhecimento': 1,
-      'NCM': 1,
-      'Conhecimento.NCM': 1,
-      'NCM.NCM': 1,
-      'CPFCNPJConsignatario': 1,
-      'Conhecimento.CPFCNPJConsignatario': 1,
-      'NCM.CPFCNPJConsignatario': 1,
-      'DescricaoMercadoria': 1,
-      'Conhecimento.DescricaoMercadoria': 1,
-      'NCM.DescricaoMercadoria': 1,
-      'IdentificacaoEmbarcador': 1,
-      'Conhecimento.IdentificacaoEmbarcador': 1,
-      'NCM.IdentificacaoEmbarcador': 1}}
-      ]
-"""

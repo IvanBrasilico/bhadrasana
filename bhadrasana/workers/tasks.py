@@ -21,10 +21,6 @@ from bhadrasana.utils.gerente_risco import GerenteRisco
 celery = Celery(__name__, broker=BROKER,
                 backend=BACKEND)
 
-mysession = MySession(Base)
-dbsession = mysession.session
-engine = mysession.engine
-
 
 @celery.task(bind=True)
 def importar_base(self, csv_folder, baseid, data, filename, remove=False):
@@ -50,6 +46,8 @@ def importar_base(self, csv_folder, baseid, data, filename, remove=False):
     self.update_state(state=states.STARTED,
                       meta={'status': 'Processando arquivo ' + basefilename +
                             '. Aguarde!!!'})
+    mysession = MySession(Base)
+    dbsession = mysession.session
     gerente = GerenteRisco()
     try:
         abase = dbsession.query(BaseOrigem).filter(
@@ -65,7 +63,7 @@ def importar_base(self, csv_folder, baseid, data, filename, remove=False):
         gerente.ativa_sanitizacao(ascii_sanitizar)
         gerente.checa_depara(abase)  # Aplicar na importação???
         gerente.pre_processa_arquivos(lista_arquivos)
-        return {'status': 'Base importada com sucesso'}
+        return {'status': 'Base ' + data + ' importada com sucesso'}
     except Exception as err:
         logger.error(err, exc_info=True)
         self.update_state(state=states.FAILURE,
@@ -79,6 +77,8 @@ def arquiva_base_csv(self, baseid, base_csv):
     # de preferência gerados pela própria aplicação
     self.update_state(state=states.STARTED,
                       meta={'status': 'Aguarde. Arquivando base ' + base_csv})
+    mysession = MySession(Base)
+    dbsession = mysession.session
     try:
         abase = dbsession.query(BaseOrigem).filter(
             BaseOrigem.id == baseid).first()
@@ -96,26 +96,57 @@ def arquiva_base_csv(self, baseid, base_csv):
 
 
 @celery.task(bind=True)
-def aplicar_risco(self, base_csv, padraoid, visaoid,
-                  parametros_ativos, dest_path):
+def aplicar_risco(self, base_csv: str, padraoid: int, visaoid: int,
+                  parametros_ativos: list, dest_path: str):
     """Chama função de aplicação de risco e grava resultado em arquivo."""
-    self.update_state(state=states.STARTED,
-                      meta={'status': 'Aguarde. Aplicando risco na base ' +
-                            base_csv})
+    mensagem = 'Aguarde. Aplicando risco na base ' + \
+        '-'.join(base_csv.split('/')[-3:])
+    self.update_state(state=states.STARTED, meta={'status': mensagem})
+    mysession = MySession(Base)
+    dbsession = mysession.session
     gerente = GerenteRisco()
     try:
-        self.update_state(state=states.PENDING, meta={
-            'status': 'Aguarde... aplicando risco na base ' +
-            base_csv})
-        lista_risco = gerente.aplica_risco_por_parametros(dbsession, base_csv,
-                                                          padraoid, visaoid,
-                                                          parametros_ativos)
+        self.update_state(state=states.PENDING, meta={'status': mensagem})
+        lista_risco = gerente.aplica_risco_por_parametros(
+            dbsession,
+            padraoid=padraoid, visaoid=visaoid,
+            parametros_ativos=parametros_ativos,
+            base_csv=base_csv)
         if lista_risco:
             csv_salvo = os.path.join(dest_path,
                                      datetime.today().strftime
-                                     ('%Y-%m-%d %H:%M:%S') + '.csv')
+                                     ('%Y-%m-%d-%H:%M:%S') + '.csv')
             gerente.save_csv(lista_risco, csv_salvo)
         return {'status': 'Planilha criada com sucesso'}
+    except Exception as err:
+        logger.error(str(err), exc_info=True)
+        self.update_state(state=states.FAILURE, meta={'status': str(err)})
+
+
+@celery.task(bind=True)
+def aplicar_risco_mongo(self, visaoid, padraoid,
+                        parametros_ativos, dest_path):
+    """Chama função de aplicação de risco e grava resultado em arquivo."""
+    mensagem = 'Aguarde. Aplicando risco no MongoDB. Visão: ' + visaoid
+    self.update_state(state=states.STARTED, meta={'status': mensagem})
+    mysession = MySession(Base)
+    dbsession = mysession.session
+    conn = MongoClient(host=MONGODB_URI)
+    db = conn[DATABASE]
+    gerente = GerenteRisco()
+    try:
+        self.update_state(state=states.PENDING, meta={'status': mensagem})
+        lista_risco = gerente.aplica_risco_por_parametros(
+            dbsession,
+            visaoid=visaoid, padraoid=padraoid,
+            parametros_ativos=parametros_ativos,
+            base_csv=None, db=db)
+        if lista_risco:
+            csv_salvo = os.path.join(dest_path,
+                                     datetime.today().strftime
+                                     ('%Y-%m-%d-%H:%M:%S') + '.csv')
+            gerente.save_csv(lista_risco, csv_salvo)
+        return {'status': 'Planilha criada com sucesso a partir do MongoDB'}
     except Exception as err:
         logger.error(err, exc_info=True)
         self.update_state(state=states.FAILURE, meta={'status': str(err)})

@@ -15,7 +15,7 @@
                 <select class="form-control" name="padrao" id="padrao">
                     <option value="0">Selecione...</option>
                     {% for padrao in padroes %}
-                    <option value="{{ padrao.id }}" {% if padrao.id|int()==padraoid|int() %} selected="selected" {% endif %}>{{ padrao.nome }}
+                    <option value="{{ padrao.id }}" {% if padrao.id|int()==padraoid|int() %} selected="selected"{% endif %}>{{ padrao.nome }}
                     </option>
                     {% endfor %}
                 </select>
@@ -38,13 +38,13 @@
                             <select class="form-control" name="base" id="base">
                                 <option value="0">Selecionar</option>
                                 {% for base in bases %}
-                                <option value="{{ base.id }}">{{ base.nome }}
+                                <option value="{{ base.id }}" {% if base.id|int()==baseid|int() %} selected="selected"{% endif %}>{{ base.nome }}
                                 </option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="form-group col-sm-3">
-                            <button onclick="adicionar_base()" id="btn_ok" type="button" class="btn btn-default">Vincular</button>
+                            <button onclick="vincular_base()" id="btn_ok" type="button" class="btn btn-default">Vincular</button>
                         </div>
                     </form>
                     {% if basesid %}
@@ -229,6 +229,19 @@
         }
     }
 
+    function vincular_base() {
+        var padraoid = $("#padrao").val();
+        var baseid = $("#base").val();
+        window.location.assign('/vincula_base?padraoid=' +
+            padraoid + '&baseid=' + baseid)
+    }
+
+    function exclui_base(baseid) {
+        var padraoid = $("#padrao").val();
+        window.location.assign('/vincula_base?padraoid=' +
+            padraoid + '&baseid=' + baseid)
+    }
+
     function adicionar_parametro() {
         var risco = $("#parametro_risco").val();
         if (risco != '') {
@@ -317,5 +330,4 @@
         });
     });
 
-</script>
-{% endblock %}
+</script> {% endblock %}

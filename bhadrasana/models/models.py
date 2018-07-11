@@ -151,6 +151,13 @@ class PadraoRisco(Base):
         if base:
             self.base_id = base.id
 
+    def __repr__(self):
+        """Retorna representação String."""
+        return 'Nome %s\n base %s\n parametros %s\n ' % \
+            (self.nome, self.base_id,
+             [(param.nome_campo, param.valores[0].valor)
+              for param in self.parametros])
+
 
 class DePara(Base):
     """Renomeia os titulos das colunas ao importar uma base."""
@@ -244,9 +251,10 @@ class Visao(Base):
     base = relationship(
         'BaseOrigem', back_populates='visoes')
 
-    def __init__(self, csv):
+    def __init__(self, nome, base_id):
         """Inicializa."""
-        self.csv = csv
+        self.nome = nome
+        self.base_id = base_id
 
 
 class Coluna(Base):
@@ -303,4 +311,11 @@ class Tabela(Base):
         """Acesso ao campo csv. Inclui extensão."""
         if self.csv.find('.csv') == -1:
             return self.csv + '.csv'
+        return self.csv
+
+    @property
+    def csv_table(self):
+        """Acesso ao nome de tabela. Não inclui extensão."""
+        if self.csv.find('.csv') != -1:
+            return self.csv[:-4]
         return self.csv
