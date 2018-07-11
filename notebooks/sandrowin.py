@@ -17,6 +17,8 @@ ARQUIVO = 'DESCARREGADOS201711.zip'
 lista = sch_processing(os.path.join(CAMINHO, ARQUIVO),
                        dest_path='.')
 
+'PROCURAR POR 435N'
+
 df_conhecimento = pd.read_csv('Conhecimento.csv',
                               encoding=ENCODE, dtype=str)
 df_mc =  pd.read_csv('ManifestoConhecimento.csv',
@@ -38,3 +40,13 @@ df_MBL_resumo = df_MBL[
          'DataAtracacao', 'HoraAtracacao']
         ]
 
+
+df_escala = pd.read_csv('Escala.csv',
+                              encoding=ENCODE, dtype=str)
+
+for column in df_final.columns:
+    filtrado = df_final[df_final[column] == '43SN']
+    if len(filtrado) > 0:
+        print('Achou', column)
+    else:
+        print('NÃO', column)
