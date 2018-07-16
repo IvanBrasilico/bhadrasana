@@ -82,7 +82,7 @@ def create_base_testes(dbsession):
     dbsession.add(valor1)
     dbsession.add(valor2)
     dbsession.commit()
-    visao1 = Visao('viagens')
+    visao1 = Visao('viagens', base1.id)
     dbsession.add(visao1)
     dbsession.commit()
     tabela1 = Tabela('viagens', 'viagem', '', 0, visao1.id)
@@ -160,7 +160,7 @@ class SeleniumTestCase(LiveServerTestCase):
         # print('############################################ create_database')
 
     def drop_database(self):
-        """**APAGA*** BD."""
+        """**APAGA*** BD. Desnecessário se BD em memória."""
         # print('########################################### DROP DATABASE')
         # Base.metadata.drop_all(self.engine)
 

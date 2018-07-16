@@ -14,7 +14,7 @@ from flask import url_for
 from selenium.webdriver.support.ui import Select
 
 from bhadrasana.conf import ENCODE, tmpdir
-from selenium_test import SeleniumTestCase
+from bhadrasana.functional_tests.selenium_test import SeleniumTestCase
 
 
 class ImportarBase(SeleniumTestCase):
@@ -67,9 +67,14 @@ class ImportarBase(SeleniumTestCase):
         """
         driver = self.driver
         self.carrega_tela()
-        self.make_planilha()
+        self.set_planilha()
         button = driver.find_element_by_name('btnimporta')
         button.click()
+        self.wait_fn(
+            lambda: self.assertIn(url_for('importa_base'),
+                                  self.driver.current_url)
+        )
+        assert 'Informe uma base' in driver.page_source
 
     def test_upload_sem_planilha(self):
         """Usuário informa arquivo e clica em importar.
@@ -82,6 +87,11 @@ class ImportarBase(SeleniumTestCase):
         select.select_by_visible_text('alimentos_e_esportes')
         button = driver.find_element_by_name('btnimporta')
         button.click()
+        self.wait_fn(
+            lambda: self.assertIn(url_for('importa_base'),
+                                  self.driver.current_url)
+        )
+        assert 'Arquivo vazio' in driver.page_source
 
     def test_inclui_base(self):
         """Usuário vê que não tem opção para base que deseja importar.
@@ -92,9 +102,20 @@ class ImportarBase(SeleniumTestCase):
         O sistema valida se o campo estiver em branco.
 
         """
-        # driver = self.driver
+        driver = self.driver
         self.carrega_tela()
-
+        nome_base_origem = driver.find_element_by_id('nome_base_origem')
+        nome_base_origem.send_keys('teste')
+        button = driver.find_element_by_id('btn_addbase')
+        button.click()
+        self.wait_fn(
+            lambda: self.assertIn(url_for('importa_base'),
+                                  self.driver.current_url)
+        )
+        select = Select(driver.find_element_by_name('baseid'))
+        select.select_by_visible_text('teste')
+        assert 'teste' in driver.page_source
+        
 
 if __name__ == '__name__':
     unittest.main()
