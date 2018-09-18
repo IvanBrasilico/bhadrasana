@@ -227,7 +227,7 @@
     };
 
     function aplica_risco(filename, acao) {
-        window.location.assign('/risco?filename=' + filename +
+        window.location.assign('risco?filename=' + filename +
             '&acao=' + acao +
             '&baseid=' + $("#base").val() +
             '&padraoid=' + $("#padrao").val() +
@@ -246,7 +246,7 @@
     };
 
     function exclui_planilha(planilha) {
-        $.getJSON('/exclui_planilha/' + planilha, {
+        $.getJSON('exclui_planilha/' + planilha, {
 
         }, function (planilhas) {
             table_planilha(planilhas);
@@ -268,7 +268,7 @@
         // send GET request to status URL
         $('#tasks_table tr').remove();
         $.each(tasks, function (i, task) {
-            var status_url = '/api/task_progress/' + task;
+            var status_url = 'api/task_progress/' + task;
             $.getJSON(status_url, function (data) {
                 console.log(data);
                 if (data['state'] == 'PENDING' || data['state'] == 'PROGRESS' || data['state'] == 'STARTED') {
@@ -298,7 +298,7 @@
     }
     $(document).ready(function () {
         var submit_form = function (e) {
-            window.location.assign('/risco?baseid=' + $("#base").val() +
+            window.location.assign('risco?baseid=' + $("#base").val() +
                 '&padraoid=' + $("#padrao").val() +
                 '&visaoid=' + $("#visao").val() +
                 '&parametros_ativos=' + parametros_selecionados()

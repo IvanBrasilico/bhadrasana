@@ -1,1 +1,1 @@
-celery --app=bhadrasana.workers.tasks worker -B --loglevel=info
+celery -A bhadrasana.workers.tasks worker --loglevel=info -n bhadrasana@%h

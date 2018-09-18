@@ -73,7 +73,7 @@
 <script>
     $(function () {
         var submit_form = function (e) {
-            window.location.assign('/edita_depara?baseid=' + $("#base").val())
+            window.location.assign('edita_depara?baseid=' + $("#base").val())
         };
         $('#base').bind('change', submit_form);
     });
@@ -82,14 +82,14 @@
         var ant = $("#titulo_ant").val()
         var novo = $("#titulo_novo").val()
         if (ant != '' && novo != '') {
-            window.location.assign('/adiciona_depara?baseid=' + $("#base").val() +
+            window.location.assign('adiciona_depara?baseid=' + $("#base").val() +
                 '&antigo=' + ant + '&novo=' + novo
             )
         }
     }
 
     function remover(tituloid) {
-        window.location.assign('/exclui_depara?baseid=' + $("#base").val() +
+        window.location.assign('exclui_depara?baseid=' + $("#base").val() +
             '&tituloid=' + tituloid
         )
     }

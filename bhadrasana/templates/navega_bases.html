@@ -117,7 +117,7 @@
 <script>
     $(function () {
         var submit_form = function (e) {
-            window.location.assign('/navega_bases' +
+            window.location.assign('navega_bases' +
                 '?selected_module=' + $("#module").val() +
                 '&selected_model=' + $("#model").val() +
                 '&selected_field=' + $("#field").val()
@@ -130,7 +130,7 @@
         var valor = $("#valor").val();
         var filtro = $("#tipofiltro").val();
         if (valor != '' && filtro != 0) {
-            window.location.assign('/adiciona_filtro' +
+            window.location.assign('adiciona_filtro' +
                 '?selected_module=' + $("#module").val() +
                 '&selected_model=' + $("#model").val() +
                 '&selected_field=' + $("#field").val() +
@@ -141,7 +141,7 @@
     }
 
     function excluir_valor(filtroid) {
-        window.location.assign('/exclui_filtro' +
+        window.location.assign('exclui_filtro' +
             '?selected_module=' + $("#module").val() +
             '&selected_model=' + $("#model").val() +
             '&selected_field=' + $("#field").val() +
@@ -150,14 +150,14 @@
     }
 
     function consultar() {
-        window.location.assign('/consulta_bases_executar' +
+        window.location.assign('consulta_bases_executar' +
             '?selected_module=' + $("#module").val() +
             '&selected_model=' + $("#model").val() +
             '&selected_field=' + $("#field").val()
         )
     }
     function abre_arvore(instance_id) {
-        window.location.assign('/arvore' +
+        window.location.assign('arvore' +
             '?selected_module=' + $("#module").val() +
             '&selected_model=' + $("#model").val() +
             '&selected_field=' + $('#dados').find('tr:first').find('td:first').text() +

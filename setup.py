@@ -19,6 +19,7 @@ setup(
         'Flask-nav',
         'Flask-session',
         'Flask-wtf',
+        'gunicorn',
         'pandas',
         'pymongo',
         'raven',

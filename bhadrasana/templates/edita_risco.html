@@ -160,7 +160,7 @@
                     <h1 class="modal-title" id="ModalLabel">Importar CSV</h1>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" action="/importa_csv/{{ padraoid }}/{{ riscoid }}" enctype="multipart/form-data">
+                    <form method="POST" action="importa_csv/{{ padraoid }}/{{ riscoid }}" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                         <input type="hidden" name="padraoid" value="{{ padraoid }}" />
                         <input type="hidden" name="id_parametro" value="{{ riscoid }}" />
@@ -215,7 +215,7 @@
 {% endblock %} {% block scripts %} {{super()}}
 <script>
     function valor_parametro(riscoid) {
-        window.location.assign('/edita_risco?padraoid=' + $("#padrao").val() + '&riscoid=' + riscoid)
+        window.location.assign('edita_risco?padraoid=' + $("#padrao").val() + '&riscoid=' + riscoid)
     }
 
     var parametros = document.querySelector("#parametros tbody");
@@ -225,34 +225,34 @@
     function adicionar_padraorisco() {
         var nome = $("#nome_padrao_risco").val();
         if (nome != '') {
-            window.location.assign('/adiciona_padrao/' + nome)
+            window.location.assign('adiciona_padrao/' + nome)
         }
     }
 
     function vincular_base() {
         var padraoid = $("#padrao").val();
         var baseid = $("#base").val();
-        window.location.assign('/vincula_base?padraoid=' +
+        window.location.assign('vincula_base?padraoid=' +
             padraoid + '&baseid=' + baseid)
     }
 
     function exclui_base(baseid) {
         var padraoid = $("#padrao").val();
-        window.location.assign('/vincula_base?padraoid=' +
+        window.location.assign('vincula_base?padraoid=' +
             padraoid + '&baseid=' + baseid)
     }
 
     function adicionar_parametro() {
         var risco = $("#parametro_risco").val();
         if (risco != '') {
-            window.location.assign('/adiciona_parametro?padraoid=' + $("#padrao").val() +
+            window.location.assign('adiciona_parametro?padraoid=' + $("#padrao").val() +
                 '&risco_novo=' + risco
             )
         }
     }
 
     function exclui_parametro(riscoid) {
-        window.location.assign('/exclui_parametro?padraoid=' + $("#padrao").val() + '&riscoid=' + riscoid)
+        window.location.assign('exclui_parametro?padraoid=' + $("#padrao").val() + '&riscoid=' + riscoid)
     }
 
     function adicionar_valor() {
@@ -260,14 +260,14 @@
         var filtro = $("#tipofiltro").val();
         var id_risco = $("#id_risco").val();
         if (novo_valor != '' && filtro != 0 && id_risco != undefined) {
-            window.location.assign('/adiciona_valor?padraoid=' + $("#padrao").val() +
+            window.location.assign('adiciona_valor?padraoid=' + $("#padrao").val() +
                 '&riscoid=' + id_risco + '&novo_valor=' + novo_valor + '&filtro=' + filtro
             )
         }
     }
 
     function excluir_valor(valorid) {
-        window.location.assign('/exclui_valor?padraoid=' + $("#padrao").val() +
+        window.location.assign('exclui_valor?padraoid=' + $("#padrao").val() +
             '&riscoid=' + $("#id_risco").val() + '&valorid=' + valorid
         )
     }
@@ -279,14 +279,14 @@
 
     $(function () {
         var submit_form = function (e) {
-            window.location.assign('/edita_risco?padraoid=' + $("#padrao").val()
+            window.location.assign('edita_risco?padraoid=' + $("#padrao").val()
             )
         };
         $('#padrao').bind('change', submit_form);
     });
 
     function exporta_csv(riscoid) {
-        window.location.assign('/exporta_csv?padraoid=' + $("#padrao").val() +
+        window.location.assign('exporta_csv?padraoid=' + $("#padrao").val() +
             '&riscoid=' + riscoid
         )
     }
@@ -317,7 +317,7 @@
         });
         $('#btn_sel').click(function () {
             if (adicionar != '') {
-                window.location.assign('/adiciona_parametro?padraoid=' + $("#padrao").val() +
+                window.location.assign('adiciona_parametro?padraoid=' + $("#padrao").val() +
                     '&lista=' + $(adicionar).toArray()
                 )
             }
