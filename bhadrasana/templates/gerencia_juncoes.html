@@ -129,7 +129,7 @@
 <script>
     $(function () {
         var submit_form = function (e) {
-            window.location.assign('/juncoes?visaoid=' + $("#visao").val() + '&baseid=' + $("#base").val()
+            window.location.assign('juncoes?visaoid=' + $("#visao").val() + '&baseid=' + $("#base").val()
                 + '&tabelaid=' + $('#tabela').val()
             )
         };
@@ -139,7 +139,7 @@
     });
 
     function visao() {
-        window.location.assign('/juncoes?baseid=' + $("#base").val())
+        window.location.assign('juncoes?baseid=' + $("#base").val())
     };
 
     $('#visoes td:first-child').click(function () {
@@ -148,13 +148,13 @@
     });
 
     function valor_parametro(visaoid) {
-        window.location.assign('/juncoes?visaoid=' + visaoid + '&baseid=' + $("#base").val())
+        window.location.assign('juncoes?visaoid=' + visaoid + '&baseid=' + $("#base").val())
     };
 
     function adiciona_visao() {
         var visao_novo = $("#visao_novo").val();
         if (visao_novo != '') {
-            window.location.assign('/adiciona_visao?visao_novo=' + visao_novo + '&baseid=' + $("#base").val())
+            window.location.assign('adiciona_visao?visao_novo=' + visao_novo + '&baseid=' + $("#base").val())
         }
     };
     $('#visao_novo').keypress(function (event) {
@@ -165,13 +165,13 @@
         event.stopPropagation();
     });
     function exclui_visao(visaoid) {
-        window.location.assign('/exclui_visao?visaoid=' + visaoid)
+        window.location.assign('exclui_visao?visaoid=' + visaoid)
     }
 
     function adiciona_coluna() {
         var col_nova = $("#col_nova").val();
         if (col_nova != '') {
-            window.location.assign('/adiciona_coluna?visaoid={{ visaoid }}' +
+            window.location.assign('adiciona_coluna?visaoid={{ visaoid }}' +
                 '&col_nova=' + col_nova)
         }
     }
@@ -184,7 +184,7 @@
     });
 
     function exclui_coluna(colunaid) {
-        window.location.assign('/exclui_coluna?visaoid={{ visaoid }}' +
+        window.location.assign('exclui_coluna?visaoid={{ visaoid }}' +
             '&colunaid=' + colunaid)
     }
 
@@ -195,14 +195,14 @@
         var pai = $("#pai_id").val();
         var desc = $("#descricao").val();
         if (csv != '' && primario != '') {
-            window.location.assign('/adiciona_tabela?visaoid={{ visaoid }}' +
+            window.location.assign('adiciona_tabela?visaoid={{ visaoid }}' +
                 '&csv=' + csv + '&primario=' + primario + '&estrangeiro=' + estrangeiro +
                 '&pai_id=' + pai + '&descricao=' + desc)
         }
     }
 
     function exclui_tabela(tabelaid) {
-        window.location.assign('/exclui_tabela?visaoid={{ visaoid }}' +
+        window.location.assign('exclui_tabela?visaoid={{ visaoid }}' +
             '&tabelaid=' + tabelaid)
     }
 

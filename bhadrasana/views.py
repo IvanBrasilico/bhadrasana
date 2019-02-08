@@ -371,7 +371,7 @@ def risco():
                     # arquivada pelo Celery
                     basedir = os.path.basename(base_csv)
                     temp_base_csv = os.path.join(tmpdir, basedir)
-                    os.rename(base_csv, temp_base_csv)
+                    shutil.move(base_csv, temp_base_csv)
                     task = arquiva_base_csv.apply_async(
                         (abase.id, temp_base_csv))
             else:

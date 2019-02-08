@@ -6,7 +6,7 @@
         </h4>
         <div class="col-sm-12">
             <div class="form-group">
-                <form action="/importa_base" method="post" enctype="multipart/form-data" id="frmrisco">
+                <form action="importa_base" method="post" enctype="multipart/form-data" id="frmrisco">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <input id="planilha" name="file" type="file" style="opacity: 0;" onchange="$('#upload-file-info').html(this.files[0].name)" />
                     <h3>
@@ -61,6 +61,6 @@
     function adicionar_baseorigem() {
         var nome = $("#nome_base_origem").val();
 
-        if (nome != '') { window.location.assign('/adiciona_base/' + nome) }
+        if (nome != '') { window.location.assign('adiciona_base/' + nome) }
     }
 </script> {% endblock %}
