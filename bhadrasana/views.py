@@ -260,11 +260,11 @@ def importa_base():
                         # para o processo Celery
                         user_folder = os.path.join(CSV_FOLDER,
                                                    current_user.name)
-                        task = importar_base.apply_async((user_folder,
+                        task = importar_base.delay(user_folder,
                                                           abase.id,
                                                           data,
                                                           tempfile_name,
-                                                          True))
+                                                          True)
                         return redirect(url_for('risco',
                                                 baseid=baseid,
                                                 task=task.id))
@@ -372,8 +372,8 @@ def risco():
                     basedir = os.path.basename(base_csv)
                     temp_base_csv = os.path.join(tmpdir, basedir)
                     shutil.move(base_csv, temp_base_csv)
-                    task = arquiva_base_csv.apply_async(
-                        (abase.id, temp_base_csv))
+                    task = arquiva_base_csv.delay(
+                        abase.id, temp_base_csv)
             else:
                 flash('Informe Base Original e arquivo!')
         except Exception as err:
@@ -411,10 +411,10 @@ def risco():
                     mongodb, base=abase,
                     parametros_ativos=parametros_ativos)
             else:
-                task = aplicar_risco_mongo.apply_async((
+                task = aplicar_risco_mongo.delay(
                     visaoid, padraoid,
                     parametros_ativos, static_path
-                ))
+                )
         else:
             if acao == 'aplicar':
                 lista_risco = gerente.aplica_risco_por_parametros(
@@ -423,9 +423,9 @@ def risco():
                     base_csv=base_csv
                 )
             elif acao == 'agendar':
-                task = aplicar_risco.apply_async((
+                task = aplicar_risco.delay(
                     base_csv, padraoid, visaoid, parametros_ativos, static_path
-                ))
+                )
 
     except Exception as err:
         logger.error(err, exc_info=True)
