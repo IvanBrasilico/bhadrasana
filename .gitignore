@@ -145,3 +145,4 @@ bhadrasana/static/ivan/
 notebooks/*.csv
 .mypy_cache/
 bhadrasana/static/ajna/Última planilha.csv
+celerybeat*
