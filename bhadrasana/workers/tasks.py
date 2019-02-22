@@ -75,29 +75,64 @@ def importar_base(self, csv_folder, baseid, data, filename, remove=False):
                           meta={'status': str(err)})
 
 
-@celery.task(bind=True)
-def arquiva_base_csv(self, baseid, base_csv):
+
+def importar_base_sync(csv_folder, baseid, data, filename, remove=False):
+    """Função para upload do arquivo de uma extração ou outra fonte externa.
+
+    Utiliza o :class: `bhadrasana.utils.gerenterisco.GerenteRisco`.
+    Suporte por ora para csv com títulos e zip com sch (padrão Carga)
+    Ver também :func: `bhadrasana.app.importa_base`
+
+    Args:
+        csv_folder: caminho onde será salvo o resultado
+
+        abase: Base de Origem do arquivo
+
+        data: data inicial do período extraído (se não for passada,
+        assume hoje)
+
+        filename: arquivo csv, sch+txt, ou conjunto deles em formato zip
+
+        remove: exclui arquivo original no final do processamento
+    """
+    mensagem = 'Processando arquivo %s.' % filename
+    basefilename = os.path.basename(filename)
+    print(basefilename)
+    mysession = MySession(Base)
+    dbsession = mysession.session
+    gerente = GerenteRisco()
+    try:
+        abase = dbsession.query(BaseOrigem).filter(
+            BaseOrigem.id == baseid).first()
+        lista_arquivos = gerente.importa_base(
+            csv_folder, baseid, data, filename, remove)
+        # Sanitizar base já na importação para evitar
+        # processamento repetido depois
+        gerente.ativa_sanitizacao(ascii_sanitizar)
+        gerente.checa_depara(abase)  # Aplicar na importação???
+        gerente.pre_processa_arquivos(lista_arquivos)
+        return 'Base ' + data + ' importada com sucesso'
+    except Exception as err:
+        logger.error(err, exc_info=True)
+        return str(err)
+
+def arquiva_base_sync(baseid, base_csv):
     """Copia CSVs para MongoDB e apaga do disco."""
     # Aviso: Esta função rmtree só deve ser utilizada com caminhos seguros,
     # de preferência gerados pela própria aplicação
-    self.update_state(state=states.STARTED,
-                      meta={'status': 'Aguarde. Arquivando base ' + base_csv})
     mysession = MySession(Base)
     dbsession = mysession.session
     try:
         abase = dbsession.query(BaseOrigem).filter(
             BaseOrigem.id == baseid).first()
-        self.update_state(state=states.PENDING,
-                          meta={'status': 'Aguarde... arquivando base ' +
-                                base_csv + ' na base MongoDB ' + abase.nome})
         conn = MongoClient(host=MONGODB_URI)
         db = conn[DATABASE]
         GerenteRisco.csv_to_mongo(db, abase, base_csv)
         shutil.rmtree(base_csv)
-        return {'status': 'Base arquivada com sucesso'}
+        return 'Base arquivada com sucesso'
     except Exception as err:
         logger.error(err, exc_info=True)
-        self.update_state(state=states.FAILURE, meta={'status': str(err)})
+        return str(err)
 
 
 @celery.task(bind=True)

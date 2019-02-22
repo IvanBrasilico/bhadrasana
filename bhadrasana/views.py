@@ -44,7 +44,7 @@ from bhadrasana.models.models import (BaseOrigem, Coluna, DePara, PadraoRisco,
 from bhadrasana.utils.gerente_risco import (ESemValorParametro, GerenteRisco,
                                             tmpdir)
 from bhadrasana.workers.tasks import (aplicar_risco, aplicar_risco_mongo,
-                                      arquiva_base_csv, importar_base)
+                                      arquiva_base_csv_sync, importar_base_sync)
 
 app = Flask(__name__, static_url_path='/static')
 csrf = CSRFProtect(app)
@@ -260,11 +260,11 @@ def importa_base():
                         # para o processo Celery
                         user_folder = os.path.join(CSV_FOLDER,
                                                    current_user.name)
-                        task = importar_base(user_folder,
-                                                          abase.id,
-                                                          data,
-                                                          tempfile_name,
-                                                          True)
+                        flash(importar_base_sync(user_folder,
+                                                 abase.id,
+                                                 data,
+                                                 tempfile_name,
+                                                 True))
                         return redirect(url_for('risco',
                                                 baseid=baseid,
                                                 task=task.id))
@@ -372,8 +372,8 @@ def risco():
                     basedir = os.path.basename(base_csv)
                     temp_base_csv = os.path.join(tmpdir, basedir)
                     shutil.move(base_csv, temp_base_csv)
-                    task = arquiva_base_csv(
-                        abase.id, temp_base_csv)
+                    flash(arquiva_base_csv(
+                        abase.id, temp_base_csv))
             else:
                 flash('Informe Base Original e arquivo!')
         except Exception as err:
@@ -671,7 +671,7 @@ def importa_csv(padraoid, riscoid):
             flash('Não foi selecionado parametro de risco')
             return redirect(request.url)
         if (csvf and '.' in csvf.filename and
-                csvf.filename.rsplit('.', 1)[1].lower() == 'csv'):
+            csvf.filename.rsplit('.', 1)[1].lower() == 'csv'):
             # filename = secure_filename(csvf.filename)
             save_name = os.path.join(tmpdir, risco.nome_campo + '.csv')
             csvf.save(save_name)
