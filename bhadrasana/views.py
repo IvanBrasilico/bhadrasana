@@ -266,8 +266,7 @@ def importa_base():
                                                  tempfile_name,
                                                  True))
                         return redirect(url_for('risco',
-                                                baseid=baseid,
-                                                task=task.id))
+                                                baseid=baseid))
                     except Exception as err:
                         logger.error(err, exc_info=True)
                         flash(err)
@@ -372,7 +371,7 @@ def risco():
                     basedir = os.path.basename(base_csv)
                     temp_base_csv = os.path.join(tmpdir, basedir)
                     shutil.move(base_csv, temp_base_csv)
-                    flash(arquiva_base_csv(
+                    flash(arquiva_base_csv_sync(
                         abase.id, temp_base_csv))
             else:
                 flash('Informe Base Original e arquivo!')
@@ -382,7 +381,7 @@ def risco():
                   'Detalhes no log da aplicação.')
             flash(type(err))
             flash(err)
-        return redirect(url_for('risco', baseid=baseid, task=task))
+        return redirect(url_for('risco', baseid=baseid))
     lista_arquivos = []
     try:
         for ano in os.listdir(os.path.join(user_folder, baseid)):
