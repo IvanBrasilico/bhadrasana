@@ -116,7 +116,7 @@ def importar_base_sync(csv_folder, baseid, data, filename, remove=False):
         logger.error(err, exc_info=True)
         return str(err)
 
-def arquiva_base_sync(baseid, base_csv):
+def arquiva_base_csv_sync(baseid, base_csv):
     """Copia CSVs para MongoDB e apaga do disco."""
     # Aviso: Esta função rmtree só deve ser utilizada com caminhos seguros,
     # de preferência gerados pela própria aplicação
