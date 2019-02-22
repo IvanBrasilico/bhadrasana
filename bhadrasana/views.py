@@ -260,7 +260,7 @@ def importa_base():
                         # para o processo Celery
                         user_folder = os.path.join(CSV_FOLDER,
                                                    current_user.name)
-                        task = importar_base.delay(user_folder,
+                        task = importar_base(user_folder,
                                                           abase.id,
                                                           data,
                                                           tempfile_name,
@@ -372,7 +372,7 @@ def risco():
                     basedir = os.path.basename(base_csv)
                     temp_base_csv = os.path.join(tmpdir, basedir)
                     shutil.move(base_csv, temp_base_csv)
-                    task = arquiva_base_csv.delay(
+                    task = arquiva_base_csv(
                         abase.id, temp_base_csv)
             else:
                 flash('Informe Base Original e arquivo!')
