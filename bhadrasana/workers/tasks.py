@@ -18,6 +18,10 @@ from ajna_commons.utils.sanitiza import ascii_sanitizar
 from bhadrasana.models.models import Base, BaseOrigem, MySession
 from bhadrasana.utils.gerente_risco import GerenteRisco
 
+REDIS_URL = 'redis://localhost:6379/0'
+BACKEND = REDIS_URL
+BROKER = REDIS_URL
+
 celery = Celery(__name__, broker=BROKER,
                 backend=BACKEND)
 
@@ -42,10 +46,11 @@ def importar_base(self, csv_folder, baseid, data, filename, remove=False):
 
         remove: exclui arquivo original no final do processamento
     """
-    basefilename = os.path.basename(filename)
     self.update_state(state=states.STARTED,
-                      meta={'status': 'Processando arquivo ' + basefilename +
+                      meta={'status': 'Processando arquivo ' + filename +
                             '. Aguarde!!!'})
+    basefilename = os.path.basename(filename)
+    print(basefilename)
     mysession = MySession(Base)
     dbsession = mysession.session
     gerente = GerenteRisco()
