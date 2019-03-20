@@ -373,7 +373,6 @@ def risco():
                     # shutil.move(base_csv, temp_base_csv)
                     flash(arquiva_base_csv_sync(
                         abase.id, base_csv))
-                    shutil.rmtree(base_csv)
             else:
                 flash('Informe Base Original e arquivo!')
         except Exception as err:
