@@ -780,8 +780,11 @@ class GerenteRisco():
         else:
             lista_arquivos = os.listdir(path)
         for arquivo in lista_arquivos:
+            print('Lendo arquivo', arquivo)
             df = pd.read_csv(os.path.join(path, arquivo),
                              encoding=ENCODE, dtype=str)
+            print('Leu arquivo %s tamanho: %s' % (arquivo, len(df)))
+            print(df.head())
             data_json = json.loads(df.to_json(orient='records'))
             collection_name = base.nome + '.' + arquivo[:-4]
             if collection_name not in db.collection_names():

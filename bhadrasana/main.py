@@ -26,6 +26,7 @@ from bhadrasana.views import configure_app
 mysession = MySession(Base)
 dbsession = mysession.session
 engine = mysession.engine
+print('URI:', MONGODB_URI, DATABASE)
 conn = MongoClient(host=MONGODB_URI)
 mongodb = conn[DATABASE]
 app = configure_app(dbsession, mongodb)
