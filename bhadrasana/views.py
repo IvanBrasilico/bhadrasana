@@ -369,10 +369,11 @@ def risco():
                     # tente efetuar novas ações na base que está sendo
                     # arquivada pelo Celery
                     basedir = os.path.basename(base_csv)
-                    temp_base_csv = os.path.join(tmpdir, basedir)
-                    shutil.move(base_csv, temp_base_csv)
+                    # temp_base_csv = os.path.join(tmpdir, basedir)
+                    # shutil.move(base_csv, temp_base_csv)
                     flash(arquiva_base_csv_sync(
-                        abase.id, temp_base_csv))
+                        abase.id, base_csv))
+                    shutil.rmtree(base_csv)
             else:
                 flash('Informe Base Original e arquivo!')
         except Exception as err:
