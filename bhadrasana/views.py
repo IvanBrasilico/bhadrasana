@@ -270,7 +270,7 @@ def importa_base():
                             return redirect(url_for('risco',
                                                     baseid=baseid))
                         else:
-                            task = importar_base(user_folder,
+                            task = importar_base.delay(user_folder,
                                                  abase.id,
                                                  data,
                                                  tempfile_name,
@@ -388,7 +388,7 @@ def risco():
                         flash(arquiva_base_csv_sync(
                             abase.id, base_csv))
                     else:
-                        task = arquiva_base_csv(
+                        task = arquiva_base_csv.delay(
                             abase.id, base_csv)
                         taskid = task.id
             else:
