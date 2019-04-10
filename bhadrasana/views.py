@@ -17,10 +17,23 @@ conexões internas.
 Adicionalmente, permite o merge entre bases, navegação de bases, e
 a aplicação de filtros/parâmetros de risco.
 """
+
+import ajna_commons.flask.login as login_ajna
 import datetime
 import os
 import shutil
-
+from ajna_commons.flask.conf import ALLOWED_EXTENSIONS, SECRET, logo
+from ajna_commons.flask.log import logger
+from ajna_commons.utils.sanitiza import sanitizar, unicode_sanitizar
+from bhadrasana.conf import APP_PATH, CSV_FOLDER
+from bhadrasana.models.models import (BaseOrigem, Coluna, DePara, PadraoRisco,
+                                      ParametroRisco, Tabela, ValorParametro,
+                                      Visao)
+from bhadrasana.utils.gerente_risco import (ESemValorParametro, GerenteRisco,
+                                            tmpdir)
+from bhadrasana.workers.tasks import (aplicar_risco, aplicar_risco_mongo,
+                                      arquiva_base_csv, importar_base,
+                                      arquiva_base_csv_sync, importar_base_sync)
 from flask import (Flask, flash, jsonify, redirect, render_template, request,
                    url_for)
 from flask_bootstrap import Bootstrap
@@ -32,19 +45,6 @@ from flask_session import Session
 # from flask_sslify import SSLify
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
-
-import ajna_commons.flask.login as login_ajna
-from ajna_commons.flask.conf import ALLOWED_EXTENSIONS, SECRET, logo
-from ajna_commons.flask.log import logger
-from ajna_commons.utils.sanitiza import sanitizar, unicode_sanitizar
-from bhadrasana.conf import APP_PATH, CSV_FOLDER
-from bhadrasana.models.models import (BaseOrigem, Coluna, DePara, PadraoRisco,
-                                      ParametroRisco, Tabela, ValorParametro,
-                                      Visao)
-from bhadrasana.utils.gerente_risco import (ESemValorParametro, GerenteRisco,
-                                            tmpdir)
-from bhadrasana.workers.tasks import (aplicar_risco, aplicar_risco_mongo,
-                                      arquiva_base_csv_sync, importar_base_sync)
 
 app = Flask(__name__, static_url_path='/static')
 csrf = CSRFProtect(app)
@@ -231,6 +231,7 @@ def importa_base():
     # print('dbsession', dbsession)
     baseid = request.form.get('baseid')
     data = request.form.get('data')
+    sync = request.args.get('sync')
     if request.method == 'POST':
         if 'file' not in request.files:
             flash('Arquivo vazio. Selecionar arquivo válido'
@@ -260,13 +261,23 @@ def importa_base():
                         # para o processo Celery
                         user_folder = os.path.join(CSV_FOLDER,
                                                    current_user.name)
-                        flash(importar_base_sync(user_folder,
+                        if sync:
+                            flash(importar_base_sync(user_folder,
+                                                     abase.id,
+                                                     data,
+                                                     tempfile_name,
+                                                     True))
+                            return redirect(url_for('risco',
+                                                    baseid=baseid))
+                        else:
+                            task = importar_base(user_folder,
                                                  abase.id,
                                                  data,
                                                  tempfile_name,
-                                                 True))
-                        return redirect(url_for('risco',
-                                                baseid=baseid))
+                                                 True)
+                            return redirect(url_for('risco',
+                                                    baseid=baseid,
+                                                    taskid=task.id))
                     except Exception as err:
                         logger.error(err, exc_info=True)
                         flash(err)
@@ -332,6 +343,7 @@ def risco():
     padraoid = request.args.get('padraoid', '0')
     visaoid = request.args.get('visaoid', '0')
     parametros_ativos = request.args.get('parametros_ativos')
+    sync = request.args.get('sync')
     tasks = []
     # Lista de planilhas geradas pelo agendamento de aplica_risco
     planilhas = get_planilhas_criadas_agendamento(static_path)
@@ -368,11 +380,17 @@ def risco():
                     # a linha da base escolhida da tela, evitando que o Usuário
                     # tente efetuar novas ações na base que está sendo
                     # arquivada pelo Celery
-                    basedir = os.path.basename(base_csv)
+                    # basedir = os.path.basename(base_csv)
                     # temp_base_csv = os.path.join(tmpdir, basedir)
                     # shutil.move(base_csv, temp_base_csv)
-                    flash(arquiva_base_csv_sync(
-                        abase.id, base_csv))
+                    if sync:
+                        taskid = None
+                        flash(arquiva_base_csv_sync(
+                            abase.id, base_csv))
+                    else:
+                        task = arquiva_base_csv(
+                            abase.id, base_csv)
+                        taskid = task.id
             else:
                 flash('Informe Base Original e arquivo!')
         except Exception as err:
@@ -381,7 +399,8 @@ def risco():
                   'Detalhes no log da aplicação.')
             flash(type(err))
             flash(err)
-        return redirect(url_for('risco', baseid=baseid))
+        return redirect(url_for('risco', baseid=baseid,
+                                task=taskid))
     lista_arquivos = []
     try:
         for ano in os.listdir(os.path.join(user_folder, baseid)):
