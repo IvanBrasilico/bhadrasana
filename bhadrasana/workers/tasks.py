@@ -116,6 +116,31 @@ def importar_base_sync(csv_folder, baseid, data, filename, remove=False):
         logger.error(err, exc_info=True)
         return str(err)
 
+
+@celery.task(bind=True)
+def arquiva_base_csv(self, baseid, base_csv):
+    """Copia CSVs para MongoDB e apaga do disco."""
+    # Aviso: Esta função rmtree só deve ser utilizada com caminhos seguros,
+    # de preferência gerados pela própria aplicação
+    self.update_state(state=states.STARTED,
+                      meta={'status': 'Aguarde. Arquivando base ' + base_csv})
+    mysession = MySession(Base)
+    dbsession = mysession.session
+    try:
+        abase = dbsession.query(BaseOrigem).filter(
+            BaseOrigem.id == baseid).first()
+        self.update_state(state=states.PENDING,
+                          meta={'status': 'Aguarde... arquivando base ' +
+                                base_csv + ' na base MongoDB ' + abase.nome})
+        conn = MongoClient(host=MONGODB_URI)
+        db = conn[DATABASE]
+        GerenteRisco.csv_to_mongo(db, abase, base_csv)
+        shutil.rmtree(base_csv)
+        return {'status': 'Base arquivada com sucesso'}
+    except Exception as err:
+        logger.error(err, exc_info=True)
+        self.update_state(state=states.FAILURE, meta={'status': str(err)})
+
 def arquiva_base_csv_sync(baseid, base_csv):
     """Copia CSVs para MongoDB e apaga do disco."""
     # Aviso: Esta função rmtree só deve ser utilizada com caminhos seguros,
