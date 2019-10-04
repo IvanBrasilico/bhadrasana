@@ -24,6 +24,7 @@ import os
 import shutil
 from ajna_commons.flask.conf import ALLOWED_EXTENSIONS, SECRET, logo
 from ajna_commons.flask.log import logger
+from ajna_commons.flask.user import DBUser
 from ajna_commons.utils.sanitiza import sanitizar, unicode_sanitizar
 from bhadrasana.conf import APP_PATH, CSV_FOLDER
 from bhadrasana.models.models import (BaseOrigem, Coluna, DePara, PadraoRisco,
@@ -64,7 +65,7 @@ def configure_app(sqllitedb, mongodb):
     app.config['SESSION_TYPE'] = 'filesystem'
     Session(app)
     login_ajna.configure(app)
-    login_ajna.DBUser.dbsession = mongodb
+    DBUser.dbsession = mongodb
     app.config['dbsession'] = sqllitedb
     app.config['mongodb'] = mongodb
     return app
