@@ -53,18 +53,28 @@
             <div class="table">
                 <table class="inlineTable table table-striped table-bordered table-hover table-condensed table-responsive" cellspacing="0"
                     cellpadding="0">
-                    {% if row %}
+                    {% if row is defined %}
                         <th>
-                            {% for key, value in row.iteritems() %}
-                                {{ key }}
+                            {% for key, value in row[0].items() %}
+                                <td>{{ key }}</td>
                             {% endfor %}
                         </th>
                     {% endif %}
                     {% for row in lista_risco %}
                     <tr>
-                        {% for key, value in row.iteritems() %}
+                        {% for key, value in row.items() %}
                         <td align="center">
-                            {{value}}
+                            {% if key=='numeroCEmercante' %}
+                              <a href="https://ajna.labin.rf08.srf/virasana/cemercante/{{value}}" target="_BLANK">
+                                  {{value}}
+                              </a>
+                            {% elif key=='codigoConteiner' %}
+                              <a href="https://ajna.labin.rf08.srf/virasana/files?numero={{value}}" target="_BLANK">
+                                  {{value}}
+                              </a>
+                            {% else %}
+                                {{value}}
+                            {% endif %}
                         </td>
                         {% endfor %}
                     </tr>
