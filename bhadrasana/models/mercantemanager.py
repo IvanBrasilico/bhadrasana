@@ -36,10 +36,10 @@ def mercanterisco(pfiltros: dict):
         limit(100)
     resultproxy = session.execute(s)
 
-    result = [keys]
+    result = []
     for row in resultproxy:
         print(row)
         print(list(row.keys()))
         print(dir(row))
-        result.append([row[key] for key in keys])
+        result.append({key:row[key] for key in keys})
     return result

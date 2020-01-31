@@ -53,12 +53,18 @@
             <div class="table">
                 <table class="inlineTable table table-striped table-bordered table-hover table-condensed table-responsive" cellspacing="0"
                     cellpadding="0">
+                    {% if row %}
+                        <th>
+                            {% for key, value in row.iteritems() %}
+                                {{ key }}
+                            {% endfor %}
+                        </th>
+                    {% endif %}
                     {% for row in lista_risco %}
                     <tr>
-                        {% for col in row %}
+                        {% for key, value in row.iteritems() %}
                         <td align="center">
-
-                            {{col}}
+                            {{value}}
                         </td>
                         {% endfor %}
                     </tr>
