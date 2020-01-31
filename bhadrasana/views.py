@@ -18,15 +18,29 @@ Adicionalmente, permite o merge entre bases, navegação de bases, e
 a aplicação de filtros/parâmetros de risco.
 """
 
-import ajna_commons.flask.login as login_ajna
 import datetime
 import os
 import shutil
+
+import ajna_commons.flask.login as login_ajna
 from ajna_commons.flask.conf import ALLOWED_EXTENSIONS, SECRET, logo
 from ajna_commons.flask.log import logger
 from ajna_commons.flask.user import DBUser
 from ajna_commons.utils.sanitiza import sanitizar, unicode_sanitizar
+from flask import (Flask, flash, jsonify, redirect, render_template, request,
+                   url_for)
+from flask_bootstrap import Bootstrap
+# from flask_cors import CORS
+from flask_login import current_user, login_required
+from flask_nav import Nav
+from flask_nav.elements import Navbar, View
+from flask_wtf import FlaskForm
+from flask_wtf.csrf import CSRFProtect
+from werkzeug.utils import secure_filename
+from wtforms import BooleanField
+
 from bhadrasana.conf import APP_PATH, CSV_FOLDER
+from bhadrasana.models.mercantemanager import mercanterisco
 from bhadrasana.models.models import (BaseOrigem, Coluna, DePara, PadraoRisco,
                                       ParametroRisco, Tabela, ValorParametro,
                                       Visao)
@@ -35,17 +49,7 @@ from bhadrasana.utils.gerente_risco import (ESemValorParametro, GerenteRisco,
 from bhadrasana.workers.tasks import (aplicar_risco, aplicar_risco_mongo,
                                       arquiva_base_csv, importar_base,
                                       arquiva_base_csv_sync, importar_base_sync)
-from flask import (Flask, flash, jsonify, redirect, render_template, request,
-                   url_for)
-from flask_bootstrap import Bootstrap
-# from flask_cors import CORS
-from flask_login import current_user, login_required
-from flask_nav import Nav
-from flask_nav.elements import Navbar, View
 from flask_session import Session
-# from flask_sslify import SSLify
-from flask_wtf.csrf import CSRFProtect
-from werkzeug.utils import secure_filename
 
 app = Flask(__name__, static_url_path='/static')
 csrf = CSRFProtect(app)
@@ -77,7 +81,7 @@ def log_every_request():
     name = 'No user'
     if current_user and current_user.is_authenticated:
         name = current_user.name
-    logger.info(request.url + ' - ' + name)
+        logger.info(request.url + ' - ' + name)
 
 
 def allowed_file(filename):
@@ -272,10 +276,10 @@ def importa_base():
                                                     baseid=baseid))
                         else:
                             task = importar_base.delay(user_folder,
-                                                 abase.id,
-                                                 data,
-                                                 tempfile_name,
-                                                 True)
+                                                       abase.id,
+                                                       data,
+                                                       tempfile_name,
+                                                       True)
                             return redirect(url_for('risco',
                                                     baseid=baseid,
                                                     taskid=task.id))
@@ -690,7 +694,7 @@ def importa_csv(padraoid, riscoid):
             flash('Não foi selecionado parametro de risco')
             return redirect(request.url)
         if (csvf and '.' in csvf.filename and
-            csvf.filename.rsplit('.', 1)[1].lower() == 'csv'):
+                csvf.filename.rsplit('.', 1)[1].lower() == 'csv'):
             # filename = secure_filename(csvf.filename)
             save_name = os.path.join(tmpdir, risco.nome_campo + '.csv')
             csvf.save(save_name)
@@ -1053,15 +1057,70 @@ def exclui_tabela():
                             visaoid=visaoid))
 
 
+class RiscosAtivosForm(FlaskForm):
+    consignatario = BooleanField(u'Consignatario',
+                    default=[1])
+    embarcador = BooleanField(u'Embarcador',
+                    default=[1])
+    portoorigem = BooleanField(u'Porto de Origem',
+                    default=[1])
+    ncm = BooleanField(u'NCM',
+                    default=[0])
+
+
+@app.route('/risco2', methods=['POST', 'GET'])
+@login_required
+def risco2():
+    """Função para aplicar parâmetros de risco em arquivo(s) importados.
+
+    Args:
+    """
+    dbsession = app.config.get('dbsession')
+    mongodb = app.config.get('mongodb')
+    static_path = os.path.join(APP_PATH,
+                               app.config.get('STATIC_FOLDER', 'static'),
+                               current_user.name)
+    user_folder = os.path.join(CSV_FOLDER, current_user.name)
+    lista_risco = []
+    if request.method == 'POST':
+        try:
+            riscos_ativos_form = RiscosAtivosForm(request.form)
+            filtros = {}
+            if riscos_ativos_form.consignatario.data is True:
+                filtros['consignatario'] = ['00']
+            if riscos_ativos_form.embarcador.data is True:
+                filtros['embarcador'] = ['RUIAN']
+            if riscos_ativos_form.portoorigem.data is True:
+                filtros['portoOrigemCarga'] = ['CNXGG']
+            if riscos_ativos_form.ncm.data is True:
+                filtros['ncm'] = ['8528', '3906', '4202']
+            lista_risco = mercanterisco(filtros)
+            # print('***********', lista_risco)
+        except Exception as err:
+            logger.error(err, exc_info=True)
+            flash('Erro ao aplicar risco! ' +
+                  'Detalhes no log da aplicação.')
+            flash(type(err))
+            flash(err)
+        # Salvar resultado um arquivo para donwload
+        # Limita resultados em 100 linhas na tela
+    else:
+        riscos_ativos_form = RiscosAtivosForm()
+    return render_template('aplica_risco2.html',
+                           oform=riscos_ativos_form,
+                           lista_risco=lista_risco)
+
+
 @nav.navigation()
 def mynavbar():
     """Menu da aplicação."""
     items = [View('Home', 'index'),
-             View('Importar Base', 'importa_base'),
-             View('Aplicar Risco', 'risco'),
+             # View('Importar Base', 'importa_base'),
+             # View('Aplicar Risco', 'risco'),
+             View('Risco', 'risco2'),
              View('Editar Riscos', 'edita_risco'),
-             View('Editar Visão', 'juncoes'),
-             View('Editar Titulos', 'edita_depara'),
+             # View('Editar Visão', 'juncoes'),
+             # View('Editar Titulos', 'edita_depara'),
              # View('Navega Bases', 'navega_bases')
              ]
     if current_user.is_authenticated:

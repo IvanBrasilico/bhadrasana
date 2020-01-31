@@ -1,0 +1,82 @@
+{% extends "layout.html" %} {% block content %} {{super()}}
+<div id="main" class="container-fluid">
+    <div id="top" class="row">
+        <div class="col-sm-12">
+            <form method="POST" id="formfiltro" action="risco2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="row">
+                    <h4>Filtros ativos</h4>
+                    <div class="form-group">
+                        <div class="col-sm-1">
+                            <input class="form-control" type="checkbox" name="consignatario" {% if oform.consignatario.data %} checked {% endif %} />
+                        </div>
+                        <div class="col-sm-2">
+                            Consignatário
+                        </div>
+                        <div class="col-sm-1">
+                            <input class="form-control" type="checkbox" name="embarcador" {% if oform.embarcador.data %} checked {% endif %} />
+                        </div>
+                        <div class="col-sm-2">
+                            Embarcador
+                        </div>
+                        <div class="col-sm-1">
+                            <input class="form-control" type="checkbox" name="portoorigem" {% if oform.portoorigem.data %} checked {% endif %} />
+                        </div>
+                        <div class="col-sm-2">
+                            Porto de Origem
+                        </div>
+                        <div class="col-sm-1">
+                            <input class="form-control" type="checkbox" name="ncm" {% if oform.ncm.data %} checked {% endif %} />
+                        </div>
+                        <div class="col-sm-2">
+                            NCM
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-default btn-info" onclick="submit">
+                    Aplicar risco
+                </button>
+            </form>
+        </div>
+        <div class="table-responsive col-sm-12">
+            <h4>Lista de Riscos da Base {{filename}} - total de {{total_linhas}} linhas - Máximos de 100 linhas, baixe a planilha
+                para ver as restantes ou aplique mais filtros</h4>
+            {% if csv_salvo %}
+            <big>
+                <a href="static/{{ current_user.name }}/{{csv_salvo}}">
+                    <span class="label label-success">
+                        <b>Baixar planilha</b>
+                    </span>
+                </a>
+            </big>
+            {% endif %}
+            <div class="table">
+                <table class="inlineTable table table-striped table-bordered table-hover table-condensed table-responsive" cellspacing="0"
+                    cellpadding="0">
+                    {% for row in lista_risco %}
+                    <tr>
+                        {% for col in row %}
+                        <td align="center">
+
+                            {{col}}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %} {% if not lista_risco %}
+                    <tr>
+                        <td>Sem resultados.</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+            &nbsp;
+        </div>
+    </div>
+    <div id="bottom" class="row">
+        AJNA - Receita Federal do Brasil 2017
+    </div>
+</div>
+{% endblock %} {% block scripts %} {{super()}}
+<script>
+
+</script> {% endblock %}
